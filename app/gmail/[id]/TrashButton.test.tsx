@@ -33,4 +33,17 @@ describe("TrashButton", () => {
     await waitFor(() => expect(trashMessageActionMock).toHaveBeenCalledWith("msg-1"));
     expect(pushMock).toHaveBeenCalledWith("/gmail");
   });
+
+  it("삭제에 실패하면 한글 에러 메시지를 보여주고 버튼을 다시 활성화한다", async () => {
+    trashMessageActionMock.mockRejectedValue(new Error("delete failed"));
+
+    render(<TrashButton messageId="msg-1" />);
+    fireEvent.click(screen.getByRole("button", { name: "삭제" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "삭제에 실패했습니다. 잠시 후 다시 시도해주세요."
+    );
+    expect(screen.getByRole("button", { name: "삭제" })).not.toBeDisabled();
+    expect(pushMock).not.toHaveBeenCalled();
+  });
 });

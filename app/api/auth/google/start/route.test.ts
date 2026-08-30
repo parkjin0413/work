@@ -15,9 +15,12 @@ vi.mock("@/lib/auth/requireAdmin", async () => {
   return { ...actual, requireAdmin: requireAdminMock };
 });
 
-vi.mock("@/lib/google/oauthClient", () => ({
-  getGoogleAuthUrl: getGoogleAuthUrlMock,
-}));
+vi.mock("@/lib/google/oauthClient", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/google/oauthClient")>(
+    "@/lib/google/oauthClient"
+  );
+  return { ...actual, getGoogleAuthUrl: getGoogleAuthUrlMock };
+});
 
 describe("GET /api/auth/google/start", () => {
   beforeEach(() => {
@@ -43,5 +46,7 @@ describe("GET /api/auth/google/start", () => {
     expect(response.headers.get("location")).toBe(
       "https://accounts.google.com/o/oauth2/v2/auth?mock=1"
     );
+    expect(getGoogleAuthUrlMock).toHaveBeenCalledWith(expect.any(String));
+    expect(response.headers.get("set-cookie")).toContain("google_oauth_state");
   });
 });

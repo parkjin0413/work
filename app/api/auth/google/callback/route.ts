@@ -3,6 +3,8 @@ import { requireAdmin, UnauthorizedError } from "@/lib/auth/requireAdmin";
 import { createGoogleOAuthClient } from "@/lib/google/oauthClient";
 import { saveGoogleRefreshToken } from "@/lib/google/tokenStore";
 
+const STATE_COOKIE = "google_oauth_state";
+
 export async function GET(request: NextRequest) {
   try {
     await requireAdmin();
@@ -13,20 +15,41 @@ export async function GET(request: NextRequest) {
     throw error;
   }
 
-  const code = request.nextUrl.searchParams.get("code");
+  const googleError = request.nextUrl.searchParams.get("error");
+  if (googleError) {
+    return NextResponse.redirect(new URL(`/gmail?error=${googleError}`, request.url));
+  }
 
+  const code = request.nextUrl.searchParams.get("code");
   if (!code) {
     return NextResponse.redirect(new URL("/gmail?error=missing_code", request.url));
   }
 
+  const returnedState = request.nextUrl.searchParams.get("state");
+  const expectedState = request.cookies.get(STATE_COOKIE)?.value;
+  if (!expectedState || returnedState !== expectedState) {
+    return NextResponse.redirect(new URL("/gmail?error=invalid_state", request.url));
+  }
+
   const client = createGoogleOAuthClient();
-  const { tokens } = await client.getToken(code);
+  let tokens;
+  try {
+    ({ tokens } = await client.getToken(code));
+  } catch {
+    return NextResponse.redirect(new URL("/gmail?error=token_exchange_failed", request.url));
+  }
 
   if (!tokens.refresh_token) {
     return NextResponse.redirect(new URL("/gmail?error=no_refresh_token", request.url));
   }
 
-  await saveGoogleRefreshToken(tokens.refresh_token);
+  try {
+    await saveGoogleRefreshToken(tokens.refresh_token);
+  } catch {
+    return NextResponse.redirect(new URL("/gmail?error=save_failed", request.url));
+  }
 
-  return NextResponse.redirect(new URL("/gmail?connected=1", request.url));
+  const response = NextResponse.redirect(new URL("/gmail?connected=1", request.url));
+  response.cookies.delete(STATE_COOKIE);
+  return response;
 }

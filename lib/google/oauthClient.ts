@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { google } from "googleapis";
 
 export const GOOGLE_SCOPES = [
@@ -14,11 +15,16 @@ export function createGoogleOAuthClient() {
   );
 }
 
-export function getGoogleAuthUrl(): string {
+export function generateOAuthState(): string {
+  return randomBytes(16).toString("hex");
+}
+
+export function getGoogleAuthUrl(state: string): string {
   const client = createGoogleOAuthClient();
   return client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
     scope: GOOGLE_SCOPES,
+    state,
   });
 }

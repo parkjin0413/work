@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, UnauthorizedError } from "@/lib/auth/requireAdmin";
-import { getGoogleAuthUrl } from "@/lib/google/oauthClient";
+import { generateOAuthState, getGoogleAuthUrl } from "@/lib/google/oauthClient";
+
+const STATE_COOKIE = "google_oauth_state";
 
 export async function GET() {
   try {
@@ -12,5 +14,14 @@ export async function GET() {
     throw error;
   }
 
-  return NextResponse.redirect(getGoogleAuthUrl());
+  const state = generateOAuthState();
+  const response = NextResponse.redirect(getGoogleAuthUrl(state));
+  response.cookies.set(STATE_COOKIE, state, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 600,
+    path: "/",
+  });
+  return response;
 }

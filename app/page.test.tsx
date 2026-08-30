@@ -23,7 +23,9 @@ describe("HomePage", () => {
 
     expect(screen.getByText("최근 메일을 확인하고 보낼 수 있습니다.")).toBeInTheDocument();
     expect(screen.getByText("파일을 조회하고 업로드/관리할 수 있습니다.")).toBeInTheDocument();
-    expect(screen.getByText("Notion 연동 준비 중입니다.")).toBeInTheDocument();
+    expect(
+      screen.getByText("데이터베이스 항목을 확인하고 추가/수정할 수 있습니다.")
+    ).toBeInTheDocument();
   });
 
   it("각 요약 카드는 해당 서비스 페이지로 연결된다", () => {

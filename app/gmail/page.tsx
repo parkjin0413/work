@@ -2,6 +2,9 @@ import Link from "next/link";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { isGoogleConnected, listRecentMessages } from "@/lib/google/gmailClient";
 
+// 항상 최신 Gmail 상태를 보여주기 위해 정적 생성을 사용하지 않는다 (라이브 프록시 구조).
+export const dynamic = "force-dynamic";
+
 export default async function GmailPage() {
   const connected = await isGoogleConnected();
   const messages = connected ? await listRecentMessages() : [];

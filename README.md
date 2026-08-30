@@ -23,7 +23,14 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`에 입력
 3. Authentication > Users 메뉴에서 관리자 계정 1개를 직접 생성
    (회원가입 화면이 없으므로 반드시 Supabase 콘솔에서 생성해야 함)
+   - 사용자 생성 시 "Auto Confirm User" 옵션을 반드시 체크할 것.
+     체크하지 않으면 이메일 인증 전 상태가 되어 로그인 시
+     "이메일이 아직 인증되지 않았습니다" 오류가 발생함
 4. 생성한 관리자 이메일을 `.env.local`의 `ADMIN_EMAIL`에 입력
+5. Authentication > Providers > Email 설정에서 "Enable Sign Ups"를 비활성화할 것.
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY`는 공개 값이므로, 이를 비활성화하지 않으면
+   누구나 Supabase Auth API를 직접 호출해 계정을 생성할 수 있음
+   (대시보드 접근은 안 되지만 불필요한 사용자 데이터가 쌓일 수 있음)
 
 ## GitHub / Vercel 연결
 
@@ -33,6 +40,13 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
    값을 등록 (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
    `ADMIN_EMAIL`)
 4. main 브랜치에 push하면 자동 배포됨
+
+### 배포 시 주의사항
+
+- **Env var 등록 순서**: 반드시 첫 Vercel 배포 **전에** Environment Variables를
+  등록해야 함. `ADMIN_EMAIL`은 Edge 미들웨어에서 사용되는데, Next.js가 빌드 시점에
+  이 값을 번들에 인라인(inline)하기 때문에, 첫 배포 이후 대시보드에서 값을 바꿔도
+  재배포(redeploy) 전까지는 반영되지 않음
 
 ## 진행 현황
 

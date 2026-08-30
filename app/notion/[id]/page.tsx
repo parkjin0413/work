@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { getDatabaseItems } from "@/lib/notion/notionClient";
+import { CreateItemForm } from "../CreateItemForm";
 
 export default async function NotionDatabasePage({ params }: { params: { id: string } }) {
   let view;
@@ -39,6 +40,8 @@ export default async function NotionDatabasePage({ params }: { params: { id: str
           ← 목록으로
         </Link>
         <h1 className="mt-4 text-lg font-semibold text-neutral-50">{view.databaseTitle}</h1>
+
+        <CreateItemForm databaseId={view.databaseId} titlePropertyName={view.titlePropertyName} />
 
         {view.items.length === 0 ? (
           <p className="mt-6 text-sm text-neutral-400">항목이 없습니다.</p>

@@ -484,8 +484,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { GET } from "./route";
 import { UnauthorizedError } from "@/lib/auth/requireAdmin";
 
-const requireAdminMock = vi.fn();
-const getGoogleAuthUrlMock = vi.fn();
+const { requireAdminMock, getGoogleAuthUrlMock } = vi.hoisted(() => ({
+  requireAdminMock: vi.fn(),
+  getGoogleAuthUrlMock: vi.fn(),
+}));
 
 vi.mock("@/lib/auth/requireAdmin", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/requireAdmin")>(
@@ -568,9 +570,13 @@ import { NextRequest } from "next/server";
 import { GET } from "./route";
 import { UnauthorizedError } from "@/lib/auth/requireAdmin";
 
-const requireAdminMock = vi.fn();
-const createGoogleOAuthClientMock = vi.fn();
-const saveGoogleRefreshTokenMock = vi.fn();
+const { requireAdminMock, createGoogleOAuthClientMock, saveGoogleRefreshTokenMock } = vi.hoisted(
+  () => ({
+    requireAdminMock: vi.fn(),
+    createGoogleOAuthClientMock: vi.fn(),
+    saveGoogleRefreshTokenMock: vi.fn(),
+  })
+);
 
 vi.mock("@/lib/auth/requireAdmin", async () => {
   const actual = await vi.importActual<typeof import("@/lib/auth/requireAdmin")>(
@@ -727,14 +733,26 @@ git commit -m "feat: Google OAuth 시작/콜백 라우트 추가"
 ```ts
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const getGoogleRefreshTokenMock = vi.fn();
-const setCredentialsMock = vi.fn();
-const createGoogleOAuthClientMock = vi.fn(() => ({ setCredentials: setCredentialsMock }));
-
-const messagesListMock = vi.fn();
-const messagesGetMock = vi.fn();
-const messagesSendMock = vi.fn();
-const messagesTrashMock = vi.fn();
+const {
+  getGoogleRefreshTokenMock,
+  setCredentialsMock,
+  createGoogleOAuthClientMock,
+  messagesListMock,
+  messagesGetMock,
+  messagesSendMock,
+  messagesTrashMock,
+} = vi.hoisted(() => {
+  const setCredentialsMock = vi.fn();
+  return {
+    getGoogleRefreshTokenMock: vi.fn(),
+    setCredentialsMock,
+    createGoogleOAuthClientMock: vi.fn(() => ({ setCredentials: setCredentialsMock })),
+    messagesListMock: vi.fn(),
+    messagesGetMock: vi.fn(),
+    messagesSendMock: vi.fn(),
+    messagesTrashMock: vi.fn(),
+  };
+});
 
 vi.mock("@/lib/google/tokenStore", () => ({
   getGoogleRefreshToken: getGoogleRefreshTokenMock,
@@ -1089,8 +1107,10 @@ vi.mock("@/lib/supabase/client", () => ({
   createSupabaseBrowserClient: () => ({ auth: { signOut: vi.fn() } }),
 }));
 
-const isGoogleConnectedMock = vi.fn();
-const listRecentMessagesMock = vi.fn();
+const { isGoogleConnectedMock, listRecentMessagesMock } = vi.hoisted(() => ({
+  isGoogleConnectedMock: vi.fn(),
+  listRecentMessagesMock: vi.fn(),
+}));
 
 vi.mock("@/lib/google/gmailClient", () => ({
   isGoogleConnected: isGoogleConnectedMock,
@@ -1343,7 +1363,9 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock, refresh: refreshMock }),
 }));
 
-const trashMessageActionMock = vi.fn();
+const { trashMessageActionMock } = vi.hoisted(() => ({
+  trashMessageActionMock: vi.fn(),
+}));
 
 vi.mock("./actions", () => ({
   trashMessageAction: trashMessageActionMock,
@@ -1490,7 +1512,9 @@ vi.mock("@/lib/supabase/client", () => ({
   createSupabaseBrowserClient: () => ({ auth: { signOut: vi.fn() } }),
 }));
 
-const sendEmailActionMock = vi.fn();
+const { sendEmailActionMock } = vi.hoisted(() => ({
+  sendEmailActionMock: vi.fn(),
+}));
 
 vi.mock("./actions", () => ({
   sendEmailAction: sendEmailActionMock,

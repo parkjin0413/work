@@ -13,10 +13,20 @@ export function createSupabaseServerClient() {
           return cookieStore.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          cookieStore.set({ name, value, ...options });
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch {
+            // Server Component에서 호출된 경우 무시 가능 —
+            // 미들웨어가 세션 갱신을 담당하므로 안전함.
+          }
         },
         remove(name: string, options: CookieOptions) {
-          cookieStore.set({ name, value: "", ...options });
+          try {
+            cookieStore.set({ name, value: "", ...options });
+          } catch {
+            // Server Component에서 호출된 경우 무시 가능 —
+            // 미들웨어가 세션 갱신을 담당하므로 안전함.
+          }
         },
       },
     }

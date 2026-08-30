@@ -127,6 +127,10 @@ browser.
 - Detailed component-level styling (colors, typography, spacing tokens)
   is deferred to the frontend-design/ui-ux-pro-max implementation pass,
   not fixed in this spec.
+- **UI language**: all user-facing text (labels, buttons, empty states,
+  error/reconnect messages) is written in Korean. Code identifiers
+  (variables, functions, component names) stay in English per normal
+  convention — only user-facing strings are Korean.
 
 ## 10. Data Flow (Summary)
 
@@ -190,3 +194,4 @@ coverage over broad E2E automation:
 | Gmail scope | Read + send + delete/trash | User explicitly requested full read/write/delete |
 | Drive scope | Read + upload/manage | User explicitly requested this scope |
 | Notion scope | Read + create/update | User explicitly requested this scope |
+| UI language | Korean for all user-facing text | User explicitly requested an all-Korean dashboard UI |

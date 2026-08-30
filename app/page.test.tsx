@@ -21,7 +21,7 @@ describe("HomePage", () => {
       </ThemeProvider>
     );
 
-    expect(screen.getByText("Gmail 연동 준비 중입니다.")).toBeInTheDocument();
+    expect(screen.getByText("최근 메일을 확인하고 보낼 수 있습니다.")).toBeInTheDocument();
     expect(screen.getByText("Drive 연동 준비 중입니다.")).toBeInTheDocument();
     expect(screen.getByText("Notion 연동 준비 중입니다.")).toBeInTheDocument();
   });

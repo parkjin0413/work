@@ -77,7 +77,7 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
 ## 진행 현황
 
 - [x] 1단계: 기반 구축 (인증, 다크모드, 빈 라우트)
-- [ ] 2단계: Gmail 연동
+- [x] 2단계: Gmail 연동
 - [ ] 3단계: Google Drive 연동
 - [ ] 4단계: Notion 연동
 - [ ] 5단계: 홈 화면 통합

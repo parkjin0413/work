@@ -55,6 +55,16 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
 8. Supabase 대시보드의 SQL Editor에서 `supabase/migrations/0001_oauth_tokens.sql`
    내용을 실행해 `oauth_tokens` 테이블 생성
 
+### Google 연동 시 알아둘 점
+
+- **"Google에서 확인하지 않은 앱입니다" 경고**: OAuth 동의 화면에서 이 경고가 뜨는 것은
+  정상입니다 (Gmail/Drive 스코프가 민감 스코프이기 때문). "고급"을 클릭한 뒤
+  "\<앱 이름\>(으)로 이동(안전하지 않음)"을 눌러 계속 진행하세요. 본인이 테스트
+  사용자로 등록한 계정이라면 안전합니다.
+- **토큰 7일 만료**: OAuth 동의 화면이 "테스트" 게시 상태인 동안 발급되는
+  refresh token은 7일 후 자동 만료됩니다. 이 기간이 지나면 Gmail 페이지에
+  재연결 안내가 표시되며, "Google 계정 다시 연결"을 눌러 다시 동의하면 됩니다.
+
 ## GitHub / Vercel 연결
 
 1. 이 저장소를 GitHub 원격 저장소에 push

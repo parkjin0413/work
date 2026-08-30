@@ -72,6 +72,7 @@ export async function listFolder(folderId: string = "root"): Promise<DriveFolder
       q: `'${folderId}' in parents and trashed = false`,
       fields: "files(id, name, mimeType, modifiedTime, size)",
       orderBy: "folder,name",
+      pageSize: 1000,
     });
 
     const files: DriveFileSummary[] = (listResponse.data.files ?? []).map((file) => ({

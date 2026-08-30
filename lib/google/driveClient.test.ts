@@ -103,6 +103,7 @@ describe("driveClient", () => {
       q: "'root' in parents and trashed = false",
       fields: "files(id, name, mimeType, modifiedTime, size)",
       orderBy: "folder,name",
+      pageSize: 1000,
     });
     expect(result).toEqual({
       folderId: "root",

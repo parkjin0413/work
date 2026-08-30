@@ -25,4 +25,16 @@ describe("HomePage", () => {
     expect(screen.getByText("Drive 연동 준비 중입니다.")).toBeInTheDocument();
     expect(screen.getByText("Notion 연동 준비 중입니다.")).toBeInTheDocument();
   });
+
+  it("각 요약 카드는 해당 서비스 페이지로 연결된다", () => {
+    render(
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+        <HomePage />
+      </ThemeProvider>
+    );
+
+    expect(screen.getByRole("link", { name: /Gmail/ })).toHaveAttribute("href", "/gmail");
+    expect(screen.getByRole("link", { name: /Google Drive/ })).toHaveAttribute("href", "/drive");
+    expect(screen.getByRole("link", { name: /Notion/ })).toHaveAttribute("href", "/notion");
+  });
 });

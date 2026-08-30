@@ -13,7 +13,7 @@ export default function HomePage() {
         />
         <ServiceSummaryCard
           title="Google Drive"
-          description="Drive 연동 준비 중입니다."
+          description="파일을 조회하고 업로드/관리할 수 있습니다."
           href="/drive"
         />
         <ServiceSummaryCard title="Notion" description="Notion 연동 준비 중입니다." href="/notion" />

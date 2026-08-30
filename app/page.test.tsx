@@ -22,7 +22,7 @@ describe("HomePage", () => {
     );
 
     expect(screen.getByText("최근 메일을 확인하고 보낼 수 있습니다.")).toBeInTheDocument();
-    expect(screen.getByText("Drive 연동 준비 중입니다.")).toBeInTheDocument();
+    expect(screen.getByText("파일을 조회하고 업로드/관리할 수 있습니다.")).toBeInTheDocument();
     expect(screen.getByText("Notion 연동 준비 중입니다.")).toBeInTheDocument();
   });
 

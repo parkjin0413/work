@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { getDatabaseItems } from "@/lib/notion/notionClient";
 import { CreateItemForm } from "../CreateItemForm";
+import { ItemRowActions } from "../ItemRowActions";
 
 export default async function NotionDatabasePage({ params }: { params: { id: string } }) {
   let view;
@@ -48,8 +49,14 @@ export default async function NotionDatabasePage({ params }: { params: { id: str
         ) : (
           <ul className="mt-6 divide-y divide-neutral-800 rounded-xl border border-neutral-800 bg-neutral-900">
             {view.items.map((item) => (
-              <li key={item.id} className="px-4 py-3">
+              <li key={item.id} className="flex items-center justify-between px-4 py-3">
                 <p className="text-sm font-medium text-neutral-50">{item.title}</p>
+                <ItemRowActions
+                  pageId={item.id}
+                  databaseId={view.databaseId}
+                  titlePropertyName={view.titlePropertyName}
+                  currentTitle={item.title}
+                />
               </li>
             ))}
           </ul>

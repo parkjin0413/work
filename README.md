@@ -65,6 +65,19 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
   refresh token은 7일 후 자동 만료됩니다. 이 기간이 지나면 Gmail/Drive 페이지에
   재연결 안내가 표시되며, "Google 계정 다시 연결"을 눌러 다시 동의하면 됩니다.
 
+## Notion 연동 설정
+
+1. https://www.notion.so/my-integrations 에서 "새 통합 만들기"로 Internal
+   Integration 생성 (이름 예: "개인 업무 대시보드")
+2. 생성된 "Internal Integration Secret" 값을 복사해 `.env.local`의
+   `NOTION_API_KEY`에 입력
+3. Notion에서 대시보드에 표시하고 싶은 데이터베이스를 열고, 우측 상단 "..."
+   메뉴 > "연결 추가"(Add connections)에서 2번에서 만든 Integration을 선택해
+   공유 (이 단계는 API로 자동화할 수 없으며, 대시보드에 보이길 원하는
+   데이터베이스마다 반복해야 함)
+4. 공유하지 않은 데이터베이스는 대시보드에 나타나지 않음 — 새 데이터베이스를
+   추가하고 싶다면 3번 과정을 반복
+
 ## GitHub / Vercel 연결
 
 1. 이 저장소를 GitHub 원격 저장소에 push
@@ -72,7 +85,8 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
 3. Vercel 프로젝트 설정 > Environment Variables에 `.env.local`과 동일한
    값을 등록 (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
    `ADMIN_EMAIL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
-   `GOOGLE_REDIRECT_URI`, `TOKEN_ENCRYPTION_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
+   `GOOGLE_REDIRECT_URI`, `TOKEN_ENCRYPTION_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
+   `NOTION_API_KEY`).
    `GOOGLE_REDIRECT_URI`는 실제 배포 도메인의 콜백 URL로 설정할 것
    (`https://<Vercel 도메인>/api/auth/google/callback`)
 4. main 브랜치에 push하면 자동 배포됨

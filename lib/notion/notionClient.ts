@@ -19,6 +19,26 @@ export type NotionDatabaseView = {
 
 type NotionRichTextPart = { plain_text?: string };
 
+async function collectAllResults<T>(
+  fetchPage: (
+    cursor: string | undefined
+  ) => Promise<{ results: T[]; has_more: boolean; next_cursor: string | null }>
+): Promise<T[]> {
+  const allResults: T[] = [];
+  let cursor: string | undefined;
+  let pageCount = 0;
+  const MAX_PAGES = 5;
+
+  do {
+    const response = await fetchPage(cursor);
+    allResults.push(...response.results);
+    cursor = response.next_cursor ?? undefined;
+    pageCount += 1;
+  } while (cursor && pageCount < MAX_PAGES);
+
+  return allResults;
+}
+
 function getNotionClient(): Client | null {
   const apiKey = process.env.NOTION_API_KEY;
   if (!apiKey) {
@@ -51,11 +71,15 @@ export async function listSharedDatabases(): Promise<NotionDatabaseSummary[]> {
     return [];
   }
 
-  const response = await notion.search({
-    filter: { property: "object", value: "database" },
-  });
+  const results = await collectAllResults((start_cursor) =>
+    notion.search({
+      filter: { property: "object", value: "database" },
+      start_cursor,
+      page_size: 100,
+    })
+  );
 
-  return response.results.map((result) => {
+  return results.map((result) => {
     const database = result as unknown as {
       id: string;
       title?: NotionRichTextPart[];
@@ -81,8 +105,11 @@ export async function getDatabaseItems(databaseId: string): Promise<NotionDataba
     };
     const titlePropertyName = findTitlePropertyName(databaseData.properties);
 
-    const queryResponse = await notion.databases.query({ database_id: databaseId });
-    const items: NotionItemSummary[] = queryResponse.results.map((page) => {
+    const queryResults = await collectAllResults((start_cursor) =>
+      notion.databases.query({ database_id: databaseId, start_cursor, page_size: 100 })
+    );
+
+    const items: NotionItemSummary[] = queryResults.map((page) => {
       const pageData = page as unknown as {
         id: string;
         properties: Record<string, { title?: NotionRichTextPart[] }>;

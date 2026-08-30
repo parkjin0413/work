@@ -71,8 +71,36 @@ describe("notionClient", () => {
 
     expect(searchMock).toHaveBeenCalledWith({
       filter: { property: "object", value: "database" },
+      start_cursor: undefined,
+      page_size: 100,
     });
     expect(result).toEqual([{ id: "db-1", title: "할 일 목록" }]);
+  });
+
+  it("여러 페이지에 걸친 검색 결과를 모두 합쳐서 반환한다", async () => {
+    searchMock
+      .mockResolvedValueOnce({
+        results: [{ id: "db-1", title: [{ plain_text: "첫 페이지" }] }],
+        has_more: true,
+        next_cursor: "cursor-1",
+      })
+      .mockResolvedValueOnce({
+        results: [{ id: "db-2", title: [{ plain_text: "둘째 페이지" }] }],
+        has_more: false,
+        next_cursor: null,
+      });
+
+    const result = await listSharedDatabases();
+
+    expect(searchMock).toHaveBeenCalledTimes(2);
+    expect(searchMock).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ start_cursor: "cursor-1" })
+    );
+    expect(result).toEqual([
+      { id: "db-1", title: "첫 페이지" },
+      { id: "db-2", title: "둘째 페이지" },
+    ]);
   });
 
   it("설정되지 않은 경우 getDatabaseItems는 null을 반환한다", async () => {
@@ -98,7 +126,11 @@ describe("notionClient", () => {
     const result = await getDatabaseItems("db-1");
 
     expect(databasesRetrieveMock).toHaveBeenCalledWith({ database_id: "db-1" });
-    expect(databasesQueryMock).toHaveBeenCalledWith({ database_id: "db-1" });
+    expect(databasesQueryMock).toHaveBeenCalledWith({
+      database_id: "db-1",
+      start_cursor: undefined,
+      page_size: 100,
+    });
     expect(result).toEqual({
       databaseId: "db-1",
       databaseTitle: "할 일 목록",

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { isGoogleConnected, listFolder } from "@/lib/google/driveClient";
 import { UploadForm } from "./UploadForm";
+import { FileRowActions } from "./FileRowActions";
 
 export default async function DrivePage({
   searchParams,
@@ -109,6 +110,7 @@ export default async function DrivePage({
                 ) : (
                   <p className="text-sm font-medium text-neutral-50">{file.name}</p>
                 )}
+                <FileRowActions fileId={file.id} currentName={file.name} />
               </li>
             ))}
           </ul>

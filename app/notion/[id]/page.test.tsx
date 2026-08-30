@@ -60,10 +60,28 @@ describe("NotionDatabasePage", () => {
     expect(screen.getByText("항목이 없습니다.")).toBeInTheDocument();
   });
 
+  it("데이터베이스를 찾을 수 없으면 공유 안내를 보여준다", async () => {
+    getDatabaseItemsMock.mockResolvedValue(null);
+
+    await renderPage("missing-db");
+
+    expect(
+      screen.getByText(/이 데이터베이스를 찾을 수 없습니다. Notion에서 데이터베이스를 열고/)
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "데이터베이스 목록으로 돌아가기" })).toHaveAttribute(
+      "href",
+      "/notion"
+    );
+  });
+
   it("조회가 실패하면 문제 안내를 보여준다", async () => {
     getDatabaseItemsMock.mockRejectedValue(new Error("invalid token"));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     await renderPage("db-1");
+
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
 
     expect(
       screen.getByText("Notion 연동에 문제가 발생했습니다. NOTION_API_KEY 값을 확인해주세요.")

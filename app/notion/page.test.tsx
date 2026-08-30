@@ -78,8 +78,12 @@ describe("NotionPage", () => {
   it("목록 조회가 실패하면 문제 안내를 보여준다", async () => {
     isNotionConfiguredMock.mockReturnValue(true);
     listSharedDatabasesMock.mockRejectedValue(new Error("invalid token"));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     await renderNotionPage();
+
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
 
     expect(
       screen.getByText("Notion 연동에 문제가 발생했습니다. NOTION_API_KEY 값을 확인해주세요.")

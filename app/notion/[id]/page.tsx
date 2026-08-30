@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { getDatabaseItems } from "@/lib/notion/notionClient";
 import { CreateItemForm } from "../CreateItemForm";
@@ -11,7 +10,8 @@ export default async function NotionDatabasePage({ params }: { params: { id: str
   let view;
   try {
     view = await getDatabaseItems(params.id);
-  } catch {
+  } catch (error) {
+    console.error("[notion] getDatabaseItems 실패:", error);
     return (
       <main className="min-h-screen bg-neutral-950">
         <AppHeader />
@@ -30,7 +30,29 @@ export default async function NotionDatabasePage({ params }: { params: { id: str
   }
 
   if (!view) {
-    notFound();
+    return (
+      <main className="min-h-screen bg-neutral-950">
+        <AppHeader />
+        <div className="p-6">
+          <Link href="/notion" className="text-sm text-neutral-400 hover:text-neutral-200">
+            ← 목록으로
+          </Link>
+          <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900 p-6">
+            <p className="text-sm text-neutral-400">
+              이 데이터베이스를 찾을 수 없습니다. Notion에서 데이터베이스를 열고 우측 상단
+              &quot;...&quot; 메뉴 &gt; &quot;연결 추가&quot;에서 이 Integration과 공유했는지
+              확인해주세요.
+            </p>
+            <Link
+              href="/notion"
+              className="mt-4 inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+            >
+              데이터베이스 목록으로 돌아가기
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (

@@ -13,7 +13,8 @@ export default async function NotionPage() {
   if (configured) {
     try {
       databases = await listSharedDatabases();
-    } catch {
+    } catch (error) {
+      console.error("[notion] listSharedDatabases 실패:", error);
       loadError = true;
     }
   }

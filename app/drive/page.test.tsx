@@ -72,6 +72,7 @@ describe("DrivePage", () => {
       "/drive?folderId=folder-1"
     );
     expect(screen.getByText("메모.txt")).toBeInTheDocument();
+    expect(screen.getByLabelText("업로드할 파일")).toBeInTheDocument();
   });
 
   it("상위 폴더가 있으면 상위 폴더 링크를 보여준다", async () => {

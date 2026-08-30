@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/layout/AppHeader";
 import { isGoogleConnected, listFolder } from "@/lib/google/driveClient";
+import { UploadForm } from "./UploadForm";
 
 export default async function DrivePage({
   searchParams,
@@ -86,6 +87,8 @@ export default async function DrivePage({
             ← 상위 폴더
           </Link>
         ) : null}
+
+        <UploadForm folderId={view.folderId} />
 
         {view.files.length === 0 ? (
           <p className="mt-6 text-sm text-neutral-400">폴더가 비어 있습니다.</p>

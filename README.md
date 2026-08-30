@@ -32,13 +32,39 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
    누구나 Supabase Auth API를 직접 호출해 계정을 생성할 수 있음
    (대시보드 접근은 안 되지만 불필요한 사용자 데이터가 쌓일 수 있음)
 
+## Google 연동 설정 (Gmail/Drive)
+
+1. https://console.cloud.google.com 에서 새 프로젝트 생성
+2. "API 및 서비스 > OAuth 동의 화면"에서 User Type을 "외부"로 선택하고,
+   게시 상태를 반드시 **"테스트"**로 유지 (심사 불필요). "테스트 사용자"에
+   본인 Google 계정 이메일을 추가
+3. "API 및 서비스 > 라이브러리"에서 Gmail API와 Google Drive API를 각각 사용 설정
+4. "API 및 서비스 > 사용자 인증 정보"에서 OAuth 클라이언트 ID 생성
+   (애플리케이션 유형: 웹 애플리케이션). "승인된 리디렉션 URI"에
+   `http://localhost:3000/api/auth/google/callback` (로컬 개발용)과
+   배포 후에는 `https://<Vercel 도메인>/api/auth/google/callback`을 등록
+5. 발급받은 클라이언트 ID/보안 비밀번호를 `.env.local`의
+   `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`에 입력하고,
+   `GOOGLE_REDIRECT_URI`에는 4번에서 등록한 콜백 URL을 그대로 입력
+6. 토큰 암호화 키 생성: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+   실행 결과를 `.env.local`의 `TOKEN_ENCRYPTION_KEY`에 입력
+   (64자리 16진수 문자열이어야 함)
+7. Supabase 프로젝트 설정 > API 메뉴에서 `service_role` 키를 복사해
+   `.env.local`의 `SUPABASE_SERVICE_ROLE_KEY`에 입력 (이 키는 절대
+   `NEXT_PUBLIC_` 접두사를 붙이지 말 것 — 브라우저에 노출되면 안 됨)
+8. Supabase 대시보드의 SQL Editor에서 `supabase/migrations/0001_oauth_tokens.sql`
+   내용을 실행해 `oauth_tokens` 테이블 생성
+
 ## GitHub / Vercel 연결
 
 1. 이 저장소를 GitHub 원격 저장소에 push
 2. Vercel에서 해당 GitHub 저장소를 Import
 3. Vercel 프로젝트 설정 > Environment Variables에 `.env.local`과 동일한
    값을 등록 (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-   `ADMIN_EMAIL`)
+   `ADMIN_EMAIL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+   `GOOGLE_REDIRECT_URI`, `TOKEN_ENCRYPTION_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
+   `GOOGLE_REDIRECT_URI`는 실제 배포 도메인의 콜백 URL로 설정할 것
+   (`https://<Vercel 도메인>/api/auth/google/callback`)
 4. main 브랜치에 push하면 자동 배포됨
 
 ### 배포 시 주의사항

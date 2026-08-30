@@ -93,11 +93,22 @@ export async function getMessageDetail(id: string): Promise<GmailMessageDetail |
     return null;
   }
 
-  const detail = await gmail.users.messages.get({
-    userId: "me",
-    id,
-    format: "full",
-  });
+  let detail;
+  try {
+    detail = await gmail.users.messages.get({
+      userId: "me",
+      id,
+      format: "full",
+    });
+  } catch (error) {
+    const status =
+      (error as { response?: { status?: number } })?.response?.status ??
+      Number((error as { code?: number | string })?.code);
+    if (status === 404) {
+      return null;
+    }
+    throw error;
+  }
 
   return {
     id: detail.data.id!,

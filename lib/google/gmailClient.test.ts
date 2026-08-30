@@ -92,6 +92,7 @@ describe("gmailClient", () => {
     const result = await listRecentMessages(10);
 
     expect(messagesListMock).toHaveBeenCalledWith({ userId: "me", maxResults: 10 });
+    expect(setCredentialsMock).toHaveBeenCalledWith({ refresh_token: "refresh-token" });
     expect(result).toEqual([
       {
         id: "msg-1",
@@ -129,6 +130,43 @@ describe("gmailClient", () => {
     const result = await getMessageDetail("msg-1");
 
     expect(result?.body).toBe(bodyText);
+  });
+
+  it("HTML 전용 메시지는 본문에 HTML을 절대 반환하지 않는다", async () => {
+    getGoogleRefreshTokenMock.mockResolvedValue("refresh-token");
+    messagesGetMock.mockResolvedValue({
+      data: {
+        id: "msg-1",
+        snippet: "미리보기 텍스트",
+        payload: {
+          headers: [{ name: "Subject", value: "제목" }],
+          mimeType: "text/html",
+          body: { data: Buffer.from("<script>alert(1)</script>", "utf8").toString("base64") },
+        },
+      },
+    });
+
+    const result = await getMessageDetail("msg-1");
+
+    expect(result?.body).not.toContain("<script>");
+    expect(result?.body).not.toContain("<");
+    expect(result?.body).toBe("미리보기 텍스트");
+  });
+
+  it("존재하지 않는 메시지 ID는 null을 반환한다 (404)", async () => {
+    getGoogleRefreshTokenMock.mockResolvedValue("refresh-token");
+    messagesGetMock.mockRejectedValue({ response: { status: 404 } });
+
+    const result = await getMessageDetail("missing-id");
+
+    expect(result).toBeNull();
+  });
+
+  it("404가 아닌 에러는 그대로 던진다", async () => {
+    getGoogleRefreshTokenMock.mockResolvedValue("refresh-token");
+    messagesGetMock.mockRejectedValue({ response: { status: 401 } });
+
+    await expect(getMessageDetail("some-id")).rejects.toBeTruthy();
   });
 
   it("Google 계정이 연결되어 있지 않으면 발송 시 에러를 던진다", async () => {

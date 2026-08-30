@@ -49,7 +49,7 @@ describe("FileRowActions", () => {
     fireEvent.click(screen.getByRole("button", { name: "저장" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "이름 변경에 실패했습니다. 잠시 후 다시 시도해주세요."
+      "이름 변경에 실패했습니다. Google 연결이 만료되었을 수 있습니다."
     );
   });
 
@@ -70,8 +70,32 @@ describe("FileRowActions", () => {
     fireEvent.click(screen.getByRole("button", { name: "삭제" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "삭제에 실패했습니다. 잠시 후 다시 시도해주세요."
+      "삭제에 실패했습니다. Google 연결이 만료되었을 수 있습니다."
     );
     expect(screen.getByRole("button", { name: "삭제" })).not.toBeDisabled();
+  });
+
+  it("폴더 삭제 시 확인 대화상자에서 취소하면 삭제 액션을 호출하지 않는다", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    render(<FileRowActions fileId="folder-1" currentName="문서함" isFolder />);
+    fireEvent.click(screen.getByRole("button", { name: "삭제" }));
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(trashFileActionMock).not.toHaveBeenCalled();
+
+    confirmSpy.mockRestore();
+  });
+
+  it("폴더 삭제 시 확인 대화상자에서 승인하면 삭제 액션을 호출한다", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    trashFileActionMock.mockResolvedValue(undefined);
+
+    render(<FileRowActions fileId="folder-1" currentName="문서함" isFolder />);
+    fireEvent.click(screen.getByRole("button", { name: "삭제" }));
+
+    await waitFor(() => expect(trashFileActionMock).toHaveBeenCalledWith("folder-1"));
+
+    confirmSpy.mockRestore();
   });
 });

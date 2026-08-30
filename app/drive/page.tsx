@@ -110,7 +110,7 @@ export default async function DrivePage({
                 ) : (
                   <p className="text-sm font-medium text-neutral-50">{file.name}</p>
                 )}
-                <FileRowActions fileId={file.id} currentName={file.name} />
+                <FileRowActions fileId={file.id} currentName={file.name} isFolder={file.isFolder} />
               </li>
             ))}
           </ul>

@@ -4,6 +4,8 @@ import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { uploadFileAction } from "./actions";
 
+const MAX_UPLOAD_SIZE_BYTES = 4 * 1024 * 1024;
+
 export function UploadForm({ folderId }: { folderId: string }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -14,6 +16,11 @@ export function UploadForm({ folderId }: { folderId: string }) {
     event.preventDefault();
     const file = inputRef.current?.files?.[0];
     if (!file) {
+      return;
+    }
+
+    if (file.size > MAX_UPLOAD_SIZE_BYTES) {
+      setErrorMessage("파일 크기는 4MB 이하만 업로드할 수 있습니다.");
       return;
     }
 
@@ -31,7 +38,7 @@ export function UploadForm({ folderId }: { folderId: string }) {
       }
       router.refresh();
     } catch {
-      setErrorMessage("업로드에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      setErrorMessage("업로드에 실패했습니다. Google 연결이 만료되었을 수 있습니다.");
     } finally {
       setIsUploading(false);
     }
@@ -54,7 +61,10 @@ export function UploadForm({ folderId }: { folderId: string }) {
       </button>
       {errorMessage ? (
         <p role="alert" className="w-full text-xs text-red-400">
-          {errorMessage}
+          {errorMessage}{" "}
+          <a href="/api/auth/google/start" className="underline">
+            Google 계정 다시 연결
+          </a>
         </p>
       ) : null}
     </form>

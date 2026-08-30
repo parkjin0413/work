@@ -4,7 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { renameFileAction, trashFileAction } from "./actions";
 
-export function FileRowActions({ fileId, currentName }: { fileId: string; currentName: string }) {
+export function FileRowActions({
+  fileId,
+  currentName,
+  isFolder = false,
+}: {
+  fileId: string;
+  currentName: string;
+  isFolder?: boolean;
+}) {
   const router = useRouter();
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(currentName);
@@ -21,13 +29,22 @@ export function FileRowActions({ fileId, currentName }: { fileId: string; curren
       setIsRenaming(false);
       router.refresh();
     } catch {
-      setErrorMessage("이름 변경에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      setErrorMessage("이름 변경에 실패했습니다. Google 연결이 만료되었을 수 있습니다.");
     } finally {
       setIsSaving(false);
     }
   }
 
   async function handleDelete() {
+    if (
+      isFolder &&
+      !window.confirm(
+        `"${currentName}" 폴더를 삭제하면 안의 모든 파일도 함께 삭제됩니다. 계속하시겠습니까?`
+      )
+    ) {
+      return;
+    }
+
     setErrorMessage(null);
     setIsDeleting(true);
 
@@ -35,7 +52,8 @@ export function FileRowActions({ fileId, currentName }: { fileId: string; curren
       await trashFileAction(fileId);
       router.refresh();
     } catch {
-      setErrorMessage("삭제에 실패했습니다. 잠시 후 다시 시도해주세요.");
+      setErrorMessage("삭제에 실패했습니다. Google 연결이 만료되었을 수 있습니다.");
+    } finally {
       setIsDeleting(false);
     }
   }
@@ -53,7 +71,7 @@ export function FileRowActions({ fileId, currentName }: { fileId: string; curren
           <button
             type="button"
             onClick={handleSaveRename}
-            disabled={isSaving}
+            disabled={isSaving || !newName.trim()}
             className="rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
           >
             {isSaving ? "저장 중..." : "저장"}
@@ -71,7 +89,10 @@ export function FileRowActions({ fileId, currentName }: { fileId: string; curren
         </div>
         {errorMessage ? (
           <p role="alert" className="text-xs text-red-400">
-            {errorMessage}
+            {errorMessage}{" "}
+            <a href="/api/auth/google/start" className="underline">
+              Google 계정 다시 연결
+            </a>
           </p>
         ) : null}
       </div>
@@ -99,7 +120,10 @@ export function FileRowActions({ fileId, currentName }: { fileId: string; curren
       </div>
       {errorMessage ? (
         <p role="alert" className="text-xs text-red-400">
-          {errorMessage}
+          {errorMessage}{" "}
+          <a href="/api/auth/google/start" className="underline">
+            Google 계정 다시 연결
+          </a>
         </p>
       ) : null}
     </div>

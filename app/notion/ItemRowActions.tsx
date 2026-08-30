@@ -59,6 +59,7 @@ export function ItemRowActions({
             onClick={() => {
               setIsRenaming(false);
               setNewTitle(currentTitle);
+              setErrorMessage(null);
             }}
             className="rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-300"
           >

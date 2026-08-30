@@ -78,6 +78,11 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
 4. 공유하지 않은 데이터베이스는 대시보드에 나타나지 않음 — 새 데이터베이스를
    추가하고 싶다면 3번 과정을 반복
 
+**참고**: `@notionhq/client`는 `2.x` 버전에 고정되어 있습니다. 5.x부터는 Notion의
+"멀티소스 데이터베이스" 모델로 API 타입이 바뀌어 이 앱이 사용하는 조회 방식
+(`search`의 `object: "database"` 필터)과 호환되지 않습니다. `npm install
+@notionhq/client@latest`로 임의 업그레이드하지 마세요.
+
 ## GitHub / Vercel 연결
 
 1. 이 저장소를 GitHub 원격 저장소에 push

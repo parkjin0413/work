@@ -5,6 +5,7 @@ import DrivePage from "./page";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => "/drive",
 }));
 
 vi.mock("@/lib/supabase/client", () => ({

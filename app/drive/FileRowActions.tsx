@@ -66,13 +66,13 @@ export function FileRowActions({
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             aria-label="새 이름"
-            className="rounded-md border border-neutral-700 bg-neutral-950 px-2 py-1 text-sm text-neutral-50"
+            className="rounded-md border border-border bg-bg px-2 py-1 text-sm text-foreground"
           />
           <button
             type="button"
             onClick={handleSaveRename}
             disabled={isSaving || !newName.trim()}
-            className="rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
+            className="rounded-md bg-accent px-2 py-1 text-xs font-medium text-accent-foreground hover:bg-accent-hover disabled:opacity-50"
           >
             {isSaving ? "저장 중..." : "저장"}
           </button>
@@ -82,13 +82,13 @@ export function FileRowActions({
               setIsRenaming(false);
               setNewName(currentName);
             }}
-            className="rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-300"
+            className="rounded-md border border-border px-2 py-1 text-xs text-muted"
           >
             취소
           </button>
         </div>
         {errorMessage ? (
-          <p role="alert" className="text-xs text-red-400">
+          <p role="alert" className="text-xs text-danger">
             {errorMessage}{" "}
             <a href="/api/auth/google/start" className="underline">
               Google 계정 다시 연결
@@ -105,7 +105,7 @@ export function FileRowActions({
         <button
           type="button"
           onClick={() => setIsRenaming(true)}
-          className="rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-300"
+          className="rounded-md border border-border px-2 py-1 text-xs text-muted"
         >
           이름변경
         </button>
@@ -113,13 +113,13 @@ export function FileRowActions({
           type="button"
           onClick={handleDelete}
           disabled={isDeleting}
-          className="rounded-md border border-red-800 px-2 py-1 text-xs text-red-400 disabled:opacity-50"
+          className="rounded-md border border-danger px-2 py-1 text-xs text-danger disabled:opacity-50"
         >
           {isDeleting ? "삭제 중..." : "삭제"}
         </button>
       </div>
       {errorMessage ? (
-        <p role="alert" className="text-xs text-red-400">
+        <p role="alert" className="text-xs text-danger">
           {errorMessage}{" "}
           <a href="/api/auth/google/start" className="underline">
             Google 계정 다시 연결

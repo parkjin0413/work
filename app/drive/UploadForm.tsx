@@ -49,18 +49,18 @@ export function UploadForm({ folderId }: { folderId: string }) {
       <input
         ref={inputRef}
         type="file"
-        className="text-sm text-neutral-300"
+        className="text-sm text-muted"
         aria-label="업로드할 파일"
       />
       <button
         type="submit"
         disabled={isUploading}
-        className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+        className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground hover:bg-accent-hover disabled:opacity-50"
       >
         {isUploading ? "업로드 중..." : "업로드"}
       </button>
       {errorMessage ? (
-        <p role="alert" className="w-full text-xs text-red-400">
+        <p role="alert" className="w-full text-xs text-danger">
           {errorMessage}{" "}
           <a href="/api/auth/google/start" className="underline">
             Google 계정 다시 연결

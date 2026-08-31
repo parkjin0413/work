@@ -21,12 +21,12 @@ export type NotionSummary =
   | { state: "ok"; titles: string[] };
 
 export async function getGmailSummary(): Promise<GmailSummary> {
-  const connected = await isGmailConnected();
-  if (!connected) {
-    return { state: "not_connected" };
-  }
-
   try {
+    const connected = await isGmailConnected();
+    if (!connected) {
+      return { state: "not_connected" };
+    }
+
     const messages = await listRecentMessages(SUMMARY_ITEM_LIMIT);
     return { state: "ok", subjects: messages.map((message) => message.subject) };
   } catch {
@@ -35,14 +35,17 @@ export async function getGmailSummary(): Promise<GmailSummary> {
 }
 
 export async function getDriveSummary(): Promise<DriveSummary> {
-  const connected = await isDriveConnected();
-  if (!connected) {
-    return { state: "not_connected" };
-  }
-
   try {
+    const connected = await isDriveConnected();
+    if (!connected) {
+      return { state: "not_connected" };
+    }
+
     const view = await listFolder();
-    const names = (view?.files ?? []).slice(0, SUMMARY_ITEM_LIMIT).map((file) => file.name);
+    const recentFiles = (view?.files ?? [])
+      .filter((file) => !file.isFolder)
+      .sort((a, b) => (b.modifiedTime ?? "").localeCompare(a.modifiedTime ?? ""));
+    const names = recentFiles.slice(0, SUMMARY_ITEM_LIMIT).map((file) => file.name);
     return { state: "ok", names };
   } catch {
     return { state: "error" };
@@ -50,12 +53,12 @@ export async function getDriveSummary(): Promise<DriveSummary> {
 }
 
 export async function getNotionSummary(): Promise<NotionSummary> {
-  const configured = isNotionConfigured();
-  if (!configured) {
-    return { state: "not_configured" };
-  }
-
   try {
+    const configured = isNotionConfigured();
+    if (!configured) {
+      return { state: "not_configured" };
+    }
+
     const databases = await listSharedDatabases();
     if (databases.length === 0) {
       return { state: "empty" };

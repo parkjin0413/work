@@ -69,6 +69,14 @@ describe("getGmailSummary", () => {
 
     expect(result).toEqual({ state: "error" });
   });
+
+  it("연결 확인이 실패하면 error 상태를 반환한다", async () => {
+    gmailIsConnectedMock.mockRejectedValue(new Error("supabase error"));
+
+    const result = await getGmailSummary();
+
+    expect(result).toEqual({ state: "error" });
+  });
 });
 
 describe("getDriveSummary", () => {
@@ -131,6 +139,32 @@ describe("getDriveSummary", () => {
 
     expect(result).toEqual({ state: "error" });
   });
+
+  it("연결 확인이 실패하면 error 상태를 반환한다", async () => {
+    driveIsConnectedMock.mockRejectedValue(new Error("supabase error"));
+
+    const result = await getDriveSummary();
+
+    expect(result).toEqual({ state: "error" });
+  });
+
+  it("폴더를 제외하고 최근 수정 순으로 정렬한다", async () => {
+    driveIsConnectedMock.mockResolvedValue(true);
+    listFolderMock.mockResolvedValue({
+      folderId: "root",
+      folderName: "내 드라이브",
+      parentId: null,
+      files: [
+        { id: "d1", name: "폴더1", isFolder: true, modifiedTime: "2026-08-30T00:00:00Z", size: null },
+        { id: "f1", name: "오래된파일.txt", isFolder: false, modifiedTime: "2026-01-01T00:00:00Z", size: null },
+        { id: "f2", name: "최신파일.txt", isFolder: false, modifiedTime: "2026-08-01T00:00:00Z", size: null },
+      ],
+    });
+
+    const result = await getDriveSummary();
+
+    expect(result).toEqual({ state: "ok", names: ["최신파일.txt", "오래된파일.txt"] });
+  });
 });
 
 describe("getNotionSummary", () => {
@@ -186,6 +220,16 @@ describe("getNotionSummary", () => {
   it("조회가 실패하면 error 상태를 반환한다", async () => {
     isNotionConfiguredMock.mockReturnValue(true);
     listSharedDatabasesMock.mockRejectedValue(new Error("invalid token"));
+
+    const result = await getNotionSummary();
+
+    expect(result).toEqual({ state: "error" });
+  });
+
+  it("설정 확인이 실패하면 error 상태를 반환한다", async () => {
+    isNotionConfiguredMock.mockImplementation(() => {
+      throw new Error("env read error");
+    });
 
     const result = await getNotionSummary();
 

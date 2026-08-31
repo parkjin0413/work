@@ -71,4 +71,20 @@ describe("FavoritesPage", () => {
     );
     expect(screen.getByRole("link", { name: "사내 위키" })).toHaveAttribute("target", "_blank");
   });
+
+  it("조회가 실패하면 안내 문구를 보여준다", async () => {
+    listCategoriesWithFavoritesMock.mockRejectedValue(new Error("db down"));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await renderFavoritesPage();
+
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+
+    expect(
+      screen.getByText(
+        "즐겨찾기를 불러오지 못했습니다. Supabase 연결 상태와 0002_favorites.sql 마이그레이션 실행 여부를 확인해주세요."
+      )
+    ).toBeInTheDocument();
+  });
 });

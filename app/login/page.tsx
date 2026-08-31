@@ -2,6 +2,7 @@
 
 import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { LayoutDashboard } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const NOT_ADMIN_MESSAGE = "관리자 권한이 없는 계정입니다.";
@@ -9,7 +10,7 @@ const NOT_ADMIN_MESSAGE = "관리자 권한이 없는 계정입니다.";
 // useSearchParams는 Suspense 경계 안에서만 사용할 수 있어 폼을 분리한다.
 export default function LoginPage() {
   return (
-    <Suspense fallback={<main className="min-h-screen bg-neutral-950" />}>
+    <Suspense fallback={<main className="min-h-screen bg-bg" />}>
       <LoginForm />
     </Suspense>
   );
@@ -59,55 +60,61 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4 rounded-xl border border-neutral-800 bg-neutral-900 p-8"
-      >
-        <h1 className="text-xl font-semibold text-neutral-50">관리자 로그인</h1>
-
-        <div className="space-y-1">
-          <label htmlFor="email" className="text-sm text-neutral-300">
-            이메일
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-50"
-          />
+    <main className="flex min-h-screen items-center justify-center bg-bg px-4">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8">
+        <div className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/10 text-accent">
+            <LayoutDashboard className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <span className="text-base font-semibold text-foreground">개인 업무 대시보드</span>
         </div>
 
-        <div className="space-y-1">
-          <label htmlFor="password" className="text-sm text-neutral-300">
-            비밀번호
-          </label>
-          <input
-            id="password"
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-neutral-50"
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <h1 className="text-xl font-semibold text-foreground">관리자 로그인</h1>
 
-        {errorMessage ? (
-          <p role="alert" className="text-sm text-red-400">
-            {errorMessage}
-          </p>
-        ) : null}
+          <div className="space-y-1">
+            <label htmlFor="email" className="text-sm text-muted">
+              이메일
+            </label>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded-md bg-blue-600 py-2 font-medium text-white disabled:opacity-50"
-        >
-          {isSubmitting ? "로그인 중..." : "로그인"}
-        </button>
-      </form>
+          <div className="space-y-1">
+            <label htmlFor="password" className="text-sm text-muted">
+              비밀번호
+            </label>
+            <input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-lg border border-border bg-bg px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </div>
+
+          {errorMessage ? (
+            <p role="alert" className="text-sm text-danger">
+              {errorMessage}
+            </p>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full rounded-lg bg-accent py-2 font-medium text-accent-foreground hover:bg-accent-hover disabled:opacity-50"
+          >
+            {isSubmitting ? "로그인 중..." : "로그인"}
+          </button>
+        </form>
+      </div>
     </main>
   );
 }

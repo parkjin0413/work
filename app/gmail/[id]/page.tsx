@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AppHeader } from "@/components/layout/AppHeader";
+import { Sidebar } from "@/components/layout/Sidebar";
 import { getMessageDetail } from "@/lib/google/gmailClient";
 import { TrashButton } from "./TrashButton";
 
@@ -12,25 +12,25 @@ export default async function GmailDetailPage({ params }: { params: { id: string
     message = await getMessageDetail(params.id);
   } catch {
     return (
-      <main className="min-h-screen bg-neutral-950">
-        <AppHeader />
-        <div className="p-6">
-          <Link href="/gmail" className="text-sm text-neutral-400 hover:text-neutral-200">
+      <div className="flex min-h-screen flex-col bg-bg md:flex-row">
+        <Sidebar />
+        <main className="flex-1 p-6">
+          <Link href="/gmail" className="text-sm text-muted hover:text-foreground">
             ← 목록으로
           </Link>
-          <div className="mt-6 rounded-xl border border-neutral-800 bg-neutral-900 p-6">
-            <p className="text-sm text-neutral-400">
+          <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
+            <p className="text-sm text-muted">
               Gmail 연결이 만료되었거나 문제가 발생했습니다. 다시 연결해주세요.
             </p>
             <a
               href="/api/auth/google/start"
-              className="mt-4 inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+              className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent-hover"
             >
               Google 계정 다시 연결
             </a>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     );
   }
 
@@ -39,22 +39,22 @@ export default async function GmailDetailPage({ params }: { params: { id: string
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950">
-      <AppHeader />
-      <div className="p-6">
-        <Link href="/gmail" className="text-sm text-neutral-400 hover:text-neutral-200">
+    <div className="flex min-h-screen flex-col bg-bg md:flex-row">
+      <Sidebar />
+      <main className="flex-1 p-6">
+        <Link href="/gmail" className="text-sm text-muted hover:text-foreground">
           ← 목록으로
         </Link>
         <div className="mt-4 flex items-start justify-between">
           <div>
-            <h1 className="text-lg font-semibold text-neutral-50">{message.subject}</h1>
-            <p className="mt-1 text-sm text-neutral-400">{message.from}</p>
-            <p className="text-xs text-neutral-500">{message.date}</p>
+            <h1 className="text-lg font-semibold text-foreground">{message.subject}</h1>
+            <p className="mt-1 text-sm text-muted">{message.from}</p>
+            <p className="text-xs text-muted">{message.date}</p>
           </div>
           <TrashButton messageId={message.id} />
         </div>
-        <p className="mt-6 whitespace-pre-wrap text-sm text-neutral-200">{message.body}</p>
-      </div>
-    </main>
+        <p className="mt-6 whitespace-pre-wrap text-sm text-foreground">{message.body}</p>
+      </main>
+    </div>
   );
 }

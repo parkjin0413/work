@@ -5,6 +5,7 @@ import GmailPage from "./page";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => "/gmail",
 }));
 
 vi.mock("@/lib/supabase/client", () => ({

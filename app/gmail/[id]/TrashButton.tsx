@@ -29,12 +29,12 @@ export function TrashButton({ messageId }: { messageId: string }) {
         type="button"
         onClick={handleClick}
         disabled={isDeleting}
-        className="rounded-md border border-red-800 px-3 py-1.5 text-sm text-red-400 disabled:opacity-50"
+        className="rounded-lg border border-danger px-3 py-1.5 text-sm text-danger hover:bg-danger-bg disabled:opacity-50"
       >
         {isDeleting ? "삭제 중..." : "삭제"}
       </button>
       {errorMessage ? (
-        <p role="alert" className="text-xs text-red-400">
+        <p role="alert" className="text-xs text-danger">
           {errorMessage}
         </p>
       ) : null}

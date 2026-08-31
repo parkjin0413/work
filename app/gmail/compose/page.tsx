@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AppHeader } from "@/components/layout/AppHeader";
+import { Sidebar } from "@/components/layout/Sidebar";
 import { sendEmailAction } from "./actions";
 
 export default function ComposePage() {
@@ -30,17 +30,17 @@ export default function ComposePage() {
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950">
-      <AppHeader />
-      <div className="p-6">
-        <Link href="/gmail" className="text-sm text-neutral-400 hover:text-neutral-200">
+    <div className="flex min-h-screen flex-col bg-bg md:flex-row">
+      <Sidebar />
+      <main className="flex-1 p-6">
+        <Link href="/gmail" className="text-sm text-muted hover:text-foreground">
           ← 목록으로
         </Link>
-        <h1 className="mt-4 text-lg font-semibold text-neutral-50">새 메일 작성</h1>
+        <h1 className="mt-4 text-lg font-semibold text-foreground">새 메일 작성</h1>
 
         <form onSubmit={handleSubmit} className="mt-6 max-w-lg space-y-4">
           <div className="space-y-1">
-            <label htmlFor="to" className="text-sm text-neutral-300">
+            <label htmlFor="to" className="text-sm text-muted">
               받는 사람
             </label>
             <input
@@ -49,12 +49,12 @@ export default function ComposePage() {
               required
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-neutral-50"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="subject" className="text-sm text-neutral-300">
+            <label htmlFor="subject" className="text-sm text-muted">
               제목
             </label>
             <input
@@ -63,12 +63,12 @@ export default function ComposePage() {
               required
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-neutral-50"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="body" className="text-sm text-neutral-300">
+            <label htmlFor="body" className="text-sm text-muted">
               내용
             </label>
             <textarea
@@ -77,12 +77,12 @@ export default function ComposePage() {
               rows={10}
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              className="w-full rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-neutral-50"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
 
           {errorMessage ? (
-            <p role="alert" className="text-sm text-red-400">
+            <p role="alert" className="text-sm text-danger">
               {errorMessage}
             </p>
           ) : null}
@@ -90,12 +90,12 @@ export default function ComposePage() {
           <button
             type="submit"
             disabled={isSending}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent-hover disabled:opacity-50"
           >
             {isSending ? "발송 중..." : "발송"}
           </button>
         </form>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

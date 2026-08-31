@@ -27,7 +27,7 @@ export function Sidebar() {
   return (
     <nav
       aria-label="주요 메뉴"
-      className="flex shrink-0 flex-row items-center justify-between gap-2 border-b border-border bg-surface px-4 py-3 md:h-screen md:w-60 md:flex-col md:items-stretch md:justify-start md:border-b-0 md:border-r md:px-4 md:py-6"
+      className="flex shrink-0 flex-row items-center justify-between gap-2 border-b border-border bg-surface px-4 py-3 md:h-screen md:w-60 md:flex-col md:items-stretch md:justify-start md:border-b-0 md:border-r md:px-4 md:py-6 md:sticky md:top-0"
     >
       <div className="hidden items-center gap-2 md:flex">
         <span className="text-base font-semibold text-foreground">개인 업무 대시보드</span>
@@ -40,6 +40,7 @@ export function Sidebar() {
             <li key={href}>
               <Link
                 href={href}
+                aria-label={label}
                 aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
                   isActive

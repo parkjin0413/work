@@ -12,7 +12,7 @@ const config: Config = {
         border: "var(--color-border)",
         foreground: "var(--color-text)",
         muted: "var(--color-text-muted)",
-        accent: "var(--color-accent)",
+        accent: "rgb(var(--color-accent) / <alpha-value>)",
         "accent-hover": "var(--color-accent-hover)",
         "accent-foreground": "var(--color-accent-foreground)",
         danger: "var(--color-danger)",

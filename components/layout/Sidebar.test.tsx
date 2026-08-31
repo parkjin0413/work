@@ -44,12 +44,13 @@ describe("Sidebar", () => {
     expect(screen.getByText("개인 업무 대시보드")).toBeInTheDocument();
   });
 
-  it("4개의 메뉴 링크를 올바른 경로로 보여준다", () => {
+  it("5개의 메뉴 링크를 올바른 경로로 보여준다", () => {
     renderSidebar();
     expect(screen.getByRole("link", { name: "홈" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Gmail" })).toHaveAttribute("href", "/gmail");
     expect(screen.getByRole("link", { name: "Drive" })).toHaveAttribute("href", "/drive");
     expect(screen.getByRole("link", { name: "Notion" })).toHaveAttribute("href", "/notion");
+    expect(screen.getByRole("link", { name: "즐겨찾기" })).toHaveAttribute("href", "/favorites");
   });
 
   it("현재 경로의 메뉴 항목에 aria-current를 표시한다", () => {

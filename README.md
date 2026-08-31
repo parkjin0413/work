@@ -54,6 +54,7 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
    `NEXT_PUBLIC_` 접두사를 붙이지 말 것 — 브라우저에 노출되면 안 됨)
 8. Supabase 대시보드의 SQL Editor에서 `supabase/migrations/0001_oauth_tokens.sql`
    내용을 실행해 `oauth_tokens` 테이블 생성
+9. `supabase/migrations/0002_favorites.sql`도 같은 방식으로 SQL Editor에 붙여넣고 실행 (즐겨찾기 기능용 테이블)
 
 ### Google 연동 시 알아둘 점
 
@@ -111,3 +112,4 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
 - [x] 4단계: Notion 연동
 - [x] 5단계: 홈 화면 통합
 - [x] UI 리디자인: 색상 토큰(다크/라이트), 사이드바 내비게이션, 아이콘, 타이포그래피
+- [x] URL 즐겨찾기: 카테고리별 관리 페이지, 사이드바 연동

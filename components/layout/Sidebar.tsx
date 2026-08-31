@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { HardDrive, LayoutDashboard, LogOut, Mail, NotebookText } from "lucide-react";
+import { HardDrive, LayoutDashboard, LogOut, Mail, NotebookText, Star } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/gmail", label: "Gmail", icon: Mail },
   { href: "/drive", label: "Drive", icon: HardDrive },
   { href: "/notion", label: "Notion", icon: NotebookText },
+  { href: "/favorites", label: "즐겨찾기", icon: Star },
 ];
 
 export function Sidebar() {

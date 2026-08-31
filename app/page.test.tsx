@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { ThemeProvider } from "next-themes";
 import HomePage from "./page";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => "/",
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -60,8 +61,29 @@ describe("HomePage", () => {
 
     await renderHomePage();
 
-    expect(screen.getByRole("link", { name: /Gmail/ })).toHaveAttribute("href", "/gmail");
-    expect(screen.getByRole("link", { name: /Google Drive/ })).toHaveAttribute("href", "/drive");
-    expect(screen.getByRole("link", { name: /Notion/ })).toHaveAttribute("href", "/notion");
+    const summarySection = screen.getByRole("region", { name: "서비스 요약" });
+    expect(within(summarySection).getByRole("link", { name: /Gmail/ })).toHaveAttribute(
+      "href",
+      "/gmail"
+    );
+    expect(within(summarySection).getByRole("link", { name: /Google Drive/ })).toHaveAttribute(
+      "href",
+      "/drive"
+    );
+    expect(within(summarySection).getByRole("link", { name: /Notion/ })).toHaveAttribute(
+      "href",
+      "/notion"
+    );
+  });
+
+  it("사이드바에 4개의 메뉴가 표시된다", async () => {
+    getGmailSummaryMock.mockResolvedValue({ state: "not_connected" });
+    getDriveSummaryMock.mockResolvedValue({ state: "not_connected" });
+    getNotionSummaryMock.mockResolvedValue({ state: "not_configured" });
+
+    await renderHomePage();
+
+    expect(screen.getByRole("navigation", { name: "주요 메뉴" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "홈" })).toHaveAttribute("href", "/");
   });
 });

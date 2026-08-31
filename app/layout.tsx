@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import { Noto_Sans_KR } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import "./globals.css";
+
+const notoSansKR = Noto_Sans_KR({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-noto-sans-kr",
+});
 
 export const metadata: Metadata = {
   title: "개인 업무 대시보드",
@@ -9,8 +16,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" suppressHydrationWarning>
-      <body>
+    <html lang="ko" suppressHydrationWarning className={notoSansKR.variable}>
+      <body className="bg-bg font-sans text-foreground">
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

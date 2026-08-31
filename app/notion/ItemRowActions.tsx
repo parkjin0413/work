@@ -44,13 +44,13 @@ export function ItemRowActions({
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             aria-label="새 제목"
-            className="rounded-md border border-neutral-700 bg-neutral-950 px-2 py-1 text-sm text-neutral-50"
+            className="rounded-md border border-border bg-bg px-2 py-1 text-sm text-foreground"
           />
           <button
             type="button"
             onClick={handleSave}
             disabled={isSaving || !newTitle.trim()}
-            className="rounded-md bg-blue-600 px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
+            className="rounded-md bg-accent px-2 py-1 text-xs font-medium text-accent-foreground hover:bg-accent-hover disabled:opacity-50"
           >
             {isSaving ? "저장 중..." : "저장"}
           </button>
@@ -61,13 +61,13 @@ export function ItemRowActions({
               setNewTitle(currentTitle);
               setErrorMessage(null);
             }}
-            className="rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-300"
+            className="rounded-md border border-border px-2 py-1 text-xs text-muted"
           >
             취소
           </button>
         </div>
         {errorMessage ? (
-          <p role="alert" className="text-xs text-red-400">
+          <p role="alert" className="text-xs text-danger">
             {errorMessage}
           </p>
         ) : null}
@@ -80,12 +80,12 @@ export function ItemRowActions({
       <button
         type="button"
         onClick={() => setIsRenaming(true)}
-        className="rounded-md border border-neutral-700 px-2 py-1 text-xs text-neutral-300"
+        className="rounded-md border border-border px-2 py-1 text-xs text-muted"
       >
         이름변경
       </button>
       {errorMessage ? (
-        <p role="alert" className="text-xs text-red-400">
+        <p role="alert" className="text-xs text-danger">
           {errorMessage}
         </p>
       ) : null}

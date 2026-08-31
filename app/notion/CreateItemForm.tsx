@@ -43,17 +43,17 @@ export function CreateItemForm({
         onChange={(e) => setTitle(e.target.value)}
         placeholder="새 항목 제목"
         aria-label="새 항목 제목"
-        className="rounded-md border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-50"
+        className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
       />
       <button
         type="submit"
         disabled={isCreating || !title.trim()}
-        className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+        className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground hover:bg-accent-hover disabled:opacity-50"
       >
         {isCreating ? "추가 중..." : "새 항목 추가"}
       </button>
       {errorMessage ? (
-        <p role="alert" className="w-full text-xs text-red-400">
+        <p role="alert" className="w-full text-xs text-danger">
           {errorMessage}
         </p>
       ) : null}

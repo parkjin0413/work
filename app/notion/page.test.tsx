@@ -5,6 +5,7 @@ import NotionPage from "./page";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => "/notion",
 }));
 
 vi.mock("@/lib/supabase/client", () => ({

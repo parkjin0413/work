@@ -3,20 +3,38 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { isGoogleConnected, listRecentMessages, type GmailMessageSummary } from "@/lib/google/gmailClient";
+import { MessageList } from "./MessageList";
+
+const MAILBOX_LABELS: Record<string, string> = {
+  inbox: "INBOX",
+  sent: "SENT",
+  spam: "SPAM",
+  trash: "TRASH",
+};
+
+const MAILBOX_TABS: { value: string; label: string }[] = [
+  { value: "inbox", label: "받은편지함" },
+  { value: "sent", label: "보낸편지함" },
+  { value: "spam", label: "스팸" },
+  { value: "trash", label: "휴지통" },
+];
 
 export default async function GmailPage({
   searchParams,
 }: {
-  searchParams: { error?: string; connected?: string };
+  searchParams: { error?: string; connected?: string; mailbox?: string };
 }) {
   const connected = await isGoogleConnected();
+  const mailbox =
+    searchParams.mailbox && MAILBOX_LABELS[searchParams.mailbox] ? searchParams.mailbox : "inbox";
+  const labelId = MAILBOX_LABELS[mailbox];
 
   let messages: GmailMessageSummary[] = [];
   let loadError = false;
 
   if (connected) {
     try {
-      messages = await listRecentMessages();
+      messages = await listRecentMessages(20, [labelId]);
     } catch {
       loadError = true;
     }
@@ -37,6 +55,25 @@ export default async function GmailPage({
             </Link>
           ) : null}
         </div>
+
+        {connected && !loadError ? (
+          <nav aria-label="편지함" className="mt-4 flex gap-1">
+            {MAILBOX_TABS.map((tab) => (
+              <Link
+                key={tab.value}
+                href={`/gmail?mailbox=${tab.value}`}
+                aria-current={mailbox === tab.value ? "page" : undefined}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
+                  mailbox === tab.value
+                    ? "bg-accent/10 text-accent"
+                    : "text-muted hover:bg-surface-hover hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
 
         {searchParams.connected === "1" ? (
           <p className="mt-4 rounded-md border border-success bg-success-bg px-4 py-2 text-sm text-success">
@@ -92,20 +129,7 @@ export default async function GmailPage({
         ) : messages.length === 0 ? (
           <p className="mt-6 text-sm text-muted">받은 메일이 없습니다.</p>
         ) : (
-          <ul className="mt-6 divide-y divide-border rounded-2xl border border-border bg-surface">
-            {messages.map((message) => (
-              <li key={message.id}>
-                <Link
-                  href={`/gmail/${message.id}`}
-                  className="block px-4 py-3 hover:bg-surface-hover"
-                >
-                  <p className="text-sm font-medium text-foreground">{message.subject}</p>
-                  <p className="text-xs text-muted">{message.from}</p>
-                  <p className="mt-1 text-xs text-muted">{message.snippet}</p>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <MessageList messages={messages} />
         )}
       </main>
     </div>

@@ -22,7 +22,9 @@ vi.mock("@/lib/google/gmailClient", () => ({
   listRecentMessages: listRecentMessagesMock,
 }));
 
-async function renderGmailPage(searchParams: { error?: string; connected?: string } = {}) {
+async function renderGmailPage(
+  searchParams: { error?: string; connected?: string; mailbox?: string } = {}
+) {
   const element = await GmailPage({ searchParams });
   return render(
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
@@ -104,5 +106,69 @@ describe("GmailPage", () => {
     await renderGmailPage({ connected: "1" });
 
     expect(screen.getByText("Google 계정이 연결되었습니다.")).toBeInTheDocument();
+  });
+
+  it("편지함 탭 4개를 올바른 href로 보여준다", async () => {
+    isGoogleConnectedMock.mockResolvedValue(true);
+    listRecentMessagesMock.mockResolvedValue([]);
+
+    await renderGmailPage({});
+
+    expect(screen.getByRole("link", { name: "받은편지함" })).toHaveAttribute(
+      "href",
+      "/gmail?mailbox=inbox"
+    );
+    expect(screen.getByRole("link", { name: "보낸편지함" })).toHaveAttribute(
+      "href",
+      "/gmail?mailbox=sent"
+    );
+    expect(screen.getByRole("link", { name: "스팸" })).toHaveAttribute(
+      "href",
+      "/gmail?mailbox=spam"
+    );
+    expect(screen.getByRole("link", { name: "휴지통" })).toHaveAttribute(
+      "href",
+      "/gmail?mailbox=trash"
+    );
+  });
+
+  it("현재 편지함 탭에 aria-current를 표시한다", async () => {
+    isGoogleConnectedMock.mockResolvedValue(true);
+    listRecentMessagesMock.mockResolvedValue([]);
+
+    await renderGmailPage({ mailbox: "sent" });
+
+    expect(screen.getByRole("link", { name: "보낸편지함" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    expect(screen.getByRole("link", { name: "받은편지함" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("mailbox 파라미터가 없으면 INBOX로 조회한다", async () => {
+    isGoogleConnectedMock.mockResolvedValue(true);
+    listRecentMessagesMock.mockResolvedValue([]);
+
+    await renderGmailPage({});
+
+    expect(listRecentMessagesMock).toHaveBeenCalledWith(20, ["INBOX"]);
+  });
+
+  it("잘못된 mailbox 값은 INBOX로 기본 처리한다", async () => {
+    isGoogleConnectedMock.mockResolvedValue(true);
+    listRecentMessagesMock.mockResolvedValue([]);
+
+    await renderGmailPage({ mailbox: "not-a-real-mailbox" });
+
+    expect(listRecentMessagesMock).toHaveBeenCalledWith(20, ["INBOX"]);
+  });
+
+  it("mailbox=sent면 SENT로 조회한다", async () => {
+    isGoogleConnectedMock.mockResolvedValue(true);
+    listRecentMessagesMock.mockResolvedValue([]);
+
+    await renderGmailPage({ mailbox: "sent" });
+
+    expect(listRecentMessagesMock).toHaveBeenCalledWith(20, ["SENT"]);
   });
 });

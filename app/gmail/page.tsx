@@ -5,12 +5,12 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { isGoogleConnected, listRecentMessages, type GmailMessageSummary } from "@/lib/google/gmailClient";
 import { MessageList } from "./MessageList";
 
-const MAILBOX_LABELS: Record<string, string> = {
-  inbox: "INBOX",
-  sent: "SENT",
-  spam: "SPAM",
-  trash: "TRASH",
-};
+const MAILBOX_LABELS = new Map<string, string>([
+  ["inbox", "INBOX"],
+  ["sent", "SENT"],
+  ["spam", "SPAM"],
+  ["trash", "TRASH"],
+]);
 
 const MAILBOX_TABS: { value: string; label: string }[] = [
   { value: "inbox", label: "받은편지함" },
@@ -26,8 +26,8 @@ export default async function GmailPage({
 }) {
   const connected = await isGoogleConnected();
   const mailbox =
-    searchParams.mailbox && MAILBOX_LABELS[searchParams.mailbox] ? searchParams.mailbox : "inbox";
-  const labelId = MAILBOX_LABELS[mailbox];
+    searchParams.mailbox && MAILBOX_LABELS.has(searchParams.mailbox) ? searchParams.mailbox : "inbox";
+  const labelId = MAILBOX_LABELS.get(mailbox)!;
 
   let messages: GmailMessageSummary[] = [];
   let loadError = false;

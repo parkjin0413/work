@@ -171,4 +171,13 @@ describe("GmailPage", () => {
 
     expect(listRecentMessagesMock).toHaveBeenCalledWith(20, ["SENT"]);
   });
+
+  it("프로토타입 체인 속성 이름은 INBOX로 기본 처리한다", async () => {
+    isGoogleConnectedMock.mockResolvedValue(true);
+    listRecentMessagesMock.mockResolvedValue([]);
+
+    await renderGmailPage({ mailbox: "constructor" });
+
+    expect(listRecentMessagesMock).toHaveBeenCalledWith(20, ["INBOX"]);
+  });
 });

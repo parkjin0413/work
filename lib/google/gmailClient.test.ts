@@ -49,6 +49,7 @@ import {
   getMessageDetail,
   sendEmail,
   trashMessage,
+  trashMessages,
   isGoogleConnected,
 } from "./gmailClient";
 
@@ -102,6 +103,19 @@ describe("gmailClient", () => {
         snippet: "미리보기 내용",
       },
     ]);
+  });
+
+  it("labelIds를 지정하면 API 호출에 포함한다", async () => {
+    getGoogleRefreshTokenMock.mockResolvedValue("refresh-token");
+    messagesListMock.mockResolvedValue({ data: { messages: [] } });
+
+    await listRecentMessages(20, ["SENT"]);
+
+    expect(messagesListMock).toHaveBeenCalledWith({
+      userId: "me",
+      maxResults: 20,
+      labelIds: ["SENT"],
+    });
   });
 
   it("Google 계정이 연결되어 있지 않으면 상세 조회는 null을 반환한다", async () => {
@@ -197,6 +211,34 @@ describe("gmailClient", () => {
     await trashMessage("msg-1");
 
     expect(messagesTrashMock).toHaveBeenCalledWith({ userId: "me", id: "msg-1" });
+  });
+
+  it("Google 계정이 연결되어 있지 않으면 일괄 삭제 시 에러를 던진다", async () => {
+    getGoogleRefreshTokenMock.mockResolvedValue(null);
+
+    await expect(trashMessages(["msg-1"])).rejects.toThrow();
+    expect(messagesTrashMock).not.toHaveBeenCalled();
+  });
+
+  it("일괄 삭제는 각 ID에 대해 trash를 호출한다", async () => {
+    getGoogleRefreshTokenMock.mockResolvedValue("refresh-token");
+    messagesTrashMock.mockResolvedValue({});
+
+    await trashMessages(["msg-1", "msg-2", "msg-3"]);
+
+    expect(messagesTrashMock).toHaveBeenCalledTimes(3);
+    expect(messagesTrashMock).toHaveBeenCalledWith({ userId: "me", id: "msg-1" });
+    expect(messagesTrashMock).toHaveBeenCalledWith({ userId: "me", id: "msg-2" });
+    expect(messagesTrashMock).toHaveBeenCalledWith({ userId: "me", id: "msg-3" });
+  });
+
+  it("일괄 삭제 중 하나라도 실패하면 에러를 던진다", async () => {
+    getGoogleRefreshTokenMock.mockResolvedValue("refresh-token");
+    messagesTrashMock
+      .mockResolvedValueOnce({})
+      .mockRejectedValueOnce(new Error("삭제 실패"));
+
+    await expect(trashMessages(["msg-1", "msg-2"])).rejects.toThrow();
   });
 
   it("isGoogleConnected은 refresh token 존재 여부를 반환한다", async () => {

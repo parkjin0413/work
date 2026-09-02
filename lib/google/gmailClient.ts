@@ -52,7 +52,10 @@ function extractPlainTextBody(payload: gmail_v1.Schema$MessagePart | undefined):
   return "";
 }
 
-export async function listRecentMessages(maxResults = 20): Promise<GmailMessageSummary[]> {
+export async function listRecentMessages(
+  maxResults = 20,
+  labelIds?: string[]
+): Promise<GmailMessageSummary[]> {
   const gmail = await getGmailClient();
   if (!gmail) {
     return [];
@@ -61,6 +64,7 @@ export async function listRecentMessages(maxResults = 20): Promise<GmailMessageS
   const listResponse = await gmail.users.messages.list({
     userId: "me",
     maxResults,
+    ...(labelIds ? { labelIds } : {}),
   });
 
   const messageIds = listResponse.data.messages ?? [];
@@ -153,6 +157,15 @@ export async function trashMessage(id: string): Promise<void> {
   }
 
   await gmail.users.messages.trash({ userId: "me", id });
+}
+
+export async function trashMessages(ids: string[]): Promise<void> {
+  const gmail = await getGmailClient();
+  if (!gmail) {
+    throw new Error("Google 계정이 연결되어 있지 않습니다.");
+  }
+
+  await Promise.all(ids.map((id) => gmail.users.messages.trash({ userId: "me", id })));
 }
 
 export async function isGoogleConnected(): Promise<boolean> {

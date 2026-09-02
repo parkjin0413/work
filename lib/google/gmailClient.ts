@@ -64,7 +64,7 @@ export async function listRecentMessages(
   const listResponse = await gmail.users.messages.list({
     userId: "me",
     maxResults,
-    ...(labelIds ? { labelIds } : {}),
+    ...(labelIds?.length ? { labelIds } : {}),
   });
 
   const messageIds = listResponse.data.messages ?? [];

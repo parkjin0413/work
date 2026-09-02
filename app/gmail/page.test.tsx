@@ -84,6 +84,16 @@ describe("GmailPage", () => {
     expect(screen.getByText("받은 메일이 없습니다.")).toBeInTheDocument();
   });
 
+  it("휴지통 탭에서 메일이 없으면 휴지통 전용 안내 문구를 보여준다", async () => {
+    isGoogleConnectedMock.mockResolvedValue(true);
+    listRecentMessagesMock.mockResolvedValue([]);
+
+    await renderGmailPage({ mailbox: "trash" });
+
+    expect(screen.getByText("휴지통이 비어 있습니다.")).toBeInTheDocument();
+    expect(screen.queryByText("받은 메일이 없습니다.")).not.toBeInTheDocument();
+  });
+
   it("메일 목록 조회가 실패하면 재연결 안내를 보여준다", async () => {
     isGoogleConnectedMock.mockResolvedValue(true);
     listRecentMessagesMock.mockRejectedValue(new Error("token expired"));

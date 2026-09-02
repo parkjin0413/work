@@ -12,7 +12,8 @@ export function MessageList({ messages }: { messages: GmailMessageSummary[] }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const allSelected = messages.length > 0 && selectedIds.length === messages.length;
+  const allSelected =
+    messages.length > 0 && messages.every((message) => selectedIds.includes(message.id));
 
   function toggleAll() {
     setSelectedIds(allSelected ? [] : messages.map((message) => message.id));

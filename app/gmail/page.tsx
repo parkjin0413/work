@@ -19,6 +19,13 @@ const MAILBOX_TABS: { value: string; label: string }[] = [
   { value: "trash", label: "휴지통" },
 ];
 
+const EMPTY_MAILBOX_MESSAGES: Record<string, string> = {
+  inbox: "받은 메일이 없습니다.",
+  sent: "보낸 메일이 없습니다.",
+  spam: "스팸 메일이 없습니다.",
+  trash: "휴지통이 비어 있습니다.",
+};
+
 export default async function GmailPage({
   searchParams,
 }: {
@@ -127,9 +134,9 @@ export default async function GmailPage({
             </a>
           </div>
         ) : messages.length === 0 ? (
-          <p className="mt-6 text-sm text-muted">받은 메일이 없습니다.</p>
+          <p className="mt-6 text-sm text-muted">{EMPTY_MAILBOX_MESSAGES[mailbox]}</p>
         ) : (
-          <MessageList messages={messages} />
+          <MessageList key={mailbox} messages={messages} />
         )}
       </main>
     </div>

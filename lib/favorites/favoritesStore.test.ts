@@ -8,13 +8,11 @@ const eqMock = vi.fn();
 const updateMock = vi.fn(() => ({ eq: eqMock }));
 const deleteEqMock = vi.fn();
 const deleteMock = vi.fn(() => ({ eq: deleteEqMock }));
-const upsertMock = vi.fn();
 const fromMock = vi.fn(() => ({
   select: selectMock,
   insert: insertMock,
   update: updateMock,
   delete: deleteMock,
-  upsert: upsertMock,
 }));
 
 vi.mock("@/lib/supabase/serviceClient", () => ({
@@ -44,7 +42,6 @@ describe("favoritesStore", () => {
     eqMock.mockReset();
     deleteMock.mockClear();
     deleteEqMock.mockReset();
-    upsertMock.mockReset();
   });
 
   describe("listCategoriesWithFavorites", () => {
@@ -130,20 +127,20 @@ describe("favoritesStore", () => {
   });
 
   describe("reorderCategories", () => {
-    it("주어진 순서대로 sort_order를 upsert한다", async () => {
-      upsertMock.mockResolvedValue({ error: null });
+    it("주어진 순서대로 각 행의 sort_order를 업데이트한다", async () => {
+      eqMock.mockResolvedValue({ error: null });
 
       await reorderCategories(["cat-2", "cat-1"]);
 
       expect(fromMock).toHaveBeenCalledWith("favorite_categories");
-      expect(upsertMock).toHaveBeenCalledWith([
-        { id: "cat-2", sort_order: 0 },
-        { id: "cat-1", sort_order: 1 },
-      ]);
+      expect(updateMock).toHaveBeenCalledWith({ sort_order: 0 });
+      expect(updateMock).toHaveBeenCalledWith({ sort_order: 1 });
+      expect(eqMock).toHaveBeenCalledWith("id", "cat-2");
+      expect(eqMock).toHaveBeenCalledWith("id", "cat-1");
     });
 
     it("실패하면 에러를 던진다", async () => {
-      upsertMock.mockResolvedValue({ error: { message: "db down" } });
+      eqMock.mockResolvedValue({ error: { message: "db down" } });
 
       await expect(reorderCategories(["cat-1"])).rejects.toThrow("db down");
     });
@@ -189,20 +186,20 @@ describe("favoritesStore", () => {
   });
 
   describe("reorderFavorites", () => {
-    it("주어진 순서대로 sort_order를 upsert한다", async () => {
-      upsertMock.mockResolvedValue({ error: null });
+    it("주어진 순서대로 각 행의 sort_order를 업데이트한다", async () => {
+      eqMock.mockResolvedValue({ error: null });
 
       await reorderFavorites(["fav-2", "fav-1"]);
 
       expect(fromMock).toHaveBeenCalledWith("favorites");
-      expect(upsertMock).toHaveBeenCalledWith([
-        { id: "fav-2", sort_order: 0 },
-        { id: "fav-1", sort_order: 1 },
-      ]);
+      expect(updateMock).toHaveBeenCalledWith({ sort_order: 0 });
+      expect(updateMock).toHaveBeenCalledWith({ sort_order: 1 });
+      expect(eqMock).toHaveBeenCalledWith("id", "fav-2");
+      expect(eqMock).toHaveBeenCalledWith("id", "fav-1");
     });
 
     it("실패하면 에러를 던진다", async () => {
-      upsertMock.mockResolvedValue({ error: { message: "db down" } });
+      eqMock.mockResolvedValue({ error: { message: "db down" } });
 
       await expect(reorderFavorites(["fav-1"])).rejects.toThrow("db down");
     });

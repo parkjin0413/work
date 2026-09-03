@@ -61,12 +61,16 @@ export async function createCategory(name: string): Promise<void> {
 
 export async function reorderCategories(orderedIds: string[]): Promise<void> {
   const supabase = createSupabaseServiceClient();
-  const { error } = await supabase
-    .from("favorite_categories")
-    .upsert(orderedIds.map((id, index) => ({ id, sort_order: index })));
 
-  if (error) {
-    throw new Error(`카테고리 순서 변경 실패: ${error.message}`);
+  const results = await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase.from("favorite_categories").update({ sort_order: index }).eq("id", id)
+    )
+  );
+
+  const failed = results.find((result) => result.error);
+  if (failed?.error) {
+    throw new Error(`카테고리 순서 변경 실패: ${failed.error.message}`);
   }
 }
 
@@ -109,12 +113,16 @@ export async function createFavorite(input: {
 
 export async function reorderFavorites(orderedIds: string[]): Promise<void> {
   const supabase = createSupabaseServiceClient();
-  const { error } = await supabase
-    .from("favorites")
-    .upsert(orderedIds.map((id, index) => ({ id, sort_order: index })));
 
-  if (error) {
-    throw new Error(`즐겨찾기 순서 변경 실패: ${error.message}`);
+  const results = await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase.from("favorites").update({ sort_order: index }).eq("id", id)
+    )
+  );
+
+  const failed = results.find((result) => result.error);
+  if (failed?.error) {
+    throw new Error(`즐겨찾기 순서 변경 실패: ${failed.error.message}`);
   }
 }
 

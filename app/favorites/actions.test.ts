@@ -6,9 +6,11 @@ const { requireAdminMock, storeMock, revalidatePathMock } = vi.hoisted(() => ({
     createCategory: vi.fn(),
     renameCategory: vi.fn(),
     deleteCategory: vi.fn(),
+    reorderCategories: vi.fn(),
     createFavorite: vi.fn(),
     renameFavorite: vi.fn(),
     deleteFavorite: vi.fn(),
+    reorderFavorites: vi.fn(),
   },
   revalidatePathMock: vi.fn(),
 }));
@@ -27,9 +29,11 @@ import {
   createCategoryAction,
   renameCategoryAction,
   deleteCategoryAction,
+  reorderCategoriesAction,
   createFavoriteAction,
   renameFavoriteAction,
   deleteFavoriteAction,
+  reorderFavoritesAction,
 } from "./actions";
 
 function resetAll() {
@@ -114,6 +118,29 @@ describe("deleteCategoryAction", () => {
     storeMock.deleteCategory.mockResolvedValue(undefined);
     await deleteCategoryAction("cat-1");
     expect(storeMock.deleteCategory).toHaveBeenCalledWith("cat-1");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/favorites");
+  });
+});
+
+describe("reorderCategoriesAction", () => {
+  beforeEach(resetAll);
+
+  it("requireAdmin을 호출한다", async () => {
+    storeMock.reorderCategories.mockResolvedValue(undefined);
+    await reorderCategoriesAction(["cat-1", "cat-2"]);
+    expect(requireAdminMock).toHaveBeenCalled();
+  });
+
+  it("requireAdmin이 실패하면 reorderCategories를 호출하지 않는다", async () => {
+    requireAdminMock.mockRejectedValue(new Error("unauthorized"));
+    await expect(reorderCategoriesAction(["cat-1", "cat-2"])).rejects.toThrow();
+    expect(storeMock.reorderCategories).not.toHaveBeenCalled();
+  });
+
+  it("정상 변경은 reorderCategories와 revalidatePath를 호출한다", async () => {
+    storeMock.reorderCategories.mockResolvedValue(undefined);
+    await reorderCategoriesAction(["cat-2", "cat-1"]);
+    expect(storeMock.reorderCategories).toHaveBeenCalledWith(["cat-2", "cat-1"]);
     expect(revalidatePathMock).toHaveBeenCalledWith("/favorites");
   });
 });
@@ -208,6 +235,29 @@ describe("deleteFavoriteAction", () => {
     storeMock.deleteFavorite.mockResolvedValue(undefined);
     await deleteFavoriteAction("fav-1");
     expect(storeMock.deleteFavorite).toHaveBeenCalledWith("fav-1");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/favorites");
+  });
+});
+
+describe("reorderFavoritesAction", () => {
+  beforeEach(resetAll);
+
+  it("requireAdmin을 호출한다", async () => {
+    storeMock.reorderFavorites.mockResolvedValue(undefined);
+    await reorderFavoritesAction(["fav-1", "fav-2"]);
+    expect(requireAdminMock).toHaveBeenCalled();
+  });
+
+  it("requireAdmin이 실패하면 reorderFavorites를 호출하지 않는다", async () => {
+    requireAdminMock.mockRejectedValue(new Error("unauthorized"));
+    await expect(reorderFavoritesAction(["fav-1", "fav-2"])).rejects.toThrow();
+    expect(storeMock.reorderFavorites).not.toHaveBeenCalled();
+  });
+
+  it("정상 변경은 reorderFavorites와 revalidatePath를 호출한다", async () => {
+    storeMock.reorderFavorites.mockResolvedValue(undefined);
+    await reorderFavoritesAction(["fav-2", "fav-1"]);
+    expect(storeMock.reorderFavorites).toHaveBeenCalledWith(["fav-2", "fav-1"]);
     expect(revalidatePathMock).toHaveBeenCalledWith("/favorites");
   });
 });

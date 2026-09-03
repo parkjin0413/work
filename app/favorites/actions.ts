@@ -6,9 +6,11 @@ import {
   createCategory,
   renameCategory,
   deleteCategory,
+  reorderCategories,
   createFavorite,
   renameFavorite,
   deleteFavorite,
+  reorderFavorites,
 } from "@/lib/favorites/favoritesStore";
 
 export async function createCategoryAction(name: string): Promise<void> {
@@ -37,6 +39,13 @@ export async function deleteCategoryAction(id: string): Promise<void> {
   await requireAdmin();
 
   await deleteCategory(id);
+  revalidatePath("/favorites");
+}
+
+export async function reorderCategoriesAction(orderedIds: string[]): Promise<void> {
+  await requireAdmin();
+
+  await reorderCategories(orderedIds);
   revalidatePath("/favorites");
 }
 
@@ -78,5 +87,12 @@ export async function deleteFavoriteAction(id: string): Promise<void> {
   await requireAdmin();
 
   await deleteFavorite(id);
+  revalidatePath("/favorites");
+}
+
+export async function reorderFavoritesAction(orderedIds: string[]): Promise<void> {
+  await requireAdmin();
+
+  await reorderFavorites(orderedIds);
   revalidatePath("/favorites");
 }

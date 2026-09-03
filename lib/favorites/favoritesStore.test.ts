@@ -1,17 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const orderMock = vi.fn();
-const selectMock = vi.fn(() => ({ order: orderMock }));
+const chainOrderMock = vi.fn(() => ({ order: orderMock }));
+const selectMock = vi.fn(() => ({ order: chainOrderMock }));
 const insertMock = vi.fn();
 const eqMock = vi.fn();
 const updateMock = vi.fn(() => ({ eq: eqMock }));
 const deleteEqMock = vi.fn();
 const deleteMock = vi.fn(() => ({ eq: deleteEqMock }));
+const upsertMock = vi.fn();
 const fromMock = vi.fn(() => ({
   select: selectMock,
   insert: insertMock,
   update: updateMock,
   delete: deleteMock,
+  upsert: upsertMock,
 }));
 
 vi.mock("@/lib/supabase/serviceClient", () => ({
@@ -23,21 +26,25 @@ import {
   createCategory,
   renameCategory,
   deleteCategory,
+  reorderCategories,
   createFavorite,
   renameFavorite,
   deleteFavorite,
+  reorderFavorites,
 } from "./favoritesStore";
 
 describe("favoritesStore", () => {
   beforeEach(() => {
     fromMock.mockClear();
     selectMock.mockClear();
+    chainOrderMock.mockClear();
     orderMock.mockReset();
     insertMock.mockReset();
     updateMock.mockClear();
     eqMock.mockReset();
     deleteMock.mockClear();
     deleteEqMock.mockReset();
+    upsertMock.mockReset();
   });
 
   describe("listCategoriesWithFavorites", () => {
@@ -122,6 +129,26 @@ describe("favoritesStore", () => {
     });
   });
 
+  describe("reorderCategories", () => {
+    it("주어진 순서대로 sort_order를 upsert한다", async () => {
+      upsertMock.mockResolvedValue({ error: null });
+
+      await reorderCategories(["cat-2", "cat-1"]);
+
+      expect(fromMock).toHaveBeenCalledWith("favorite_categories");
+      expect(upsertMock).toHaveBeenCalledWith([
+        { id: "cat-2", sort_order: 0 },
+        { id: "cat-1", sort_order: 1 },
+      ]);
+    });
+
+    it("실패하면 에러를 던진다", async () => {
+      upsertMock.mockResolvedValue({ error: { message: "db down" } });
+
+      await expect(reorderCategories(["cat-1"])).rejects.toThrow("db down");
+    });
+  });
+
   describe("createFavorite", () => {
     it("올바른 URL이면 즐겨찾기를 생성한다", async () => {
       insertMock.mockResolvedValue({ error: null });
@@ -158,6 +185,26 @@ describe("favoritesStore", () => {
       await expect(
         renameFavorite("fav-1", { name: "이름", url: "not-a-url" })
       ).rejects.toThrow("올바른 URL 형식이 아닙니다");
+    });
+  });
+
+  describe("reorderFavorites", () => {
+    it("주어진 순서대로 sort_order를 upsert한다", async () => {
+      upsertMock.mockResolvedValue({ error: null });
+
+      await reorderFavorites(["fav-2", "fav-1"]);
+
+      expect(fromMock).toHaveBeenCalledWith("favorites");
+      expect(upsertMock).toHaveBeenCalledWith([
+        { id: "fav-2", sort_order: 0 },
+        { id: "fav-1", sort_order: 1 },
+      ]);
+    });
+
+    it("실패하면 에러를 던진다", async () => {
+      upsertMock.mockResolvedValue({ error: { message: "db down" } });
+
+      await expect(reorderFavorites(["fav-1"])).rejects.toThrow("db down");
     });
   });
 

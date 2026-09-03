@@ -24,6 +24,7 @@ export async function listCategoriesWithFavorites(): Promise<CategoryWithFavorit
   const { data: categories, error: categoriesError } = await supabase
     .from("favorite_categories")
     .select("id, name")
+    .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
   if (categoriesError) {
@@ -33,6 +34,7 @@ export async function listCategoriesWithFavorites(): Promise<CategoryWithFavorit
   const { data: favorites, error: favoritesError } = await supabase
     .from("favorites")
     .select("id, name, url, category_id")
+    .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
 
   if (favoritesError) {
@@ -54,6 +56,17 @@ export async function createCategory(name: string): Promise<void> {
 
   if (error) {
     throw new Error(`카테고리 생성 실패: ${error.message}`);
+  }
+}
+
+export async function reorderCategories(orderedIds: string[]): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase
+    .from("favorite_categories")
+    .upsert(orderedIds.map((id, index) => ({ id, sort_order: index })));
+
+  if (error) {
+    throw new Error(`카테고리 순서 변경 실패: ${error.message}`);
   }
 }
 
@@ -91,6 +104,17 @@ export async function createFavorite(input: {
 
   if (error) {
     throw new Error(`즐겨찾기 생성 실패: ${error.message}`);
+  }
+}
+
+export async function reorderFavorites(orderedIds: string[]): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase
+    .from("favorites")
+    .upsert(orderedIds.map((id, index) => ({ id, sort_order: index })));
+
+  if (error) {
+    throw new Error(`즐겨찾기 순서 변경 실패: ${error.message}`);
   }
 }
 

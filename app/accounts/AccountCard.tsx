@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, GripVertical, Pencil, Trash2 } from "lucide-react";
-import type { BoardAccount } from "@/lib/accounts/accountsStore";
+import type { AccountSummary } from "@/lib/accounts/accountsStore";
 import type { DragHandleProps } from "./AccountsBoard";
 import { renameAccountAction, deleteAccountAction } from "./actions";
 
@@ -12,16 +12,12 @@ const MASKED_PASSWORD = "•".repeat(10);
 export function AccountCard({
   account,
   categoryId,
-  categoryName,
   categories,
-  color,
   dragHandleProps,
 }: {
-  account: BoardAccount;
+  account: AccountSummary;
   categoryId: string;
-  categoryName: string;
   categories: { id: string; name: string }[];
-  color: string;
   dragHandleProps?: DragHandleProps;
 }) {
   const router = useRouter();
@@ -204,10 +200,7 @@ export function AccountCard({
   const isPasswordVisible = revealed || flashRevealed;
 
   return (
-    <div
-      className="flex flex-col gap-2 rounded-2xl border-y border-r border-border border-l-4 bg-surface p-4"
-      style={{ borderLeftColor: color }}
-    >
+    <div className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-2">
           {dragHandleProps ? (
@@ -221,15 +214,7 @@ export function AccountCard({
               <GripVertical size={14} />
             </button>
           ) : null}
-          <div className="min-w-0">
-            <span
-              className="inline-block rounded-full px-2 py-0.5 text-xs font-medium"
-              style={{ backgroundColor: `${color}26`, color }}
-            >
-              {categoryName}
-            </span>
-            <h3 className="mt-1 truncate text-base font-semibold text-foreground">{account.name}</h3>
-          </div>
+          <h3 className="min-w-0 truncate text-base font-semibold text-foreground">{account.name}</h3>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button

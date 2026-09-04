@@ -27,8 +27,6 @@ const account = {
   username: "admin",
   password: "secret1",
   memo: "메모",
-  categoryId: "cat-1",
-  categoryName: "업무",
 };
 
 const categories = [
@@ -37,15 +35,7 @@ const categories = [
 ];
 
 function renderCard() {
-  return render(
-    <AccountCard
-      account={account}
-      categoryId="cat-1"
-      categoryName="업무"
-      categories={categories}
-      color="#6366F1"
-    />
-  );
+  return render(<AccountCard account={account} categoryId="cat-1" categories={categories} />);
 }
 
 describe("AccountCard", () => {

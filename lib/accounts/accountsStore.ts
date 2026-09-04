@@ -1,25 +1,19 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/serviceClient";
 import { encryptToken, decryptToken } from "@/lib/crypto/tokenCipher";
 
-export type CategoryOption = {
-  id: string;
-  name: string;
-};
-
-export type BoardAccount = {
+export type AccountSummary = {
   id: string;
   name: string;
   url: string;
   username: string;
   password: string;
   memo: string | null;
-  categoryId: string;
-  categoryName: string;
 };
 
-export type AccountsBoardData = {
-  categories: CategoryOption[];
-  accounts: BoardAccount[];
+export type CategoryWithAccounts = {
+  id: string;
+  name: string;
+  accounts: AccountSummary[];
 };
 
 function assertValidUrl(url: string): void {
@@ -28,7 +22,7 @@ function assertValidUrl(url: string): void {
   }
 }
 
-export async function listAccountsBoard(): Promise<AccountsBoardData> {
+export async function listCategoriesWithAccounts(): Promise<CategoryWithAccounts[]> {
   const supabase = createSupabaseServiceClient();
 
   const { data: categories, error: categoriesError } = await supabase
@@ -51,21 +45,20 @@ export async function listAccountsBoard(): Promise<AccountsBoardData> {
     throw new Error(`계정 조회 실패: ${accountsError.message}`);
   }
 
-  const categoryNameById = new Map((categories ?? []).map((category) => [category.id, category.name]));
-
-  return {
-    categories: (categories ?? []).map((category) => ({ id: category.id, name: category.name })),
-    accounts: (accounts ?? []).map((account) => ({
-      id: account.id,
-      name: account.name,
-      url: account.url,
-      username: account.username,
-      password: decryptToken(account.password_encrypted),
-      memo: account.memo,
-      categoryId: account.category_id,
-      categoryName: categoryNameById.get(account.category_id) ?? "",
-    })),
-  };
+  return (categories ?? []).map((category) => ({
+    id: category.id,
+    name: category.name,
+    accounts: (accounts ?? [])
+      .filter((account) => account.category_id === category.id)
+      .map((account) => ({
+        id: account.id,
+        name: account.name,
+        url: account.url,
+        username: account.username,
+        password: decryptToken(account.password_encrypted),
+        memo: account.memo,
+      })),
+  }));
 }
 
 export async function createCategory(name: string): Promise<void> {

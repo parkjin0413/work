@@ -1,17 +1,17 @@
 export const dynamic = "force-dynamic";
 
 import { Sidebar } from "@/components/layout/Sidebar";
-import { listAccountsBoard, type AccountsBoardData } from "@/lib/accounts/accountsStore";
+import { listCategoriesWithAccounts, type CategoryWithAccounts } from "@/lib/accounts/accountsStore";
 import { CreateCategoryForm } from "./CreateCategoryForm";
 import { AccountsBoard } from "./AccountsBoard";
 
 export default async function AccountsPage() {
-  let board: AccountsBoardData;
+  let categories: CategoryWithAccounts[];
 
   try {
-    board = await listAccountsBoard();
+    categories = await listCategoriesWithAccounts();
   } catch (error) {
-    console.error("[accounts] listAccountsBoard 실패:", error);
+    console.error("[accounts] listCategoriesWithAccounts 실패:", error);
     return (
       <div className="flex min-h-screen flex-col bg-bg md:flex-row">
         <Sidebar />
@@ -36,10 +36,10 @@ export default async function AccountsPage() {
 
         <CreateCategoryForm />
 
-        {board.categories.length === 0 ? (
+        {categories.length === 0 ? (
           <p className="mt-6 text-sm text-muted">카테고리를 먼저 만들어주세요.</p>
         ) : (
-          <AccountsBoard categories={board.categories} accounts={board.accounts} />
+          <AccountsBoard categories={categories} />
         )}
       </main>
     </div>

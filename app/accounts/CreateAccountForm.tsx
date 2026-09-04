@@ -4,10 +4,9 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createAccountAction } from "./actions";
 
-export function CreateAccountForm({ categories }: { categories: { id: string; name: string }[] }) {
+export function CreateAccountForm({ categoryId }: { categoryId: string }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [username, setUsername] = useState("");
@@ -17,7 +16,6 @@ export function CreateAccountForm({ categories }: { categories: { id: string; na
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   function resetForm() {
-    setCategoryId(categories[0]?.id ?? "");
     setName("");
     setUrl("");
     setUsername("");
@@ -28,7 +26,7 @@ export function CreateAccountForm({ categories }: { categories: { id: string; na
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!categoryId || !name.trim() || !username.trim() || !password.trim()) {
+    if (!name.trim() || !username.trim() || !password.trim()) {
       return;
     }
 
@@ -52,7 +50,7 @@ export function CreateAccountForm({ categories }: { categories: { id: string; na
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="mt-4 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground hover:bg-accent-hover"
+        className="rounded-lg border border-dashed border-border px-3 py-1.5 text-sm text-muted hover:border-accent hover:text-accent"
       >
         + 새 계정 추가
       </button>
@@ -62,20 +60,8 @@ export function CreateAccountForm({ categories }: { categories: { id: string; na
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-4 flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 md:max-w-md"
+      className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 md:max-w-md"
     >
-      <select
-        value={categoryId}
-        onChange={(e) => setCategoryId(e.target.value)}
-        aria-label="분류"
-        className="rounded-lg border border-border bg-bg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
-      >
-        {categories.map((category) => (
-          <option key={category.id} value={category.id}>
-            {category.name}
-          </option>
-        ))}
-      </select>
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -116,7 +102,7 @@ export function CreateAccountForm({ categories }: { categories: { id: string; na
       <div className="flex items-center gap-2">
         <button
           type="submit"
-          disabled={isCreating || !categoryId || !name.trim() || !username.trim() || !password.trim()}
+          disabled={isCreating || !name.trim() || !username.trim() || !password.trim()}
           className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground hover:bg-accent-hover disabled:opacity-50"
         >
           {isCreating ? "추가 중..." : "등록"}

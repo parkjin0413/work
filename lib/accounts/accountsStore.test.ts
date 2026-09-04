@@ -25,13 +25,14 @@ vi.mock("@/lib/crypto/tokenCipher", () => ({
 }));
 
 import {
-  listCategoriesWithAccounts,
+  listAccountsBoard,
   createCategory,
   renameCategory,
   deleteCategory,
   createAccount,
   renameAccount,
   deleteAccount,
+  reorderAccounts,
 } from "./accountsStore";
 
 describe("accountsStore", () => {
@@ -47,8 +48,8 @@ describe("accountsStore", () => {
     deleteEqMock.mockReset();
   });
 
-  describe("listCategoriesWithAccounts", () => {
-    it("카테고리별로 계정을 묶고 비밀번호를 복호화해서 반환한다", async () => {
+  describe("listAccountsBoard", () => {
+    it("카테고리 목록과, 카테고리 이름이 붙은 전역 정렬된 계정 목록을 반환하고 비밀번호를 복호화한다", async () => {
       orderMock
         .mockResolvedValueOnce({
           data: [
@@ -81,46 +82,44 @@ describe("accountsStore", () => {
           error: null,
         });
 
-      const result = await listCategoriesWithAccounts();
+      const result = await listAccountsBoard();
 
       expect(fromMock).toHaveBeenCalledWith("account_categories");
       expect(fromMock).toHaveBeenCalledWith("accounts");
-      expect(result).toEqual([
-        {
-          id: "cat-1",
-          name: "업무",
-          accounts: [
-            {
-              id: "acc-1",
-              name: "사내 관리자",
-              url: "https://admin.example.com",
-              username: "admin",
-              password: "secret1",
-              memo: "메모1",
-            },
-          ],
-        },
-        {
-          id: "cat-2",
-          name: "개인",
-          accounts: [
-            {
-              id: "acc-2",
-              name: "개인 메일",
-              url: "https://mail.example.com",
-              username: "me",
-              password: "secret2",
-              memo: null,
-            },
-          ],
-        },
-      ]);
+      expect(result).toEqual({
+        categories: [
+          { id: "cat-1", name: "업무" },
+          { id: "cat-2", name: "개인" },
+        ],
+        accounts: [
+          {
+            id: "acc-1",
+            name: "사내 관리자",
+            url: "https://admin.example.com",
+            username: "admin",
+            password: "secret1",
+            memo: "메모1",
+            categoryId: "cat-1",
+            categoryName: "업무",
+          },
+          {
+            id: "acc-2",
+            name: "개인 메일",
+            url: "https://mail.example.com",
+            username: "me",
+            password: "secret2",
+            memo: null,
+            categoryId: "cat-2",
+            categoryName: "개인",
+          },
+        ],
+      });
     });
 
     it("카테고리 조회가 실패하면 에러를 던진다", async () => {
       orderMock.mockResolvedValueOnce({ data: null, error: { message: "db down" } });
 
-      await expect(listCategoriesWithAccounts()).rejects.toThrow("db down");
+      await expect(listAccountsBoard()).rejects.toThrow("db down");
     });
   });
 
@@ -248,6 +247,26 @@ describe("accountsStore", () => {
 
       expect(fromMock).toHaveBeenCalledWith("accounts");
       expect(deleteEqMock).toHaveBeenCalledWith("id", "acc-1");
+    });
+  });
+
+  describe("reorderAccounts", () => {
+    it("주어진 순서대로 각 행의 sort_order를 업데이트한다", async () => {
+      eqMock.mockResolvedValue({ error: null });
+
+      await reorderAccounts(["acc-2", "acc-1"]);
+
+      expect(fromMock).toHaveBeenCalledWith("accounts");
+      expect(updateMock).toHaveBeenCalledWith({ sort_order: 0 });
+      expect(updateMock).toHaveBeenCalledWith({ sort_order: 1 });
+      expect(eqMock).toHaveBeenCalledWith("id", "acc-2");
+      expect(eqMock).toHaveBeenCalledWith("id", "acc-1");
+    });
+
+    it("실패하면 에러를 던진다", async () => {
+      eqMock.mockResolvedValue({ error: { message: "db down" } });
+
+      await expect(reorderAccounts(["acc-1"])).rejects.toThrow("db down");
     });
   });
 });

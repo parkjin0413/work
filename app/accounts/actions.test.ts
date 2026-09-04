@@ -9,6 +9,7 @@ const { requireAdminMock, storeMock, revalidatePathMock } = vi.hoisted(() => ({
     createAccount: vi.fn(),
     renameAccount: vi.fn(),
     deleteAccount: vi.fn(),
+    reorderAccounts: vi.fn(),
   },
   revalidatePathMock: vi.fn(),
 }));
@@ -30,6 +31,7 @@ import {
   createAccountAction,
   renameAccountAction,
   deleteAccountAction,
+  reorderAccountsAction,
 } from "./actions";
 
 function resetAll() {
@@ -203,6 +205,23 @@ describe("deleteAccountAction", () => {
     storeMock.deleteAccount.mockResolvedValue(undefined);
     await deleteAccountAction("acc-1");
     expect(storeMock.deleteAccount).toHaveBeenCalledWith("acc-1");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/accounts");
+  });
+});
+
+describe("reorderAccountsAction", () => {
+  beforeEach(resetAll);
+
+  it("requireAdmin이 실패하면 reorderAccounts를 호출하지 않는다", async () => {
+    requireAdminMock.mockRejectedValue(new Error("unauthorized"));
+    await expect(reorderAccountsAction(["acc-1", "acc-2"])).rejects.toThrow();
+    expect(storeMock.reorderAccounts).not.toHaveBeenCalled();
+  });
+
+  it("정상 변경은 reorderAccounts와 revalidatePath를 호출한다", async () => {
+    storeMock.reorderAccounts.mockResolvedValue(undefined);
+    await reorderAccountsAction(["acc-2", "acc-1"]);
+    expect(storeMock.reorderAccounts).toHaveBeenCalledWith(["acc-2", "acc-1"]);
     expect(revalidatePathMock).toHaveBeenCalledWith("/accounts");
   });
 });

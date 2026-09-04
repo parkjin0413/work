@@ -1,19 +1,25 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/serviceClient";
 import { encryptToken, decryptToken } from "@/lib/crypto/tokenCipher";
 
-export type AccountSummary = {
+export type CategoryOption = {
+  id: string;
+  name: string;
+};
+
+export type BoardAccount = {
   id: string;
   name: string;
   url: string;
   username: string;
   password: string;
   memo: string | null;
+  categoryId: string;
+  categoryName: string;
 };
 
-export type CategoryWithAccounts = {
-  id: string;
-  name: string;
-  accounts: AccountSummary[];
+export type AccountsBoardData = {
+  categories: CategoryOption[];
+  accounts: BoardAccount[];
 };
 
 function assertValidUrl(url: string): void {
@@ -22,7 +28,7 @@ function assertValidUrl(url: string): void {
   }
 }
 
-export async function listCategoriesWithAccounts(): Promise<CategoryWithAccounts[]> {
+export async function listAccountsBoard(): Promise<AccountsBoardData> {
   const supabase = createSupabaseServiceClient();
 
   const { data: categories, error: categoriesError } = await supabase
@@ -45,20 +51,21 @@ export async function listCategoriesWithAccounts(): Promise<CategoryWithAccounts
     throw new Error(`계정 조회 실패: ${accountsError.message}`);
   }
 
-  return (categories ?? []).map((category) => ({
-    id: category.id,
-    name: category.name,
-    accounts: (accounts ?? [])
-      .filter((account) => account.category_id === category.id)
-      .map((account) => ({
-        id: account.id,
-        name: account.name,
-        url: account.url,
-        username: account.username,
-        password: decryptToken(account.password_encrypted),
-        memo: account.memo,
-      })),
-  }));
+  const categoryNameById = new Map((categories ?? []).map((category) => [category.id, category.name]));
+
+  return {
+    categories: (categories ?? []).map((category) => ({ id: category.id, name: category.name })),
+    accounts: (accounts ?? []).map((account) => ({
+      id: account.id,
+      name: account.name,
+      url: account.url,
+      username: account.username,
+      password: decryptToken(account.password_encrypted),
+      memo: account.memo,
+      categoryId: account.category_id,
+      categoryName: categoryNameById.get(account.category_id) ?? "",
+    })),
+  };
 }
 
 export async function createCategory(name: string): Promise<void> {
@@ -150,5 +157,18 @@ export async function deleteAccount(id: string): Promise<void> {
 
   if (error) {
     throw new Error(`계정 삭제 실패: ${error.message}`);
+  }
+}
+
+export async function reorderAccounts(orderedIds: string[]): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+
+  const results = await Promise.all(
+    orderedIds.map((id, index) => supabase.from("accounts").update({ sort_order: index }).eq("id", id))
+  );
+
+  const failed = results.find((result) => result.error);
+  if (failed?.error) {
+    throw new Error(`계정 순서 변경 실패: ${failed.error.message}`);
   }
 }

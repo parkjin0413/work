@@ -12,12 +12,12 @@ vi.mock("@/lib/supabase/client", () => ({
   createSupabaseBrowserClient: () => ({ auth: { signOut: vi.fn() } }),
 }));
 
-const { listCategoriesWithAccountsMock } = vi.hoisted(() => ({
-  listCategoriesWithAccountsMock: vi.fn(),
+const { listAccountsBoardMock } = vi.hoisted(() => ({
+  listAccountsBoardMock: vi.fn(),
 }));
 
 vi.mock("@/lib/accounts/accountsStore", () => ({
-  listCategoriesWithAccounts: listCategoriesWithAccountsMock,
+  listAccountsBoard: listAccountsBoardMock,
 }));
 
 async function renderAccountsPage() {
@@ -31,19 +31,22 @@ async function renderAccountsPage() {
 
 describe("AccountsPage", () => {
   beforeEach(() => {
-    listCategoriesWithAccountsMock.mockReset();
+    listAccountsBoardMock.mockReset();
   });
 
   it("카테고리가 없으면 안내 문구를 보여준다", async () => {
-    listCategoriesWithAccountsMock.mockResolvedValue([]);
+    listAccountsBoardMock.mockResolvedValue({ categories: [], accounts: [] });
 
     await renderAccountsPage();
 
     expect(screen.getByText("카테고리를 먼저 만들어주세요.")).toBeInTheDocument();
   });
 
-  it("계정이 없는 카테고리는 표시할 계정이 없다는 문구를 보여준다", async () => {
-    listCategoriesWithAccountsMock.mockResolvedValue([{ id: "cat-1", name: "업무", accounts: [] }]);
+  it("계정이 없으면 표시할 계정이 없다는 문구를 보여준다", async () => {
+    listAccountsBoardMock.mockResolvedValue({
+      categories: [{ id: "cat-1", name: "업무" }],
+      accounts: [],
+    });
 
     await renderAccountsPage();
 
@@ -51,23 +54,22 @@ describe("AccountsPage", () => {
     expect(screen.getByText("표시할 계정이 없습니다.")).toBeInTheDocument();
   });
 
-  it("카테고리별 계정 카드를 보여준다", async () => {
-    listCategoriesWithAccountsMock.mockResolvedValue([
-      {
-        id: "cat-1",
-        name: "업무",
-        accounts: [
-          {
-            id: "acc-1",
-            name: "사내 관리자",
-            url: "https://admin.example.com",
-            username: "admin",
-            password: "secret1",
-            memo: null,
-          },
-        ],
-      },
-    ]);
+  it("계정 카드를 보여준다", async () => {
+    listAccountsBoardMock.mockResolvedValue({
+      categories: [{ id: "cat-1", name: "업무" }],
+      accounts: [
+        {
+          id: "acc-1",
+          name: "사내 관리자",
+          url: "https://admin.example.com",
+          username: "admin",
+          password: "secret1",
+          memo: null,
+          categoryId: "cat-1",
+          categoryName: "업무",
+        },
+      ],
+    });
 
     await renderAccountsPage();
 
@@ -80,7 +82,7 @@ describe("AccountsPage", () => {
   });
 
   it("조회가 실패하면 안내 문구를 보여준다", async () => {
-    listCategoriesWithAccountsMock.mockRejectedValue(new Error("db down"));
+    listAccountsBoardMock.mockRejectedValue(new Error("db down"));
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     await renderAccountsPage();

@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { HardDrive, KeyRound, LayoutDashboard, LogOut, Mail, NotebookText, Star } from "lucide-react";
+import {
+  CheckSquare,
+  HardDrive,
+  KeyRound,
+  LayoutDashboard,
+  LogOut,
+  Mail,
+  NotebookText,
+  Star,
+} from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
@@ -13,6 +22,7 @@ const NAV_ITEMS = [
   { href: "/notion", label: "Notion", icon: NotebookText },
   { href: "/favorites", label: "즐겨찾기", icon: Star },
   { href: "/accounts", label: "계정관리", icon: KeyRound },
+  { href: "/tasks", label: "업무관리", icon: CheckSquare },
 ];
 
 export function Sidebar() {

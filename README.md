@@ -35,6 +35,8 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
    같은 방식으로 붙여넣고 실행 (즐겨찾기 기능용 테이블)
 7. `supabase/migrations/0003_accounts.sql`도 같은 방식으로 붙여넣고 실행
    (계정관리 기능용 테이블)
+8. `supabase/migrations/0004_tasks.sql`, `0005_tasks_task_date.sql`도 순서대로
+   같은 방식으로 붙여넣고 실행 (업무관리 기능용 테이블)
 
 ## Google 연동 설정 (Gmail/Drive)
 

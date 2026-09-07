@@ -44,7 +44,7 @@ describe("Sidebar", () => {
     expect(screen.getByText("개인 업무 대시보드")).toBeInTheDocument();
   });
 
-  it("7개의 메뉴 링크를 올바른 경로로 보여준다", () => {
+  it("8개의 메뉴 링크를 올바른 경로로 보여준다", () => {
     renderSidebar();
     expect(screen.getByRole("link", { name: "홈" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Gmail" })).toHaveAttribute("href", "/gmail");
@@ -53,6 +53,7 @@ describe("Sidebar", () => {
     expect(screen.getByRole("link", { name: "즐겨찾기" })).toHaveAttribute("href", "/favorites");
     expect(screen.getByRole("link", { name: "계정관리" })).toHaveAttribute("href", "/accounts");
     expect(screen.getByRole("link", { name: "업무관리" })).toHaveAttribute("href", "/tasks");
+    expect(screen.getByRole("link", { name: "제품 정보" })).toHaveAttribute("href", "/products");
   });
 
   it("현재 경로의 메뉴 항목에 aria-current를 표시한다", () => {

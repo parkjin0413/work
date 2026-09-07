@@ -10,6 +10,7 @@ import {
   LogOut,
   Mail,
   NotebookText,
+  Package,
   Star,
 } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { href: "/favorites", label: "즐겨찾기", icon: Star },
   { href: "/accounts", label: "계정관리", icon: KeyRound },
   { href: "/tasks", label: "업무관리", icon: CheckSquare },
+  { href: "/products", label: "제품 정보", icon: Package },
 ];
 
 export function Sidebar() {

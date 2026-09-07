@@ -118,3 +118,14 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
 - [x] 5단계: 홈 화면 통합
 - [x] UI 리디자인: 색상 토큰(다크/라이트), 사이드바 내비게이션, 아이콘, 타이포그래피
 - [x] URL 즐겨찾기: 카테고리별 관리 페이지, 사이드바 연동
+- [x] 계정관리: 카테고리별 카드 그리드, 아이디/비밀번호 암호화 저장·복사
+- [x] 업무관리: 고정 업무(요일별 자동 재생성) + 일반 업무(날짜 지정)
+- [x] 제품 정보: 파일 기반 카탈로그(벽/바닥/천장), 총괄표·데이터시트·복사(텍스트/마크다운/JSON/Claude용)
+
+### 제품 정보 데이터 편집
+
+제품 데이터는 Supabase가 아니라 저장소 파일이다. `content/products/SCHEMA.md`가
+필드 정의의 단일 진실이고, 제품 하나 = `content/products/{wall,floor,ceiling}/{slug}/product.md`
+파일 하나(YAML frontmatter + 본문). 대시보드 `/products`는 열람·복사 전용이며,
+편집은 파일을 고쳐 커밋·재배포한다. Claude에게 "`content/products/SCHEMA.md` 읽고
+그 스키마대로 …"라고 하면 구조 설명 없이 바로 작업할 수 있다.

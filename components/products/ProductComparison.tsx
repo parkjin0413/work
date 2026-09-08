@@ -34,12 +34,12 @@ export function ProductComparison({ items }: { items: ComparisonItem[] }) {
     <div className="overflow-x-auto pb-2">
       <div className="grid gap-x-3" style={{ gridTemplateColumns, minWidth }}>
         {/* ── 열 머리 (제품명·타입·복사·단독 링크) ── */}
-        <div className="sticky top-0 z-10 bg-bg" />
+        <div aria-hidden="true" />
         {items.map(({ product, copy }) => (
           <div
             key={product.slug}
             id={product.slug}
-            className="sticky top-0 z-10 scroll-mt-20 rounded-t-lg border-x border-t border-border bg-surface px-4 pb-3 pt-4"
+            className="scroll-mt-20 rounded-t-lg border-x border-t border-border bg-surface px-4 pb-3 pt-4"
           >
             <p className="text-[11px] font-semibold uppercase tracking-wide text-accent">
               {product.productType}

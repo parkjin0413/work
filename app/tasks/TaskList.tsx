@@ -6,7 +6,7 @@ import type { GeneralTask } from "@/lib/tasks/tasksStore";
 import { formatMonthDayWeekday } from "@/lib/tasks/week";
 import { setTaskCompletionAction, deleteTaskAction, updateTaskAction } from "./actions";
 
-const CARD_GRID_BASE = "grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6";
+const CARD_GRID_BASE = "grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6";
 
 export function TaskList({
   incomplete: initialIncomplete,
@@ -171,13 +171,13 @@ function TaskCard({
           value={editDate}
           onChange={(e) => setEditDate(e.target.value)}
           aria-label="날짜"
-          className="rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground"
+          className="w-full min-w-0 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground"
         />
         <input
           value={editName}
           onChange={(e) => setEditName(e.target.value)}
           aria-label="업무 이름"
-          className="rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground"
+          className="w-full min-w-0 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground"
         />
         <textarea
           value={editMemo}
@@ -185,9 +185,9 @@ function TaskCard({
           placeholder="진행상황 (선택)"
           aria-label="진행상황"
           rows={3}
-          className="rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground"
+          className="w-full min-w-0 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground"
         />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={handleSave}
@@ -263,7 +263,7 @@ function TaskCard({
       </label>
 
       <div
-        className={`min-h-[3rem] rounded-lg bg-bg p-2 text-xs text-muted ${
+        className={`min-h-[3rem] whitespace-pre-wrap break-words rounded-lg bg-bg p-2 text-xs text-muted ${
           task.isCompleted ? "line-through" : ""
         }`}
       >

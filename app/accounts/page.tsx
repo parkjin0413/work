@@ -15,7 +15,7 @@ export default async function AccountsPage() {
     return (
       <div className="flex min-h-screen flex-col bg-bg md:flex-row">
         <Sidebar />
-        <main className="flex-1 p-6">
+        <main className="min-w-0 flex-1 p-6">
           <h1 className="text-lg font-semibold text-foreground">계정관리</h1>
           <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
             <p className="text-sm text-muted">
@@ -31,7 +31,7 @@ export default async function AccountsPage() {
   return (
     <div className="flex min-h-screen flex-col bg-bg md:flex-row">
       <Sidebar />
-      <main className="flex-1 p-6">
+      <main className="min-w-0 flex-1 p-6">
         <h1 className="text-lg font-semibold text-foreground">계정관리</h1>
 
         <CreateCategoryForm />

@@ -58,7 +58,7 @@ export function ProductSearch({ products }: { products: ProductListItem[] }) {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="제품명 · 형태 · 소재 · 인증명 검색"
           aria-label="제품 검색"
-          className="min-w-[220px] flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+          className="w-full min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent sm:w-auto sm:min-w-[200px]"
         />
         <div className="flex flex-wrap gap-1.5">
           {chips.map((c) => (

@@ -47,7 +47,7 @@ export function Sidebar() {
         <span className="text-base font-semibold text-foreground">개인 업무 대시보드</span>
       </div>
 
-      <ul className="flex flex-1 flex-row items-center justify-center gap-1 md:mt-8 md:flex-1 md:flex-col md:items-stretch md:justify-start md:gap-1">
+      <ul className="flex flex-1 flex-row flex-wrap items-center justify-center gap-x-0.5 gap-y-1 md:mt-8 md:flex-1 md:flex-nowrap md:flex-col md:items-stretch md:justify-start md:gap-1">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive = href === "/" ? pathname === "/" : pathname?.startsWith(href);
           return (
@@ -56,7 +56,7 @@ export function Sidebar() {
                 href={href}
                 aria-label={label}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium ${
+                className={`flex items-center justify-center gap-3 rounded-lg px-2 py-2 text-sm font-medium md:justify-start md:px-3 ${
                   isActive
                     ? "bg-accent/10 text-accent"
                     : "text-muted hover:bg-surface-hover hover:text-foreground"

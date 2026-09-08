@@ -19,7 +19,7 @@ export default async function DrivePage({
     return (
       <div className="flex min-h-screen flex-col bg-bg md:flex-row">
         <Sidebar />
-        <main className="flex-1 p-6">
+        <main className="min-w-0 flex-1 p-6">
           <h1 className="text-lg font-semibold text-foreground">Google Drive</h1>
           <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
             <p className="text-sm text-muted">
@@ -46,7 +46,7 @@ export default async function DrivePage({
     return (
       <div className="flex min-h-screen flex-col bg-bg md:flex-row">
         <Sidebar />
-        <main className="flex-1 p-6">
+        <main className="min-w-0 flex-1 p-6">
           <div className="rounded-2xl border border-border bg-surface p-6">
             <p className="text-sm text-muted">
               Google Drive 연결이 만료되었거나 문제가 발생했습니다. 다시 연결해주세요.
@@ -70,7 +70,7 @@ export default async function DrivePage({
   return (
     <div className="flex min-h-screen flex-col bg-bg md:flex-row">
       <Sidebar />
-      <main className="flex-1 p-6">
+      <main className="min-w-0 flex-1 p-6">
         <h1 className="text-lg font-semibold text-foreground">{view.folderName}</h1>
         {view.parentId ? (
           <Link

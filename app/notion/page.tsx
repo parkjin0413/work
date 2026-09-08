@@ -23,7 +23,7 @@ export default async function NotionPage() {
   return (
     <div className="flex min-h-screen flex-col bg-bg md:flex-row">
       <Sidebar />
-      <main className="flex-1 p-6">
+      <main className="min-w-0 flex-1 p-6">
         <h1 className="text-lg font-semibold text-foreground">Notion</h1>
 
         {!configured ? (

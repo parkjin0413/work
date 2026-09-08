@@ -8,7 +8,7 @@ import { WEEKDAY_LABELS } from "@/lib/tasks/week";
 import { createTemplateAction, renameTemplateAction, archiveTemplateAction, setTaskCompletionAction } from "./actions";
 
 const inputClass =
-  "rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent";
+  "w-full min-w-0 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent";
 
 const CARD_GRID_STYLE = { gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" };
 

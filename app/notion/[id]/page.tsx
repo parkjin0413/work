@@ -15,7 +15,7 @@ export default async function NotionDatabasePage({ params }: { params: { id: str
     return (
       <div className="flex min-h-screen flex-col bg-bg md:flex-row">
         <Sidebar />
-        <main className="flex-1 p-6">
+        <main className="min-w-0 flex-1 p-6">
           <Link href="/notion" className="text-sm text-muted hover:text-foreground">
             ← 목록으로
           </Link>
@@ -33,7 +33,7 @@ export default async function NotionDatabasePage({ params }: { params: { id: str
     return (
       <div className="flex min-h-screen flex-col bg-bg md:flex-row">
         <Sidebar />
-        <main className="flex-1 p-6">
+        <main className="min-w-0 flex-1 p-6">
           <Link href="/notion" className="text-sm text-muted hover:text-foreground">
             ← 목록으로
           </Link>
@@ -58,7 +58,7 @@ export default async function NotionDatabasePage({ params }: { params: { id: str
   return (
     <div className="flex min-h-screen flex-col bg-bg md:flex-row">
       <Sidebar />
-      <main className="flex-1 p-6">
+      <main className="min-w-0 flex-1 p-6">
         <Link href="/notion" className="text-sm text-muted hover:text-foreground">
           ← 목록으로
         </Link>

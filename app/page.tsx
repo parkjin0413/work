@@ -16,7 +16,7 @@ export default async function HomePage() {
   return (
     <div className="flex min-h-screen flex-col bg-bg md:flex-row">
       <Sidebar />
-      <main className="flex-1 p-6">
+      <main className="min-w-0 flex-1 p-6">
         <section aria-label="서비스 요약" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <GmailSummaryCard summary={gmailSummary} />
           <DriveSummaryCard summary={driveSummary} />

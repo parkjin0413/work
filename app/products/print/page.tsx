@@ -26,8 +26,8 @@ export default function ProductsPrintPage() {
   const generatedAt = getCatalog().generatedAt.slice(0, 10);
 
   return (
-    <div className="min-h-screen bg-neutral-200 py-6 print:bg-white print:py-0">
-      <div className="mx-auto max-w-[210mm] bg-white p-[14mm] text-black shadow print:max-w-none print:p-0 print:shadow-none">
+    <div className="min-h-screen bg-neutral-200 py-4 sm:py-6 print:bg-white print:py-0">
+      <div className="mx-auto min-w-0 max-w-[210mm] overflow-x-hidden bg-white p-4 text-black shadow sm:p-[14mm] print:max-w-none print:overflow-visible print:p-0 print:shadow-none">
         {/* 화면 전용 툴바 */}
         <div className="mb-6 flex items-center justify-between print:hidden">
           <Link

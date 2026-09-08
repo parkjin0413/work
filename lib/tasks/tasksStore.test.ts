@@ -69,6 +69,28 @@ describe("tasksStore", () => {
       expect(result.completed).toEqual([]);
     });
 
+    it("보관된 템플릿의 잔여 인스턴스는 카드에서 제외한다", async () => {
+      queueResult({
+        data: [{ id: "tpl-1", name: "월요 보고", weekday: 0, sort_order: 0 }],
+        error: null,
+      }); // templates (tpl-2 는 보관돼 목록에 없음)
+      queueResult({ data: [{ template_id: "tpl-1" }], error: null }); // existing check
+      queueResult({
+        data: [
+          { id: "task-1", template_id: "tpl-1", name: "월요 보고", weekday: 0, is_completed: false },
+          { id: "task-2", template_id: "tpl-2", name: "삭제된 업무", weekday: 0, is_completed: false },
+        ],
+        error: null,
+      }); // fixed rows — tpl-2 인스턴스가 남아있음
+      queueResult({ data: [], error: null }); // general rows
+
+      const result = await getBoard();
+
+      expect(result.fixedTasks).toEqual([
+        { taskId: "task-1", templateId: "tpl-1", name: "월요 보고", weekday: 0, isCompleted: false },
+      ]);
+    });
+
     it("이번 주에 없는 고정 업무는 자동으로 생성한다", async () => {
       queueResult({
         data: [{ id: "tpl-1", name: "주간업무일지 제출", weekday: 3, sort_order: 0 }],
@@ -214,7 +236,14 @@ describe("tasksStore", () => {
     });
 
     it("고정 업무 카드는 요일순으로 정렬한다", async () => {
-      queueResult({ data: [], error: null }); // templates
+      queueResult({
+        data: [
+          { id: "tpl-1", name: "월요 보고", weekday: 0, sort_order: 0 },
+          { id: "tpl-2", name: "금요 정산", weekday: 4, sort_order: 0 },
+        ],
+        error: null,
+      }); // templates
+      queueResult({ data: [{ template_id: "tpl-1" }, { template_id: "tpl-2" }], error: null }); // existing check
       queueResult({
         data: [
           { id: "f-fri", template_id: "tpl-2", name: "금요 정산", weekday: 4, is_completed: false },
@@ -261,15 +290,21 @@ describe("tasksStore", () => {
   });
 
   describe("archiveTemplate", () => {
-    it("archived_at을 채워서 보관 처리한다", async () => {
-      const query = makeQuery({ error: null });
-      fromMock.mockImplementationOnce(() => query);
+    it("archived_at을 채우고, 이 템플릿에서 나온 고정 업무 인스턴스를 삭제한다", async () => {
+      const updateQuery = makeQuery({ error: null });
+      const deleteQuery = makeQuery({ error: null });
+      fromMock.mockImplementationOnce(() => updateQuery); // task_templates update
+      fromMock.mockImplementationOnce(() => deleteQuery); // tasks delete
 
       await archiveTemplate("tpl-1");
 
-      expect(query.eq).toHaveBeenCalledWith("id", "tpl-1");
-      const updateCall = (query.update as ReturnType<typeof vi.fn>).mock.calls[0][0];
+      expect(fromMock).toHaveBeenNthCalledWith(1, "task_templates");
+      expect(fromMock).toHaveBeenNthCalledWith(2, "tasks");
+      const updateCall = (updateQuery.update as ReturnType<typeof vi.fn>).mock.calls[0][0];
       expect(updateCall.archived_at).toBeTruthy();
+      expect(updateQuery.eq).toHaveBeenCalledWith("id", "tpl-1");
+      expect(deleteQuery.delete).toHaveBeenCalled();
+      expect(deleteQuery.eq).toHaveBeenCalledWith("template_id", "tpl-1");
     });
   });
 

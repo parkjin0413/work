@@ -86,7 +86,7 @@ describe("FixedTaskBoard", () => {
     archiveTemplateActionMock.mockResolvedValue(undefined);
     render(<FixedTaskBoard tasks={tasks} />);
 
-    fireEvent.click(screen.getByRole("button", { name: "주간업무일지 제출 보관" }));
+    fireEvent.click(screen.getByRole("button", { name: "주간업무일지 제출 삭제" }));
 
     await waitFor(() => expect(archiveTemplateActionMock).toHaveBeenCalledWith("tpl-1"));
   });

@@ -114,7 +114,12 @@ export async function getBoard(): Promise<Board> {
     throw new Error(`고정 업무 조회 실패: ${fixedError.message}`);
   }
 
+  // 살아있는(보관 안 된) 템플릿에서 나온 인스턴스만. 보관된/삭제된 템플릿의
+  // 잔여 인스턴스가 화면에 남지 않도록 방어한다.
+  const liveTemplateIds = new Set(templates.map((template) => template.id));
+
   const fixedTasks: FixedTaskCard[] = (fixedRows ?? [])
+    .filter((row) => row.template_id != null && liveTemplateIds.has(row.template_id))
     .map((row) => ({
       taskId: row.id,
       templateId: row.template_id as string,
@@ -164,6 +169,7 @@ export async function renameTemplate(id: string, name: string, weekday: number):
 
 export async function archiveTemplate(id: string): Promise<void> {
   const supabase = createSupabaseServiceClient();
+
   const { error } = await supabase
     .from("task_templates")
     .update({ archived_at: new Date().toISOString() })
@@ -171,6 +177,15 @@ export async function archiveTemplate(id: string): Promise<void> {
 
   if (error) {
     throw new Error(`고정 업무 보관 실패: ${error.message}`);
+  }
+
+  // 템플릿만 보관하면 이번 주에 이미 생성된 고정 업무 인스턴스(tasks)가 남아
+  // 화면에서 계속 보인다("삭제가 안 됨"). 인스턴스는 매주 자동 재생성되므로
+  // 이 템플릿에서 나온 tasks 를 모두 지운다.
+  const { error: taskError } = await supabase.from("tasks").delete().eq("template_id", id);
+
+  if (taskError) {
+    throw new Error(`고정 업무 인스턴스 삭제 실패: ${taskError.message}`);
   }
 }
 

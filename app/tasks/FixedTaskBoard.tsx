@@ -149,7 +149,7 @@ function FixedTaskItem({ task }: { task: FixedTaskCard }) {
             type="button"
             onClick={handleArchive}
             disabled={isArchiving}
-            aria-label={`${task.name} 보관`}
+            aria-label={`${task.name} 삭제`}
             className="rounded-md p-1.5 text-danger hover:bg-bg disabled:opacity-50"
           >
             <Trash2 size={14} />

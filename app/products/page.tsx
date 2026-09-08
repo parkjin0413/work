@@ -24,9 +24,9 @@ function toListItem(p: Product): ProductListItem {
     productType: p.productType,
     material: p.material,
     summary: p.summary,
-    certLabels: p.certifications.map((c) => c.label),
+    certLabels: p.certifications.map((c) => c.name),
     typeCount: p.types.length,
-    badges: presentBadgeLabels(p.category, p.types).slice(0, 4),
+    badges: presentBadgeLabels(p).slice(0, 4),
     discontinued: p.status === "discontinued",
   };
 }

@@ -74,12 +74,6 @@ colors:
   - Blush
 colors_note: "카탈로그 라미네이트 타일 공통 색상(4.2T/4.5T/5T). 대리석·천연석·콘크리트·우드 패턴 계열"
 
-# attributes 값은 이 문서의 features/certifications 에 실제로 적힌 내용에서만 끌어왔습니다.
-# fire: 원본 "기술" 표의 "화재에 대한 반응 EN13501-1: D-s3,d0/DHG"는 유럽 Euroclass 등급이라
-# 국내 불연/준불연 기준과 다른 체계입니다. 총괄표의 화재 컬럼은 국내 기준 전용이므로
-# 여기서는 null로 두고, 유럽 등급 값 자체는 위 certifications 에서만 노출합니다.
-# voc: 인증표 "VOC 방출 (화학물질, 프랑스 기준) A+" 근거. imp: features "간헐적 뒤틀림에도
-# 금이 가거나 깨지지 않는" + 인증 "충격 저항 EN 13245-1" 근거.
 types:
   - group: null
     type_name: 4.2T
@@ -89,7 +83,6 @@ types:
     composition: Box 10ea / 2.16 ㎡
     surface: HPL
     note: 1Box 10장
-    attributes: { fire: null, eco: null, hyg: null, voc: true, wtp: true, aco: null, imp: true }
   - group: null
     type_name: 4.5T
     thickness: 4.50mm
@@ -98,7 +91,6 @@ types:
     composition: Box 5ea / 0.9 ㎡
     surface: HPL
     note: 1Box 5장
-    attributes: { fire: null, eco: null, hyg: null, voc: true, wtp: true, aco: null, imp: true }
   - group: null
     type_name: 5.0T
     thickness: 5.00mm
@@ -107,41 +99,10 @@ types:
     composition: Box 8ea / 1.95 ㎡
     surface: HPL
     note: 1Box 8장
-    attributes: { fire: null, eco: null, hyg: null, voc: true, wtp: true, aco: null, imp: true }
 
-# 아래 인증 6개는 전부 유럽(EN/프랑스 NF) 기준 시험 결과입니다 — 국내 인증 체계가 아닙니다.
-# 특히 "화재에 대한 반응"은 유럽 Euroclass 분류(EN 13501-1)이며, 국내 불연/준불연 등급과는
-# 별개의 체계라서 types[].attributes.fire 에는 반영하지 않았습니다.
-certifications:
-  - label: 화재에 대한 반응 (유럽 EN 13501-1 Euroclass, 국내 불연/준불연 등급 아님)
-    standard: EN 13501-1
-    value: D-s3, d0 / DHG
-  - label: 충격 저항 (유럽 기준)
-    standard: EN 13245-1
-    value: 에너지 레벨 (23, 35)
-  - label: 세제 저항 (프랑스 기준)
-    standard: NF 54-801
-    value: "4-5"
-  - label: 긁힘 저항 (유럽 기준)
-    standard: EN 14323
-    value: "300"
-  - label: 내수성 인증 (유럽 기준)
-    standard: EN 14527
-    value: 물 침투 없음
-  - label: VOC 방출 (화학물질, 프랑스 기준)
-    standard: 프랑스 VOC 규정
-    value: A+
-certifications_note: >
-  위 인증 6개는 전부 유럽(EN)·프랑스(NF) 기준 시험 결과이며 국내 인증 체계가
-  아닙니다. "화재에 대한 반응"은 유럽 Euroclass 분류(EN13501-1)로 국내 불연/준불연
-  등급과 다른 체계라, 제품 규격 총괄표의 화재 컬럼(국내 기준 전용)에는 반영하지
-  않았습니다.
-
-certification_documents:
-  - 화재 시험 성적서
-  - 성능 인증서
-  - 유해물질 시험 성적서
-  - 유럽 제품 인증서
+# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
+certifications: []
+certifications_note: ""
 
 installation_methods:
   - method_name: 기본 설치

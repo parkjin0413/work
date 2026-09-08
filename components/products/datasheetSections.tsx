@@ -1,6 +1,6 @@
 import type { Product } from "@/lib/products/productsStore";
 import { attrsForCategory } from "@/lib/products/attributeSchema";
-import { aggregateAttributes, isPresent } from "@/lib/products/attributes";
+import { productAttributes, isPresent } from "@/lib/products/attributes";
 
 export const EMPTY = "정보 없음";
 
@@ -44,7 +44,7 @@ function ImgSlot({ text, className = "" }: { text: string; className?: string })
 
 export function PerfCell({ product }: { product: Product }) {
   const defs = attrsForCategory(product.category);
-  const agg = aggregateAttributes(product.category, product.types);
+  const agg = productAttributes(product);
   // 값이 있는 속성만 배지로 (없는 항목은 굳이 표시하지 않음)
   const present = defs.filter((d) => isPresent(agg[d.key]));
   if (present.length === 0) return <EmptyBlock />;
@@ -171,46 +171,51 @@ export function ColorsCell({ product }: { product: Product }) {
   );
 }
 
+/** 인증 1건 — 값이 있는 필드만 label/value 로 나열. */
+function CertRow({ cert }: { cert: Product["certifications"][number] }) {
+  const rows = (
+    [
+      ["시험/발급기관", cert.body],
+      ["시험 규격", cert.standard],
+      ["인증·성적서 번호", cert.number],
+      ["결과 / 등급", cert.result],
+      ["발급일", cert.issued],
+      ["유효기간", cert.expires],
+      ["기준", cert.scope],
+      ["비고", cert.note],
+    ] as [string, string][]
+  ).filter(([, v]) => v);
+
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <p className="text-[13px] font-semibold text-foreground">{cert.name || "(항목명 없음)"}</p>
+      {rows.length ? (
+        <dl className="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
+          {rows.map(([k, v]) => (
+            <div key={k} className="contents">
+              <dt className="text-muted">{k}</dt>
+              <dd className="min-w-0 break-words text-foreground">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+    </div>
+  );
+}
+
 export function CertsCell({ product }: { product: Product }) {
   return (
     <div className="space-y-2">
       {product.certifications.length ? (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="bg-surface-hover/60 text-left uppercase tracking-wide text-muted">
-                <th className="px-2 py-1.5 font-semibold">항목</th>
-                <th className="px-2 py-1.5 font-semibold">규격</th>
-                <th className="px-2 py-1.5 font-semibold">결과</th>
-              </tr>
-            </thead>
-            <tbody>
-              {product.certifications.map((c, i) => (
-                <tr key={i} className="border-t border-border">
-                  <td className="px-2 py-1.5">{c.label}</td>
-                  <td className="px-2 py-1.5 font-mono">{c.standard || "-"}</td>
-                  <td className="px-2 py-1.5 font-mono font-medium text-accent">{c.value}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {product.certifications.map((c, i) => (
+            <CertRow key={i} cert={c} />
+          ))}
         </div>
       ) : (
         <EmptyBlock />
       )}
       {product.certificationsNote ? <NoteBlock prefix="참고" text={product.certificationsNote} /> : null}
-      {product.certificationDocuments.length ? (
-        <div className="flex flex-wrap gap-1.5">
-          {product.certificationDocuments.map((d, i) => (
-            <span
-              key={i}
-              className="rounded border border-dashed border-border bg-surface-hover px-2 py-0.5 text-xs text-muted"
-            >
-              {d}
-            </span>
-          ))}
-        </div>
-      ) : null}
     </div>
   );
 }

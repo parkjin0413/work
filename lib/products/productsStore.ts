@@ -17,6 +17,7 @@ import {
   type CategoryLabel,
   type CategorySlug,
 } from "./categories";
+import { deriveAttributes } from "./attributes";
 
 export type ProductAttributeValue = string | boolean | null;
 
@@ -29,10 +30,20 @@ export type ProductType = {
   composition: string;
   surface: string;
   note: string;
-  attributes: Record<string, ProductAttributeValue>;
 };
 
-export type Certification = { label: string; standard: string; value: string };
+export type Certification = {
+  name: string;
+  body: string;
+  standard: string;
+  number: string;
+  issued: string;
+  expires: string;
+  result: string;
+  scope: string;
+  feeds: string; // 총괄표 성능 컬럼 key (없으면 총괄표 미반영)
+  note: string;
+};
 
 export type InstallationStep = {
   step: number;
@@ -65,7 +76,6 @@ export type Product = {
   types: ProductType[];
   certifications: Certification[];
   certificationsNote: string;
-  certificationDocuments: string[];
   installationMethods: InstallationMethod[];
   installationNote: string;
   finishingOptions: FinishingOption[];
@@ -94,10 +104,6 @@ const arr = <T,>(v: unknown): T[] => (Array.isArray(v) ? (v as T[]) : []);
 
 function normalizeType(raw: unknown): ProductType {
   const t = (raw ?? {}) as Record<string, unknown>;
-  const attributes =
-    t.attributes && typeof t.attributes === "object" && !Array.isArray(t.attributes)
-      ? (t.attributes as Record<string, ProductAttributeValue>)
-      : {};
   return {
     group: typeof t.group === "string" && t.group.length > 0 ? t.group : null,
     typeName: str(t.type_name),
@@ -107,7 +113,6 @@ function normalizeType(raw: unknown): ProductType {
     composition: str(t.composition),
     surface: str(t.surface),
     note: str(t.note),
-    attributes,
   };
 }
 
@@ -152,12 +157,18 @@ function toProduct(
     // 항상 최소 1행 — 렌더러가 빈 types 를 만나지 않게 한다
     types: types.length > 0 ? types : [normalizeType({ type_name: "-" })],
     certifications: arr<Record<string, unknown>>(fm.certifications).map((c) => ({
-      label: str(c.label),
+      name: str(c.name),
+      body: str(c.body),
       standard: str(c.standard),
-      value: str(c.value),
+      number: str(c.number),
+      issued: str(c.issued),
+      expires: str(c.expires),
+      result: str(c.result),
+      scope: str(c.scope),
+      feeds: str(c.feeds),
+      note: str(c.note),
     })),
     certificationsNote: str(fm.certifications_note),
-    certificationDocuments: arr<string>(fm.certification_documents),
     installationMethods: arr<unknown>(fm.installation_methods).map(normalizeMethod),
     installationNote: str(fm.installation_note),
     finishingOptions: arr<Record<string, unknown>>(fm.finishing_options).map((f) => ({
@@ -217,10 +228,11 @@ export function getRawMarkdown(
   return fs.existsSync(file) ? fs.readFileSync(file, "utf-8") : undefined;
 }
 
-/** 총괄표용 flat 행 — 제품 × 타입. */
+/** 총괄표용 flat 행 — 제품 × 타입. 성능값은 제품의 certifications 에서 파생. */
 export function getCatalogRows(rootDir?: string): CatalogRow[] {
-  return getAllProducts(rootDir).flatMap((p) =>
-    p.types.map((t) => ({
+  return getAllProducts(rootDir).flatMap((p) => {
+    const attributes = deriveAttributes(p.category, p.certifications);
+    return p.types.map((t) => ({
       category: p.category,
       productName: p.name,
       slug: p.slug,
@@ -228,9 +240,9 @@ export function getCatalogRows(rootDir?: string): CatalogRow[] {
       typeName: t.typeName,
       group: t.group,
       size: t.sizeWxhxt,
-      attributes: t.attributes,
-    }))
-  );
+      attributes,
+    }));
+  });
 }
 
 /** /products/catalog.json 및 "catalog 복사"용 전체 덤프. */

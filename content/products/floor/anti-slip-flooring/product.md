@@ -40,14 +40,6 @@ installation_summary: 접착식
 colors: []
 colors_note: "미네랄 입자·컬러 칩 디자인 — 홈페이지에 개별 색상명 미표기"
 
-# attributes: 홈페이지(미끄럼 방지 바닥재) 규격·기술·지속가능성 표·시험성적서 목록 근거.
-# eco=true: 시험성적서 "친환경표지 성적서"
-# hyg=true: "ISO 22196 기준 MRSA 24시간 후 99% 억제"
-# voc=true: "28일 후 TVOC < 100μg/m³", "중금속·CMR 물질 무함유"
-# wtp=true: "샤워실·습식 공간·욕실·탈의실 등 물기가 빈번한 공간에 이상적", 엠보싱 미끄럼 방지
-# slip="R11": 기술 표 "젖은 신발 미끄럼 방지 R11"
-# abrasion="< 4.0mm³": 기술 표 "내마모성 < 4.0mm3"
-# fire=null: "화재에 대한 반응 Cfl-s1"은 유럽 등급 → certifications 에만
 types:
   - group: null
     type_name: 2T
@@ -57,43 +49,10 @@ types:
     composition: 1 Roll
     surface: 엠보싱 (요철)
     note: 마모층 1.00mm / 접착식
-    attributes:
-      fire: null
-      eco: true
-      hyg: true
-      voc: true
-      wtp: true
-      slip: "R11"
-      abrasion: "< 4.0mm³"
-      dim_stability: null
 
-certifications:
-  - label: 화재에 대한 반응 (유럽 기준, 국내 불연/준불연 등급 아님)
-    standard: EN 13501-1
-    value: Cfl-s1
-  - label: 젖은 신발 미끄럼 방지
-    standard: ""
-    value: R11
-  - label: 내마모성
-    standard: ""
-    value: < 4.0 mm³
-  - label: 항균 (MRSA 억제)
-    standard: ISO 22196
-    value: 24시간 후 99% 억제
-  - label: TVOC
-    standard: ISO 16000-6
-    value: < 100 µg/m³ (28일)
-  - label: 재활용
-    standard: REACH
-    value: 100% 재활용 가능 (재활용 원료 39%), 중금속·CMR 무함유
-certifications_note: >
-  Cfl-s1 은 유럽 내화 등급(EN 13501-1)으로 총괄표 화재 컬럼에는 넣지 않았습니다.
-  나머지 규격·수치는 홈페이지 규격/기술/지속가능성 표에 근거합니다.
-certification_documents:
-  - 항바이러스 시험 성적서
-  - 오염물질 방출 시험 성적서
-  - 친환경표지 성적서
-  - 미끄럼성(C.S.R) 테스트 인증서
+# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
+certifications: []
+certifications_note: ""
 
 installation_methods: []
 installation_note: "접착식 시공. 홈페이지에 상세 시공 단계 텍스트 없음 — 확인 후 추가 필요"

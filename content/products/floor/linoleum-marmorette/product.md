@@ -39,12 +39,6 @@ installation_summary: 접착식
 colors: []
 colors_note: "밝고 반짝이는 색상·상감 디자인·무광·대리석 등 — 홈페이지에 개별 색상명 미표기"
 
-# attributes: 홈페이지(마모렛 / 리노륨 바닥재) 규격·기술·지속가능성 표·시험성적서 목록 근거.
-# eco=true: 시험성적서 "친환경표지 성적서", REACH 준수
-# hyg=true: "ISO 22196 / JIS Z 2801, 24시간 후 99.99% 억제", "ISO 21702, 5시간 후 98.65% 감소"
-# voc=true: "28일 후 TVOC < 10 µg/m³", "중금속·CMR 물질 무함유"
-# slip="R9": 기술 표 "젖은 신발 미끄럼 방지 R9"
-# fire=null: "화재에 대한 반응 Cfl-s1"은 유럽 등급 → certifications 에만
 types:
   - group: null
     type_name: 2.5T
@@ -54,44 +48,10 @@ types:
     composition: 1 Roll
     surface: Neocare™
     note: 마모층 2.50mm / 접착식
-    attributes:
-      fire: null
-      eco: true
-      hyg: true
-      voc: true
-      wtp: null
-      slip: "R9"
-      abrasion: null
-      dim_stability: null
 
-certifications:
-  - label: 화재에 대한 반응 (유럽 기준, 국내 불연/준불연 등급 아님)
-    standard: EN 13501-1
-    value: Cfl-s1
-  - label: 항균 (박테리아 억제)
-    standard: ISO 22196 / JIS Z 2801
-    value: 24시간 후 99.99% 억제
-  - label: 항바이러스 (휴먼 코로나바이러스)
-    standard: ISO 21702
-    value: 5시간 후 98.65% 감소
-  - label: 젖은 신발 미끄럼 방지
-    standard: ""
-    value: R9
-  - label: TVOC
-    standard: ISO 16000-6
-    value: < 10 µg/m³ (28일)
-  - label: 재활용
-    standard: REACH
-    value: 100% 재활용 가능 (재활용 원료 40%), 중금속·CMR 무함유
-certifications_note: >
-  Cfl-s1 은 유럽 내화 등급(EN 13501-1)으로 총괄표 화재 컬럼에는 넣지 않았습니다.
-  규격은 홈페이지 기준 2.0m × 31m 롤이며(이전 카탈로그의 "2000 × 3100" 시트
-  표기와 다름), 나머지 수치는 홈페이지 규격/기술/지속가능성 표에 근거합니다.
-certification_documents:
-  - 항바이러스 불검출 성적서
-  - 오염물질 방출 시험 성적서
-  - 친환경표지 성적서
-  - 미끄럼성(C.S.R) 테스트 인증서
+# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
+certifications: []
+certifications_note: ""
 
 installation_methods: []
 installation_note: "접착식 시공. 홈페이지에 상세 시공 단계 텍스트 없음 — 확인 후 추가 필요"

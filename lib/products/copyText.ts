@@ -7,7 +7,7 @@
  */
 
 import { attrsForCategory } from "./attributeSchema";
-import { aggregateAttributes, isPresent } from "./attributes";
+import { productAttributes, isPresent } from "./attributes";
 import type { Product } from "./productsStore";
 
 const EMPTY = "정보 없음";
@@ -49,7 +49,7 @@ export function buildPlainText(p: Product): string {
   });
   lines.push("");
 
-  const agg = aggregateAttributes(p.category, p.types);
+  const agg = productAttributes(p);
   const defs = attrsForCategory(p.category);
   lines.push(
     "[성능] " +
@@ -73,15 +73,22 @@ export function buildPlainText(p: Product): string {
 
   lines.push("[인증]");
   if (p.certifications.length) {
-    p.certifications.forEach((c) =>
-      lines.push(`${c.label}${c.standard ? ` (${c.standard})` : ""}: ${c.value}`)
-    );
+    p.certifications.forEach((c) => {
+      const parts = [
+        c.body && `기관 ${c.body}`,
+        c.standard && `규격 ${c.standard}`,
+        c.number && `번호 ${c.number}`,
+        c.result && `결과 ${c.result}`,
+        c.issued && `발급 ${c.issued}`,
+        c.expires && `유효 ~${c.expires}`,
+        c.scope && `기준 ${c.scope}`,
+        c.note && `(${c.note})`,
+      ].filter(Boolean);
+      lines.push(`- ${c.name || "(항목명 없음)"}${parts.length ? ` — ${parts.join(" / ")}` : ""}`);
+    });
   } else {
     lines.push(EMPTY);
   }
-  lines.push(
-    `보유 인증서: ${p.certificationDocuments.length ? p.certificationDocuments.join(", ") : EMPTY}`
-  );
   if (p.certificationsNote) lines.push(`참고: ${p.certificationsNote}`);
   lines.push("");
 

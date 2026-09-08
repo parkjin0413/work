@@ -51,10 +51,6 @@ colors:
   - London
 colors_note: "표면 패턴(TYPE) 별도: ALLOVER / 600×600 / 600×300 / 600×150"
 
-# types 는 항상 이 키들을 갖는 평평한(flat) 배열. group 이 없는 제품은 group: null
-# attributes = 코어(fire/eco/hyg/voc) + 벽재 확장(wtp/aco/imp) 요약 값.
-# 아래 값은 전부 이 문서 상단 features/certifications 에 실제로 적힌 문장·인증명에서만 끌어왔고,
-# 원문에 근거가 없는 항목은 추측하지 않고 null(정보 없음)로 둡니다.
 types:
   - group: null
     type_name: 10.2T
@@ -64,37 +60,10 @@ types:
     composition: Box 2ea / 포장면적 2.98 ㎡
     surface: HPL
     note: "표면 패턴: ALLOVER / 600×600 / 600×300 / 600×150"
-    attributes:
-      fire: null   # "방염 테스트 인증(KFPI-18-03084)"은 있으나 불연/준불연 등급 표기가 자료에 없어 null
-      eco: null    # 환경표지 인증명이 자료에 없어 null
-      hyg: null    # 자료에 항균 관련 언급 없음
-      voc: null    # 카탈로그 "NO본드 / 접착제 미사용" 언급은 있으나 유해물질 방출 등급 표기는 없어 null
-      wtp: true    # "완벽한 방수 기능", 카탈로그 "습기침투 차단력 유럽(ETAG 022) 적합"
-      aco: null    # 자료에 흡음/차음 관련 언급 없음
-      imp: true    # features "충격·마모·파손에 안전"
 
-# SINTEF-2410 / KFPI-18-03084 는 정확한 시험 규격을 교차 확인하지 못해 빈 값.
-# ETA-18/0735 은 최신 카탈로그의 "방수 기능 유럽(ETAG 022) 적합" 문구로 규격을 특정.
-certifications:
-  - label: 제품성능 인증 (SINTEF, 노르웨이)
-    standard: ""
-    value: SINTEF-2410
-  - label: 방염 테스트 인증
-    standard: ""
-    value: KFPI-18-03084
-  - label: 유럽기술 인증 (ETA, EOTA 발급 체계)
-    standard: ETAG 022
-    value: ETA-18/0735
-certifications_note: >
-  ETA-18/0735 의 규격은 최신 카탈로그의 "습기침투 차단력 유럽(ETAG 022) 적합"
-  문구에 근거해 ETAG 022(습식 공간 방수 코팅 키트 가이드라인)로 기재. SINTEF-2410 /
-  KFPI-18-03084 는 대응 시험 규격을 교차 확인하지 못해 비워뒀습니다.
-
-certification_documents:
-  - 노르웨이 벌목 산림인증
-  - 성능 인증서
-  - 노르웨이 건축자재 품질 보증서
-  - 유럽 제품 인증서
+# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
+certifications: []
+certifications_note: ""
 
 installation_methods:
   - method_name: 홈-탭 결합식
@@ -150,8 +119,7 @@ HPL(High Pressure Laminate)을 코팅한 완전 방수 벽 패널입니다. 합�
 사용할 수 있는 방수 성능을 갖췄습니다.
 
 홈-탭 결합식 또는 접착식 두 가지 시공 방식을 지원하며, 일반 타일 시공과 달리
-줄눈 작업이 필요 없어 시공 시간이 짧고 리모델링 현장에 특히 적합합니다. 방수
-성능은 유럽 ETAG 022(습식 공간 방수 코팅 키트) 기준에 적합합니다.
+줄눈 작업이 필요 없어 시공 시간이 짧고 리모델링 현장에 특히 적합합니다.
 
 표면 패턴은 ALLOVER, 600×600, 600×300, 600×150 네 가지로 제공되며, 색상은
 White Marble·Concrete·Royal Oak·Black Slate 등 12종입니다.

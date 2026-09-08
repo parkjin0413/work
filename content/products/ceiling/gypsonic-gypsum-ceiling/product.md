@@ -37,11 +37,6 @@ colors:
   - BLACK
 colors_note: "RANDOM(랜덤) 타공 타입, WHITE / BLACK"
 
-# attributes 는 카탈로그(불연/준불연 천장재 페이지)의 특징 문장에서만 끌어왔습니다.
-# fire="불연": 페이지 제목 "불연/준불연 천장재" + 특징 "천연석고를 사용하여 화재에도 안심"
-# nrc=true: "음향 컨설턴트·건축가에게 평가된 놀라운 흡음 효과" (수치 미표기)
-# sag=true: "압착 유리섬유 보강으로 변형에 강함"
-# humidity=true: "천연석고의 강력한 탈취 효과 및 적절한 습도 조절"
 types:
   - group: null
     type_name: RANDOM
@@ -51,23 +46,10 @@ types:
     composition: 1 BOX (4장) 1.44 ㎡
     surface: 천연석고
     note: WHITE / BLACK
-    attributes:
-      fire: 불연
-      eco: null
-      hyg: null
-      voc: null
-      wtp: null
-      nrc: true
-      sag: true
-      humidity: true
 
-# 카탈로그에 이 제품 전용 시험성적서 표기가 없어 인증 배열은 비워둡니다.
+# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
 certifications: []
-certifications_note: >
-  최신 카탈로그의 "불연/준불연 천장재" 페이지에서 소개되며, "불연"은 페이지
-  분류와 "천연석고를 사용하여 화재에도 안심" 문구에 근거합니다. 개별 시험성적서·
-  규격 번호는 카탈로그에 표기되지 않아 비워뒀습니다.
-certification_documents: []
+certifications_note: ""
 
 # 카탈로그에 T-BAR 시공만 표기되고 상세 시공 단계 텍스트는 없습니다.
 installation_methods: []

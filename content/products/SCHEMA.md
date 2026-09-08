@@ -48,9 +48,8 @@ colors_note: ""                    # 왜 비어있는지 등 메모 (선택)
 
 types: []                          # 아래 참고 — 절대 생략하지 않음, 최소 1행
 
-certifications: []                 # {label, standard, value}
-certifications_note: ""            # 시험규격을 못 채운 이유 등 (선택)
-certification_documents: []        # 보유 인증서 이름 목록
+certifications: []                 # 인증/시험성적서 목록 — 아래 "인증" 참고
+certifications_note: ""            # 이 제품 인증 전반에 대한 메모 (선택)
 
 installation_methods: []           # 순서 있는 시공 단계, 아래 참고
 installation_note: ""
@@ -77,19 +76,35 @@ types:
     composition: Box 2ea / 포장면적 2.88 ㎡
     surface: HPL                  # 없으면 ""
     note: ""
-    attributes:                   # 아래 "성능 속성" — 총괄표에서 이 값을 그대로 씀
-      fire: null
-      eco: null
-      hyg: null
-      voc: null
-      wtp: null
-      # + 분류별 확장 키 (아래)
 ```
 
-## 성능 속성 (`types[].attributes`)
+`types` 에는 더 이상 `attributes`(성능값)를 손으로 넣지 않습니다. 총괄표의 성능
+컬럼은 아래처럼 **`certifications` 에서 파생**됩니다.
 
-나중에 벽·바닥·천장 전 품목을 SKU 단위로 모은 "제품 규격 총괄표"를 뽑을
-계획이라, 그 표에 바로 쓸 수 있게 타입마다 이 값들을 둡니다.
+## 성능 속성 — `certifications` 에서 파생 (총괄표 ↔ 개별 페이지 동기화)
+
+제품 규격 총괄표의 성능 컬럼(화재·환경표지·항균·유해물질·방수방습 + 분류 확장)은
+그 제품의 **`certifications` 목록에서 자동으로 계산**합니다. 별도로 입력하는 값이
+없으므로 개별 제품 페이지의 인증과 총괄표가 항상 일치합니다.
+
+연결 방법: 각 인증 항목에 `feeds` 를 달아 어느 성능 컬럼을 채우는지 지정합니다.
+
+```yaml
+certifications:
+  - name: 준불연 성능 인증
+    body: 한국건설생활환경시험연구원(KCL)
+    standard: KS F ISO 5660-1
+    number: CT16-099977
+    result: 준불연           # text 컬럼이면 이 값이 그대로 총괄표에 들어감
+    scope: 국내              # fire 는 scope 가 "국내" 일 때만 화재 컬럼에 반영
+    feeds: fire              # 이 인증이 채우는 성능 컬럼 key (없으면 총괄표 미반영)
+  - name: 친환경표지 인증
+    number: "..."
+    feeds: eco              # flag 컬럼이면 "인증 있음 = 표시됨"
+```
+
+- `feeds` 없는 인증은 인증 표에만 나오고 총괄표엔 영향 없음.
+- 여러 인증이 같은 `feeds` 를 가리키면: flag 는 하나라도 있으면 표시, text 는 첫 값.
 
 ### 코어 속성 (전 분류 공통 · 총괄표 고정 컬럼)
 
@@ -101,9 +116,8 @@ types:
 | `voc` | 유해물질 | `true` / `null` — VOC/중금속/CMR 등 유해물질 저감 |
 | `wtp` | 방수·방습 | `true` / `null` — 벽·바닥·천장 전반에 공통으로 등장해 코어로 승격 |
 
-확장 속성은 **현재 카탈로그에 실제로 값이 있는 것만** 둡니다. 새 확장 키가
-필요하면(예: 강화마루 내마모 AC등급) 실제 값과 함께 추가합니다. 총괄표는 여기
-정의된 확장 컬럼 중에서도 그 분류에 값이 전무하면 자동으로 숨깁니다.
+확장 속성은 실제로 그 컬럼을 채우는 인증(`feeds`)이 있는 것만 정의합니다. 총괄표는
+여기 정의된 확장 컬럼 중에서도 그 분류에 파생값이 전무하면 자동으로 숨깁니다.
 
 ### 벽재(`wall`) 확장
 
@@ -144,18 +158,37 @@ types:
 3. **`fire` 는 국내 불연/준불연 등급만.** 해외 기준(예: 유럽 Euroclass
    EN13501-1 의 "D-s3,d0")은 여기 넣지 않고 `certifications` 배열에만 원문 그대로
    남깁니다.
-4. 인증번호(SINTEF, KFPI, ETA, CT 코드 등)에 대응하는 정확한 시험 규격을 교차
-   확인 못 하면 `certifications[].standard` 를 빈 문자열로 두고
-   `certifications_note` 에 사유를 남깁니다. 추정해서 넣지 않습니다.
+4. 인증 관련 `attributes` 값(예: `eco`, `voc`)도 실제 확인된 인증/시험성적서에
+   근거가 있을 때만 채웁니다. `scope: 유럽(EU)` 인 화재 항목은 국내 불연/준불연
+   체계와 다르므로 `types[].attributes.fire` 에 넣지 않습니다.
 
-## `certifications` — 항상 3개 키 (항목 / 시험규격 / 결과)
+## `certifications` — 인증 / 시험성적서 (단일 목록)
+
+이전의 `certification_documents`(성적서 이름만 나열)는 폐지하고 `certifications`
+하나로 통합합니다. 인증서 원본 파일(PDF/스캔)은 저장소에서 관리하지 않습니다.
 
 ```yaml
 certifications:
-  - label: 제품성능 인증
-    standard: ""                  # 확인 안 되면 빈 문자열
-    value: SINTEF-2410
+  - name: 준불연 성능 인증          # 필수 — 무엇에 대한 인증/시험인지
+    body: ""                        # 발급/시험 기관 (예: 한국건설생활환경시험연구원(KCL))
+    standard: ""                    # 시험 규격 번호 (예: KS F ISO 5660-1)
+    number: ""                      # 인증/성적서 번호 (예: CT16-099977)
+    issued: ""                      # 발급일 "YYYY-MM-DD" (있으면)
+    expires: ""                     # 유효기간 만료일 (있으면)
+    result: ""                      # 결과 / 등급 (예: 적합, D-s3 d0, A+, R9)
+    scope: 국내                     # 국내 | 유럽(EU) | 기타
+    feeds: ""                       # 총괄표 성능 컬럼 key (fire/eco/hyg/voc/wtp/aco/imp/slip/abrasion/dim_stability/nrc/sag/humidity). 없으면 총괄표 미반영
+    note: ""
+
+certifications_note: ""            # 이 제품 인증 전반에 대한 메모 (선택)
 ```
+
+- `name` 만 필수. 나머지는 **확인된 것만** 채우고 나머지는 빈 문자열로 둡니다
+  (추정 금지).
+- `scope` 로 국내/해외 기준을 구분합니다 — 라벨 문장에 "(유럽 기준, 국내 아님)"
+  같은 설명을 박지 않습니다. `fire` 는 `scope: 국내` 인 인증만 화재 컬럼에 반영.
+- `feeds` 가 총괄표(성능 컬럼)와 개별 페이지 인증을 잇습니다. 위 "성능 속성" 참고.
+- 화면에서는 값이 있는 필드만 표로 보여줍니다.
 
 ## `installation_methods` — 순서가 있는 시공 단계
 
@@ -180,7 +213,7 @@ installation_methods:
 4. 특징 상세 (불릿)
 5. 타입별 규격 표 (그룹 / 타입 / 두께 / 규격 / 중량 / 제품구성 / 표면 / 비고)
 6. 색상 / 디자인 옵션
-7. 인증 표 + 보유 인증서 목록
+7. 인증 표 (인증/시험성적서 — 값 있는 필드만 표시)
 8. 설치 방법
 9. 마감 옵션
 10. 이미지 자료 (파일명 자리표시자)
@@ -190,7 +223,8 @@ installation_methods:
 
 ## 총괄표
 
-`품목` + `규격(W×H×T)` + 코어 4컬럼(화재·환경표지·항균·유해물질) + 그 분류의
-확장 컬럼. 확장 컬럼 세트가 분류마다 다르므로 카테고리 그룹(WALL / FLOOR /
-CEILING)마다 헤더를 다시 그립니다. 모든 값은 각 제품 원문에 명시된 내용만
-반영하며, 미기재 항목은 추정하지 않습니다.
+`품목` + `규격(W×H×T)` + 코어 5컬럼(화재·환경표지·항균·유해물질·방수방습) + 그
+분류의 확장 컬럼. 확장 컬럼 세트가 분류마다 다르므로 카테고리 그룹(WALL / FLOOR
+/ CEILING)마다 헤더를 다시 그립니다. **성능 컬럼 값은 각 제품의 `certifications`
+(`feeds`)에서 파생**되므로 개별 페이지 인증과 항상 동기화됩니다. 파생값이 없는
+확장 컬럼은 자동으로 숨깁니다.

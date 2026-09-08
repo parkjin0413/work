@@ -39,11 +39,6 @@ installation_summary: T-BAR / M-BAR 시공
 colors: []
 colors_note: "카탈로그·홈페이지에 색상 옵션 미표기"
 
-# attributes: 홈페이지(RF타공 천장재) 개요 + 카탈로그 "불연/준불연 천장재" 페이지 근거.
-# fire="준불연": 제품 분류 "준불연 RF 타공 천장재" (카탈로그), 홈페이지 "뛰어난 내화성"
-# nrc=true: 홈페이지 "우수한 흡음성", 타공 흡음재
-# sag=true: 홈페이지 "높은 강도와 내구성으로 장기간 형태의 변형 없이"
-# humidity=true: 홈페이지 "뛰어난 내습성 ... 습기에 강하며"
 types:
   - group: null
     type_name: 9T
@@ -53,24 +48,10 @@ types:
     composition: 1 BOX (8장) 2.83 ㎡
     surface: ""
     note: T-BAR / M-BAR 시공
-    attributes:
-      fire: 준불연
-      eco: null
-      hyg: null
-      voc: null
-      wtp: null
-      nrc: true
-      sag: true
-      humidity: true
 
+# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
 certifications: []
-certifications_note: >
-  홈페이지·카탈로그 모두 제품 개요와 특징만 있고 개별 시험성적서·규격 번호는
-  이미지(SVG)로만 제공되어 텍스트로 확인되지 않아 비워뒀습니다. "준불연"은
-  카탈로그 분류와 홈페이지 "뛰어난 내화성" 문구, "내습성"은 홈페이지 개요에 근거.
-  "석면 없는 친환경 소재"는 개요 문구지만 환경표지 인증 여부는 확인되지 않아
-  eco 는 null 로 뒀습니다.
-certification_documents: []
+certifications_note: ""
 
 installation_methods: []
 installation_note: >

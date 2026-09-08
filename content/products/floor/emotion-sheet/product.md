@@ -39,12 +39,6 @@ installation_summary: 접착식
 colors: []
 colors_note: "다양한 색상·패턴 제공 — 홈페이지·카탈로그에 개별 색상명 미표기"
 
-# attributes: 홈페이지(이모션 시트) 규격·기술 표·시험성적서 목록 근거.
-# eco=true: 시험성적서 "친환경표지 성적서", REACH 100% 부합
-# hyg=true: "고 항균성", "항바이러스(Anti-Covid) 2시간 후 98.2% 사멸"
-# voc=true: "TVOC < 100 µg/m³ (ISO 16000-6, 28일)", "DOP·중금속·벤젠·포름알데히드 미검출"
-# slip="R9": 기술 표 "젖은 신발 미끄럼 방지 R9"
-# fire=null: "화재에 대한 반응 Bfl-s1"은 유럽 등급 → certifications 에만
 types:
   - group: null
     type_name: 2.6T
@@ -54,38 +48,10 @@ types:
     composition: 1 Roll
     surface: Protecsol®
     note: 마모층 0.70mm / 접착식
-    attributes:
-      fire: null
-      eco: true
-      hyg: true
-      voc: true
-      wtp: null
-      slip: "R9"
-      abrasion: null
-      dim_stability: null
 
-certifications:
-  - label: 화재에 대한 반응 (유럽 기준, 국내 불연/준불연 등급 아님)
-    standard: EN 13501-1
-    value: Bfl-s1
-  - label: 젖은 신발 미끄럼 방지
-    standard: ""
-    value: R9
-  - label: TVOC (총 휘발성 유기 화합물)
-    standard: ISO 16000-6
-    value: < 100 µg/m³ (28일)
-  - label: 유해물질 / 재활용
-    standard: REACH
-    value: 100% 부합, 100% 재활용 가능
-certifications_note: >
-  Bfl-s1 은 유럽 내화 등급(EN 13501-1)으로 국내 불연/준불연 체계와 다른 분류라
-  총괄표 화재 컬럼에는 넣지 않았습니다. 나머지 규격·수치는 홈페이지 규격/기술
-  표와 시험성적서 목록에 근거합니다.
-certification_documents:
-  - 항바이러스 시험 성적서
-  - 오염물질 방출 시험 성적서
-  - 친환경표지 성적서
-  - 미끄럼성(C.S.R) 테스트 인증서
+# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
+certifications: []
+certifications_note: ""
 
 installation_methods: []
 installation_note: "접착식 시공. 홈페이지에 상세 시공 단계 텍스트 없음 — 확인 후 추가 필요"

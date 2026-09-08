@@ -34,8 +34,6 @@ describe("ProductComparison", () => {
     ]) {
       expect(screen.getAllByText(label)).toHaveLength(1);
     }
-    // 프라임 타공보드의 준불연 등급이 성능/규격에 노출
-    expect(screen.getAllByText("준불연").length).toBeGreaterThan(0);
     // 라미네이트 타일 색상(디자인) 스와치
     expect(screen.getByText("Calacatta")).toBeInTheDocument();
   });

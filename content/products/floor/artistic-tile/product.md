@@ -55,11 +55,6 @@ colors:
   - TS-5519P
 colors_note: "카탈로그 컬러타입 14종 (홈페이지엔 개별 색상명 미표기)"
 
-# attributes: 홈페이지(아티스틱 타일) 규격·기술 표·Feature·시험성적서 목록 근거.
-# eco=true: "국내 친환경 인증(환경표지 인증)", 시험성적서 "친환경표지 성적서"
-# hyg=true: "박테리아 99.9% 제거 EEPT™ 항균 소재", "미국 EPA 인증" (이전 카탈로그의 FDA → EPA 로 정정)
-# voc=true: "DOP·중금속·벤젠·포름알데히드 미검출"
-# slip="R9": 기술 표 "젖은 신발 미끄럼 방지 R9"
 types:
   - group: 457각
     type_name: 3.2T
@@ -69,7 +64,6 @@ types:
     composition: 16 pcs/Box, 시공면적 3.34 ㎡
     surface: EEPT™ (EPT™ Shield 코팅)
     note: 마모층 0.30mm
-    attributes: { fire: null, eco: true, hyg: true, voc: true, wtp: null, slip: "R9", abrasion: null, dim_stability: null }
   - group: 457각
     type_name: 5.2T
     thickness: 5.20mm
@@ -78,7 +72,6 @@ types:
     composition: 10 pcs/Box, 시공면적 2.09 ㎡
     surface: EEPT™ (EPT™ Shield 코팅)
     note: 마모층 0.70mm
-    attributes: { fire: null, eco: true, hyg: true, voc: true, wtp: null, slip: "R9", abrasion: null, dim_stability: null }
   - group: 600각
     type_name: 3.2T
     thickness: 3.20mm
@@ -87,7 +80,6 @@ types:
     composition: 9 pcs/Box, 시공면적 3.24 ㎡
     surface: EEPT™ (EPT™ Shield 코팅)
     note: 마모층 0.30mm
-    attributes: { fire: null, eco: true, hyg: true, voc: true, wtp: null, slip: "R9", abrasion: null, dim_stability: null }
   - group: 600각
     type_name: 5.2T
     thickness: 5.20mm
@@ -96,33 +88,10 @@ types:
     composition: 6 pcs/Box, 시공면적 2.16 ㎡
     surface: EEPT™ (EPT™ Shield 코팅)
     note: 마모층 0.70mm
-    attributes: { fire: null, eco: true, hyg: true, voc: true, wtp: null, slip: "R9", abrasion: null, dim_stability: null }
 
-certifications:
-  - label: 국내 친환경 인증
-    standard: 환경표지
-    value: 인증
-  - label: 항균 소재 안전성
-    standard: 미국 EPA
-    value: 인증
-  - label: 자외선 변색 방지
-    standard: ISO 105-B02
-    value: 적합
-  - label: 내화학성
-    standard: KS M 3802:2014
-    value: 인증
-  - label: 젖은 신발 미끄럼 방지
-    standard: ""
-    value: R9
-certifications_note: >
-  항균 소재 인증 기관은 이전 카탈로그에 "미국 FDA"로 표기됐으나 최신 홈페이지
-  기준 "미국 EPA"로 정정했습니다. 색상 14종은 카탈로그 컬러타입 목록에서
-  가져왔고 홈페이지에는 개별 색상명이 없습니다.
-certification_documents:
-  - 항바이러스 불검출 성적서
-  - 오염물질 방출 시험 성적서
-  - 친환경표지 성적서
-  - 미끄럼성(C.S.R) 테스트 인증서
+# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
+certifications: []
+certifications_note: ""
 
 installation_methods: []
 installation_note: "홈페이지에 상세 시공 단계 텍스트 없음 — 확인 후 추가 필요"

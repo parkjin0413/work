@@ -16,11 +16,12 @@ describe("buildPlainText", () => {
     expect(text).toContain("[인증]");
   });
 
-  it("성능 줄에 코어+벽재 확장 속성이 들어간다", () => {
+  it("성능 줄은 코어+벽재 확장 컬럼을 나열하되, 인증 정리 전이라 값은 전부 '정보 없음'", () => {
     const text = buildPlainText(board);
-    expect(text).toMatch(/화재:준불연/);
-    expect(text).toMatch(/방수·방습:O/);
-    expect(text).toMatch(/흡음·차음:O/);
+    const perfLine = text.split("\n").find((l) => l.startsWith("[성능]"))!;
+    expect(perfLine).toContain("화재:정보 없음");
+    expect(perfLine).toContain("방수·방습:정보 없음");
+    expect(perfLine).toContain("흡음·차음:정보 없음");
   });
 
   it("빈 필드는 '정보 없음'", () => {

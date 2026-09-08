@@ -7,7 +7,9 @@ import {
   getRawMarkdown,
   getCatalogRows,
   getCatalog,
+  type Product,
 } from "./productsStore";
+import { deriveAttributes } from "./attributes";
 
 const MINIMAL_ROOT = path.join(process.cwd(), "test", "fixtures", "products-minimal");
 
@@ -20,46 +22,33 @@ describe("getAllProducts — 실제 content/products", () => {
     expect(products.filter((p) => p.category === "천장재")).toHaveLength(2);
   });
 
-  it("라미네이트 타일: 타입 3개 · 색상 29종 · 인증 6개", () => {
+  it("라미네이트 타일: 타입 3개 · 색상 29종 · 인증/성능은 재정리 중이라 비어있음", () => {
     const tile = getProductBySlug("wall", "laminate-tile-hpl");
     expect(tile).toBeDefined();
     expect(tile!.types).toHaveLength(3);
     expect(tile!.colors).toHaveLength(29);
-    expect(tile!.certifications).toHaveLength(6);
-    expect(tile!.types[0].attributes.voc).toBe(true);
-    expect(tile!.types[0].attributes.wtp).toBe(true);
-    expect(tile!.types[0].attributes.fire ?? null).toBeNull();
+    expect(tile!.certifications).toEqual([]);
+    expect(tile!.certificationsNote).toBe("");
+    // types 에 attributes 필드가 더 이상 없음
+    expect(tile!.types[0]).not.toHaveProperty("attributes");
   });
 
-  it("프라임 타공보드: 원형 9T + 라인 10T/12T = 3행, 전부 준불연", () => {
+  it("프라임 타공보드: 원형 9T + 라인 10T/12T = 3행", () => {
     const board = getProductBySlug("wall", "prime-perforated-board");
     expect(board!.types).toHaveLength(3);
     expect(board!.types[0].group).toBe("원형타공");
     expect(board!.types[1].group).toBe("라인타공");
     expect(board!.types.map((t) => t.typeName)).toEqual(["9T", "10T", "12T"]);
-    expect(board!.types.every((t) => t.attributes.fire === "준불연")).toBe(true);
   });
 
-  it("천장재: 천연석고는 불연, RF 타공은 준불연·내습성", () => {
+  it("천장재/바닥재 제품명·타입은 유지, 성능값은 인증 정리 전이라 비어있음", () => {
     const gyp = getProductBySlug("ceiling", "gypsonic-gypsum-ceiling")!;
-    const rf = getProductBySlug("ceiling", "rf-perforated-ceiling")!;
     expect(gyp.name).toBe("천연석고 천장재");
-    expect(gyp.types[0].attributes.fire).toBe("불연");
-    expect(gyp.types[0].attributes.nrc).toBe(true);
-    expect(rf.types[0].attributes.fire).toBe("준불연");
-    expect(rf.types[0].attributes.humidity).toBe(true);
-  });
-
-  it("바닥재: 아티스틱 타일 R9, 라미네이트 후로링 AC6 + 유럽 화재등급은 fire 아님", () => {
-    const tile = getProductBySlug("floor", "artistic-tile")!;
-    const lam = getProductBySlug("floor", "laminate-flooring")!;
-    const emotion = getProductBySlug("floor", "emotion-sheet")!;
-    expect(tile.types[0].attributes.slip).toBe("R9");
-    expect(lam.types[0].attributes.abrasion).toBe("AC6");
-    expect(lam.types[0].attributes.slip).toBe("DS");
-    expect(lam.types[0].attributes.fire ?? null).toBeNull(); // Bfl-s1 은 certifications 로
-    expect(emotion.name).toBe("이모션 시트");
-    expect(emotion.types[0].attributes.eco).toBe(true);
+    expect(getProductBySlug("ceiling", "rf-perforated-ceiling")!.name).toBe("RF타공 천장재");
+    expect(getProductBySlug("floor", "emotion-sheet")!.name).toBe("이모션 시트");
+    // 인증이 비어있으므로 파생 성능값도 전부 빈 값
+    const agg = deriveAttributes(gyp.category, gyp.certifications);
+    expect(Object.values(agg).every((v) => v === null || v === false)).toBe(true);
   });
 
   it("본문(body)과 dir 이 채워진다", () => {
@@ -132,7 +121,6 @@ describe("누락 필드 백필 — 최소 frontmatter 픽스처", () => {
     expect(p.highlightFeatures).toEqual([]);
     expect(p.colors).toEqual([]);
     expect(p.certifications).toEqual([]);
-    expect(p.certificationDocuments).toEqual([]);
     expect(p.installationMethods).toEqual([]);
     expect(p.finishingOptions).toEqual([]);
     expect(p.images).toEqual([]);
@@ -144,7 +132,30 @@ describe("누락 필드 백필 — 최소 frontmatter 픽스처", () => {
 
     // types 는 절대 비어있지 않다 — placeholder 1행 보장
     expect(p.types).toHaveLength(1);
-    expect(p.types[0].attributes).toEqual({});
+    expect(p.types[0]).not.toHaveProperty("attributes");
     expect(p.body).toContain("본문만 있는 최소 제품");
+  });
+});
+
+describe("deriveAttributes — certifications 에서 총괄표 성능값 파생", () => {
+  const wall = "벽재" as Product["category"];
+  const base = { body: "", standard: "", number: "", issued: "", expires: "", scope: "", note: "" };
+
+  it("feeds 로 flag/text 컬럼을 채우고, feeds 없으면 무시", () => {
+    const agg = deriveAttributes(wall, [
+      { ...base, name: "친환경표지 인증", result: "인증", feeds: "eco" },
+      { ...base, name: "준불연 성능 인증", result: "준불연", scope: "국내", feeds: "fire" },
+      { ...base, name: "흡음 시험", result: "0.7", feeds: "" }, // feeds 없음 → 무시
+    ]);
+    expect(agg.eco).toBe(true);
+    expect(agg.fire).toBe("준불연");
+    expect(agg.wtp).toBe(false);
+  });
+
+  it("fire 는 scope 가 '국내' 인 인증만 반영", () => {
+    const agg = deriveAttributes(wall, [
+      { ...base, name: "화재에 대한 반응", result: "Bfl-s1", scope: "유럽(EU)", feeds: "fire" },
+    ]);
+    expect(agg.fire ?? null).toBeNull();
   });
 });

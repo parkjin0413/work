@@ -1,6 +1,6 @@
 import type { Product } from "@/lib/products/productsStore";
 import { attrsForCategory } from "@/lib/products/attributeSchema";
-import { aggregateAttributes, isPresent } from "@/lib/products/attributes";
+import { productAttributes, isPresent } from "@/lib/products/attributes";
 
 const EMPTY = "정보 없음";
 
@@ -19,7 +19,7 @@ function Cell({ children }: { children: React.ReactNode }) {
 /** 인쇄용 단일 제품 데이터시트 — 흑백, 얇은 테두리, 압축 여백. */
 export function PrintDatasheet({ product: p }: { product: Product }) {
   const defs = attrsForCategory(p.category);
-  const agg = aggregateAttributes(p.category, p.types);
+  const agg = productAttributes(p);
   const perf = defs
     .filter((d) => isPresent(agg[d.key]))
     .map((d) => (d.format === "text" && typeof agg[d.key] === "string" ? `${d.label} ${agg[d.key]}` : d.label));
@@ -119,16 +119,22 @@ export function PrintDatasheet({ product: p }: { product: Product }) {
           <thead>
             <tr className="bg-neutral-100 text-left">
               <th className="border border-neutral-300 px-1.5 py-1 font-semibold">항목</th>
-              <th className="border border-neutral-300 px-1.5 py-1 font-semibold">시험 규격</th>
-              <th className="border border-neutral-300 px-1.5 py-1 font-semibold">결과</th>
+              <th className="border border-neutral-300 px-1.5 py-1 font-semibold">기관</th>
+              <th className="border border-neutral-300 px-1.5 py-1 font-semibold">규격</th>
+              <th className="border border-neutral-300 px-1.5 py-1 font-semibold">번호</th>
+              <th className="border border-neutral-300 px-1.5 py-1 font-semibold">결과/등급</th>
+              <th className="border border-neutral-300 px-1.5 py-1 font-semibold">기준</th>
             </tr>
           </thead>
           <tbody>
             {p.certifications.map((c, i) => (
               <tr key={i}>
-                <Cell>{c.label}</Cell>
+                <Cell>{c.name || "-"}</Cell>
+                <Cell>{c.body || "-"}</Cell>
                 <Cell>{c.standard || "-"}</Cell>
-                <Cell>{c.value}</Cell>
+                <Cell>{c.number || "-"}</Cell>
+                <Cell>{[c.result, c.issued && `발급 ${c.issued}`, c.expires && `~${c.expires}`].filter(Boolean).join(" / ") || "-"}</Cell>
+                <Cell>{c.scope || "-"}</Cell>
               </tr>
             ))}
           </tbody>
@@ -136,8 +142,12 @@ export function PrintDatasheet({ product: p }: { product: Product }) {
       ) : (
         <p className="mt-1">{EMPTY}</p>
       )}
-      {p.certificationDocuments.length ? (
-        <p className="mt-1 text-[10px] text-neutral-600">보유 인증서: {p.certificationDocuments.join(", ")}</p>
+      {p.certifications.some((c) => c.note) ? (
+        <ul className="mt-1 text-[10px] text-neutral-600">
+          {p.certifications.filter((c) => c.note).map((c, i) => (
+            <li key={i}>· {c.name}: {c.note}</li>
+          ))}
+        </ul>
       ) : null}
       {p.certificationsNote ? (
         <p className="mt-1 text-[10px] text-neutral-600">참고: {p.certificationsNote}</p>

@@ -39,13 +39,6 @@ installation_summary: 접착식
 colors: []
 colors_note: "다양한 색상·패턴 제공 — 홈페이지에 개별 색상명 미표기"
 
-# attributes: 홈페이지(아티스틱 시트) 규격·기술 표·시험성적서 목록 근거.
-# eco=true: 시험성적서 "친환경표지 성적서"
-# hyg=true: 시험성적서 "항바이러스 불검출 성적서"
-# voc=true: "DOP·중금속·벤젠·포름알데히드 미검출"
-# slip="R9": 기술 표 "젖은 신발 미끄럼 방지 R9" (이전 카탈로그의 R10 → 홈페이지 R9 로 정정)
-# dim_stability=true: "특수 섬유층 적층으로 온·습도 변화에 강하며 시공 후 안착성 우수"
-# fire=null: "화재에 대한 반응 Bfl-s1"은 유럽 등급 → certifications 에만
 types:
   - group: null
     type_name: 2.6T
@@ -55,7 +48,6 @@ types:
     composition: 1 Roll
     surface: Protecsol®
     note: 마모층 0.70mm / 접착식
-    attributes: { fire: null, eco: true, hyg: true, voc: true, wtp: null, slip: "R9", abrasion: null, dim_stability: true }
   - group: null
     type_name: 3.8T
     thickness: 3.80mm
@@ -64,7 +56,6 @@ types:
     composition: 1 Roll
     surface: Protecsol®
     note: 마모층 0.70mm / 접착식
-    attributes: { fire: null, eco: true, hyg: true, voc: true, wtp: null, slip: "R9", abrasion: null, dim_stability: true }
   - group: null
     type_name: 6.3T
     thickness: 6.30mm
@@ -73,28 +64,10 @@ types:
     composition: 1 Roll
     surface: Protecsol®
     note: 마모층 0.70mm / 접착식
-    attributes: { fire: null, eco: true, hyg: true, voc: true, wtp: null, slip: "R9", abrasion: null, dim_stability: true }
 
-certifications:
-  - label: 화재에 대한 반응 (유럽 기준, 국내 불연/준불연 등급 아님)
-    standard: EN 13501-1
-    value: Bfl-s1
-  - label: 젖은 신발 미끄럼 방지
-    standard: ""
-    value: R9
-  - label: 유해물질
-    standard: ""
-    value: DOP·중금속·벤젠·포름알데히드 미검출
-certifications_note: >
-  Bfl-s1 은 유럽 내화 등급(EN 13501-1)으로 총괄표 화재 컬럼에는 넣지 않았습니다.
-  미끄럼 등급은 이전 카탈로그에 R10 으로 표기됐으나 최신 홈페이지 기술 표 기준
-  R9 로 정정했습니다. 2.6T 규격(1.83m x 18m)은 홈페이지 규격 표에서 생략되어
-  카탈로그 값을 사용했습니다.
-certification_documents:
-  - 항바이러스 불검출 성적서
-  - 오염물질 방출 시험 성적서
-  - 친환경표지 성적서
-  - 미끄럼성(C.S.R) 테스트 인증서
+# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
+certifications: []
+certifications_note: ""
 
 installation_methods: []
 installation_note: "접착식 시공. 홈페이지에 상세 시공 단계 텍스트 없음 — 확인 후 추가 필요"

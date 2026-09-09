@@ -1,7 +1,7 @@
 ---
 category: 벽재
 slug: laminate-panel-10-2t
-name: 라미네이트 판넬 10.2T
+name: 라미네이트 판넬
 product_type: HPL 방수 벽 패널 (자작나무 합판 코어)
 status: active
 
@@ -61,9 +61,26 @@ types:
     surface: HPL
     note: "표면 패턴: ALLOVER / 600×600 / 600×300 / 600×150"
 
-# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
-certifications: []
-certifications_note: ""
+# 인증 — 실제 시험성적서 기준. 두께·패턴별로 다르면 applies_to 로 지정 (SCHEMA.md 참고).
+certifications:
+  - name: 방염성능 시험 (45도 연소시험)
+    body: 한국소방산업기술원(KFI)
+    number: 제2305391호
+    issued: "2023-11-21"
+    expires: 발급일로부터 1년
+    result: 방염
+    scope: 국내
+    feeds: fire
+    note: 전 항목 기준 이내 PASS
+  - name: 방염성능 시험 (연기밀도)
+    body: 한국소방산업기술원(KFI)
+    number: 제2305387호
+    issued: "2023-12-19"
+    expires: 발급일로부터 1년
+    result: "Dm 188.0 / 209.4 / 218.2 (기준 400 이하)"
+    scope: 국내
+    note: 성적서 시료명이 "라미네이트 판넬"로만 기재 — 함께 발급된 45도 연소시험(제2305391호) 근거로 10.2T 로 판단
+certifications_note: 방염 인증은 45도 연소·연기밀도 두 시험을 모두 충족해야 유효하며 정기적으로 재시험(갱신) 중. 위 성적서는 현재 보존 중인 참고 자료(과거 발급분 포함).
 
 installation_methods:
   - method_name: 홈-탭 결합식

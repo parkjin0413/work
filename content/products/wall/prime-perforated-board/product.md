@@ -74,9 +74,59 @@ types:
     surface: HPM
     note: 테논 조인 방식
 
-# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
-certifications: []
-certifications_note: ""
+# 인증 — 실제 시험성적서 기준. 두께·패턴별로 성적서가 달라 applies_to 로 지정 (SCHEMA.md 참고).
+certifications:
+  - name: 환경표지 인증 (EL248)
+    body: 한국환경산업기술원
+    number: 제29401호
+    issued: "2023-11-07"
+    expires: "2026-11-06"
+    feeds: eco
+    applies_to: 10T, 12T
+    note: 인증서류상 브랜드명 "프라임 라인타공보드"(동일 제품, 산화마그네슘 보드). 비주력 항목으로 갱신 계획 없음.
+  - name: 준불연 성능 시험 (열방출·가스유해성)
+    body: 한국건설생활환경시험연구원(KCL)
+    number: CT22-058862K
+    issued: "2022-07-21"
+    expires: 발급일로부터 3년
+    result: 준불연
+    scope: 국내
+    feeds: fire
+    applies_to: 12T
+  - name: 준불연 성능 시험 (열방출·가스유해성)
+    body: 한국건설생활환경시험연구원(KCL)
+    number: CT25-111264K
+    issued: "2026-01-16"
+    expires: 발급일로부터 3년
+    result: 준불연
+    scope: 국내
+    feeds: fire
+    applies_to: 10T
+  - name: 준불연 성능 시험 (열방출·가스유해성)
+    body: 한국건설생활환경시험연구원(KCL)
+    number: CT25-093057K
+    issued: "2025-11-25"
+    expires: 발급일로부터 3년
+    result: 준불연
+    scope: 국내
+    feeds: fire
+    applies_to: 9T
+    note: 원형타공 9T(규산칼슘) 기준 시험. RF타공 천장재 9T 와 소재가 같아 이 성적서를 공유.
+  - name: 흡음 시험 (잔향실법)
+    body: 한국건설생활환경시험연구원(KCL)
+    number: CT23-077831K
+    issued: "2023-10-05"
+    result: 흡음계수 0.35
+    feeds: aco
+    applies_to: 12T
+  - name: 흡음 시험 (잔향실법)
+    body: 한국건설생활환경시험연구원(KCL)
+    number: CT26-014717K
+    issued: "2026-03-24"
+    result: 흡음계수 0.40
+    feeds: aco
+    applies_to: 10T
+certifications_note: 원본 관리자료상 명칭 "마그네슘 라인타공". 원형타공 9T 준불연은 RF타공 천장재 9T 와 성적서 공유(동일 규산칼슘 소재, 원형타공 9T 기준 시험). 10T 는 2026년 준불연·흡음 재시험.
 
 # 원본 자료에 시공방법 상세 없음 — 빈 배열, 표시 시 "정보 없음"
 installation_methods: []

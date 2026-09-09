@@ -100,9 +100,43 @@ types:
     surface: HPL
     note: 1Box 8장
 
-# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
-certifications: []
-certifications_note: ""
+# 인증 — 실제 시험성적서 기준. 두께별로 성적서가 달라 applies_to 로 지정 (SCHEMA.md 참고).
+certifications:
+  - name: 방염성능 시험 (45도 연소시험)
+    body: 한국소방산업기술원(KFI)
+    number: 제2305388호
+    issued: "2023-11-21"
+    expires: 발급일로부터 1년
+    result: 방염
+    scope: 국내
+    feeds: fire
+    applies_to: 5.0T
+    note: 성적서 시료명 "5T PVC 판넬"(재질 PVC + 라미네이트 마감) — 동일 제품
+  - name: 방염성능 시험 (45도 연소시험)
+    body: 한국소방산업기술원(KFI)
+    number: 제2401487호
+    issued: "2024-04-15"
+    expires: 발급일로부터 1년
+    result: 방염
+    scope: 국내
+    feeds: fire
+    applies_to: 4.5T
+  - name: 방염성능 시험 (연기밀도)
+    body: 한국소방산업기술원(KFI)
+    number: 제2401465호
+    issued: "2024-04-18"
+    expires: 발급일로부터 1년
+    result: "Dm 357.9 / 366.2 / 370.2 (기준 400 이하)"
+    scope: 국내
+    applies_to: 4.5T
+  - name: 유해물질 시험 (3종)
+    body: 한국산업기술시험원(KTL)
+    number: "24-015639-01-1"
+    issued: "2024-04-16"
+    result: "폼알데하이드 0.003 · TVOC 0.054 · 톨루엔 0.003 mg/㎡·h"
+    feeds: voc
+    applies_to: 4.5T
+certifications_note: 방염(45도 연소·연기밀도)은 정기적으로 재시험(갱신) 중. 4.2T 는 현재 보존 성적서 없음.
 
 installation_methods:
   - method_name: 기본 설치

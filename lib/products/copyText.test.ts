@@ -16,12 +16,13 @@ describe("buildPlainText", () => {
     expect(text).toContain("[인증]");
   });
 
-  it("성능 줄은 코어+벽재 확장 컬럼을 나열하되, 인증 정리 전이라 값은 전부 '정보 없음'", () => {
+  it("성능 줄은 코어+벽재 확장 컬럼을 나열하고, 값은 인증에서 파생(전 타입 합집합)", () => {
     const text = buildPlainText(board);
     const perfLine = text.split("\n").find((l) => l.startsWith("[성능]"))!;
-    expect(perfLine).toContain("화재:정보 없음");
-    expect(perfLine).toContain("방수·방습:정보 없음");
-    expect(perfLine).toContain("흡음·차음:정보 없음");
+    expect(perfLine).toContain("화재:준불연"); // 라인타공 준불연 성적서
+    expect(perfLine).toContain("환경표지:O"); // EL248
+    expect(perfLine).toContain("흡음·차음:흡음계수"); // 잔향실법 흡음계수
+    expect(perfLine).toContain("항균:정보 없음"); // 성적서 없음
   });
 
   it("빈 필드는 '정보 없음'", () => {

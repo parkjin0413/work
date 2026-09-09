@@ -50,9 +50,15 @@ types:
     surface: 엠보싱 (요철)
     note: 마모층 1.00mm / 접착식
 
-# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
-certifications: []
-certifications_note: ""
+# 인증 — 실제 시험성적서 기준 (SCHEMA.md 참고).
+certifications:
+  - name: 미끄럼저항 시험 (C.S.R)
+    body: 한국건설생활환경시험연구원(KCL)
+    number: CT17-138705
+    issued: "2017-12-18"
+    result: C.S.R 0.46
+    feeds: slip
+certifications_note: Tarasafe Ultra H2O 기준.
 
 installation_methods: []
 installation_note: "접착식 시공. 홈페이지에 상세 시공 단계 텍스트 없음 — 확인 후 추가 필요"

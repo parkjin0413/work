@@ -1,6 +1,7 @@
 import type { Product } from "@/lib/products/productsStore";
 import { attrsForCategory } from "@/lib/products/attributeSchema";
 import { productAttributes, isPresent } from "@/lib/products/attributes";
+import { certKeyLabel } from "@/lib/products/certLabels";
 
 const EMPTY = "정보 없음";
 
@@ -115,40 +116,26 @@ export function PrintDatasheet({ product: p }: { product: Product }) {
 
       <H>인증</H>
       {p.certifications.length ? (
-        <table className="mt-1 w-full border-collapse break-inside-avoid">
-          <thead>
-            <tr className="bg-neutral-100 text-left">
-              <th className="border border-neutral-300 px-1.5 py-1 font-semibold">항목</th>
-              <th className="border border-neutral-300 px-1.5 py-1 font-semibold">기관</th>
-              <th className="border border-neutral-300 px-1.5 py-1 font-semibold">규격</th>
-              <th className="border border-neutral-300 px-1.5 py-1 font-semibold">번호</th>
-              <th className="border border-neutral-300 px-1.5 py-1 font-semibold">결과/등급</th>
-              <th className="border border-neutral-300 px-1.5 py-1 font-semibold">기준</th>
-            </tr>
-          </thead>
-          <tbody>
-            {p.certifications.map((c, i) => (
-              <tr key={i}>
-                <Cell>{c.name || "-"}</Cell>
-                <Cell>{c.body || "-"}</Cell>
-                <Cell>{c.standard || "-"}</Cell>
-                <Cell>{c.number || "-"}</Cell>
-                <Cell>{[c.result, c.issued && `발급 ${c.issued}`, c.expires && `~${c.expires}`].filter(Boolean).join(" / ") || "-"}</Cell>
-                <Cell>{c.scope || "-"}</Cell>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ul className="mt-1 space-y-1 break-inside-avoid">
+          {p.certifications.map((c, i) => {
+            const entries = Object.entries(c).filter(([, v]) => v);
+            return (
+              <li key={i} className="border border-neutral-300 p-1.5">
+                {c.name ? <span className="font-semibold">{c.name}</span> : null}
+                {entries
+                  .filter(([k]) => k !== "name")
+                  .map(([k, v]) => (
+                    <span key={k} className="ml-2 text-neutral-600">
+                      {certKeyLabel(k)}: {v}
+                    </span>
+                  ))}
+              </li>
+            );
+          })}
+        </ul>
       ) : (
         <p className="mt-1">{EMPTY}</p>
       )}
-      {p.certifications.some((c) => c.note) ? (
-        <ul className="mt-1 text-[10px] text-neutral-600">
-          {p.certifications.filter((c) => c.note).map((c, i) => (
-            <li key={i}>· {c.name}: {c.note}</li>
-          ))}
-        </ul>
-      ) : null}
       {p.certificationsNote ? (
         <p className="mt-1 text-[10px] text-neutral-600">참고: {p.certificationsNote}</p>
       ) : null}

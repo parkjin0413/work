@@ -1,6 +1,7 @@
 import type { Product } from "@/lib/products/productsStore";
 import { attrsForCategory } from "@/lib/products/attributeSchema";
 import { productAttributes, isPresent } from "@/lib/products/attributes";
+import { certKeyLabel } from "@/lib/products/certLabels";
 
 export const EMPTY = "정보 없음";
 
@@ -171,29 +172,20 @@ export function ColorsCell({ product }: { product: Product }) {
   );
 }
 
-/** 인증 1건 — 값이 있는 필드만 label/value 로 나열. */
+/** 인증 1건 — 있는 key 를 전부 나열 (라벨은 certKeyLabel, 없으면 원문 key). */
 function CertRow({ cert }: { cert: Product["certifications"][number] }) {
-  const rows = (
-    [
-      ["시험/발급기관", cert.body],
-      ["시험 규격", cert.standard],
-      ["인증·성적서 번호", cert.number],
-      ["결과 / 등급", cert.result],
-      ["발급일", cert.issued],
-      ["유효기간", cert.expires],
-      ["기준", cert.scope],
-      ["비고", cert.note],
-    ] as [string, string][]
-  ).filter(([, v]) => v);
+  const entries = Object.entries(cert).filter(([, v]) => v);
+  const name = cert.name;
+  const rest = entries.filter(([k]) => k !== "name");
 
   return (
     <div className="rounded-lg border border-border p-3">
-      <p className="text-[13px] font-semibold text-foreground">{cert.name || "(항목명 없음)"}</p>
-      {rows.length ? (
+      {name ? <p className="text-[13px] font-semibold text-foreground">{name}</p> : null}
+      {rest.length ? (
         <dl className="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
-          {rows.map(([k, v]) => (
+          {rest.map(([k, v]) => (
             <div key={k} className="contents">
-              <dt className="text-muted">{k}</dt>
+              <dt className="text-muted">{certKeyLabel(k)}</dt>
               <dd className="min-w-0 break-words text-foreground">{v}</dd>
             </div>
           ))}

@@ -8,6 +8,7 @@
 
 import { attrsForCategory } from "./attributeSchema";
 import { productAttributes, isPresent } from "./attributes";
+import { certKeyLabel } from "./certLabels";
 import type { Product } from "./productsStore";
 
 const EMPTY = "정보 없음";
@@ -74,17 +75,11 @@ export function buildPlainText(p: Product): string {
   lines.push("[인증]");
   if (p.certifications.length) {
     p.certifications.forEach((c) => {
-      const parts = [
-        c.body && `기관 ${c.body}`,
-        c.standard && `규격 ${c.standard}`,
-        c.number && `번호 ${c.number}`,
-        c.result && `결과 ${c.result}`,
-        c.issued && `발급 ${c.issued}`,
-        c.expires && `유효 ~${c.expires}`,
-        c.scope && `기준 ${c.scope}`,
-        c.note && `(${c.note})`,
-      ].filter(Boolean);
-      lines.push(`- ${c.name || "(항목명 없음)"}${parts.length ? ` — ${parts.join(" / ")}` : ""}`);
+      const name = c.name ?? "(항목명 없음)";
+      const parts = Object.entries(c)
+        .filter(([k, v]) => k !== "name" && v)
+        .map(([k, v]) => `${certKeyLabel(k)} ${v}`);
+      lines.push(`- ${name}${parts.length ? ` — ${parts.join(" / ")}` : ""}`);
     });
   } else {
     lines.push(EMPTY);

@@ -20,7 +20,6 @@ export const CORE_ATTRS: readonly AttrDef[] = [
   { key: "eco", label: "환경표지", format: "flag" },
   { key: "hyg", label: "항균", format: "flag" },
   { key: "voc", label: "유해물질", format: "flag" },
-  { key: "wtp", label: "방수·방습", format: "flag" },
 ];
 
 // 확장 속성은 "현재 카탈로그에 실제로 값이 있는 것"만 둡니다. 값이 하나도 없는
@@ -28,7 +27,7 @@ export const CORE_ATTRS: readonly AttrDef[] = [
 // 컬럼 중에서도 그 분류에 값이 전무하면 자동으로 숨깁니다(usedAttrsForCategory).
 export const CATEGORY_ATTRS: Record<CategoryLabel, readonly AttrDef[]> = {
   벽재: [
-    { key: "aco", label: "흡음·차음", format: "flag" },
+    { key: "aco", label: "흡음·차음", format: "text" },
     { key: "imp", label: "내충격", format: "flag" },
   ],
   바닥재: [

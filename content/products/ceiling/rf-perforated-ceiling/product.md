@@ -32,7 +32,7 @@ highlight_features:
   - title: T-BAR / M-BAR 겸용
     description: 두 가지 천장 시스템에 모두 시공 가능
 
-material: 석고계 무기질 보드 (석면 미함유)
+material: 규산칼슘(Calcium Silicate) 보드 (석면 미함유)
 structure: ""
 installation_summary: T-BAR / M-BAR 시공
 
@@ -49,9 +49,18 @@ types:
     surface: ""
     note: T-BAR / M-BAR 시공
 
-# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
-certifications: []
-certifications_note: ""
+# 인증 — 실제 시험성적서 기준 (SCHEMA.md 참고).
+certifications:
+  - name: 준불연 성능 시험 (열방출·가스유해성)
+    body: 한국건설생활환경시험연구원(KCL)
+    number: CT25-093057K
+    issued: "2025-11-25"
+    expires: 발급일로부터 3년
+    result: 준불연
+    scope: 국내
+    feeds: fire
+    note: 프라임 타공보드 원형타공 9T 기준 시험. 소재(규산칼슘)가 같아 이 성적서를 공유.
+certifications_note: 준불연 성적서는 프라임 타공보드 원형타공 9T 와 공유. 성적서 시료명 "RF 타공보드 9mm(규산칼슘)".
 
 installation_methods: []
 installation_note: >

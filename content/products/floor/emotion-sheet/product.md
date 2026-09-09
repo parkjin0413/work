@@ -49,9 +49,29 @@ types:
     surface: Protecsol®
     note: 마모층 0.70mm / 접착식
 
-# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
-certifications: []
-certifications_note: ""
+# 인증 — 실제 시험성적서 기준 (SCHEMA.md 참고).
+certifications:
+  - name: 환경표지 인증 (EL246)
+    body: 한국환경산업기술원
+    number: 제28042호
+    issued: "2025-11-22"
+    expires: "2028-11-21"
+    feeds: eco
+    note: Emotion / Mipolam / Atlas 공통 인증서. 최초 교부 2022-11-22.
+  - name: 미끄럼저항 시험 (C.S.R, 습식)
+    body: 한국건설생활환경시험연구원(KCL)
+    number: CT22-115235K
+    issued: "2022-12-12"
+    result: C.S.R 0.37 (습식)
+    feeds: slip
+  - name: 항바이러스 시험 (Human Coronavirus 229E)
+    body: 한국표준시험연구원(KSTR)
+    standard: ISO 21702
+    number: KS230103090052
+    issued: "2023-02-03"
+    result: 바이러스 감소율 98.2% (감소값 1.8 log) · 2시간 / 25℃ / MRC-5 Cell
+    feeds: hyg
+certifications_note: Gerflor Emotion 기준.
 
 installation_methods: []
 installation_note: "접착식 시공. 홈페이지에 상세 시공 단계 텍스트 없음 — 확인 후 추가 필요"

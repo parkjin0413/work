@@ -13,7 +13,7 @@ const items: ProductListItem[] = [
     summary: "다양한 패턴의 방수 벽 타일",
     certLabels: ["VOC 방출"],
     typeCount: 3,
-    badges: ["유해물질", "방수·방습"],
+    badges: ["유해물질", "흡음·차음"],
     discontinued: false,
   },
   {

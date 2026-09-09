@@ -7,20 +7,20 @@ import {
 } from "./attributeSchema";
 
 describe("CORE_ATTRS", () => {
-  it("전 분류 공통 코어 5개 (fire, eco, hyg, voc, wtp)", () => {
-    expect(CORE_ATTRS.map((a) => a.key)).toEqual(["fire", "eco", "hyg", "voc", "wtp"]);
+  it("전 분류 공통 코어 4개 (fire, eco, hyg, voc) — 방수·방습은 제거", () => {
+    expect(CORE_ATTRS.map((a) => a.key)).toEqual(["fire", "eco", "hyg", "voc"]);
   });
 
   it("fire 는 text, 나머지 코어는 flag", () => {
     expect(CORE_ATTRS.find((a) => a.key === "fire")?.format).toBe("text");
-    for (const key of ["eco", "hyg", "voc", "wtp"]) {
+    for (const key of ["eco", "hyg", "voc"]) {
       expect(CORE_ATTRS.find((a) => a.key === key)?.format).toBe("flag");
     }
   });
 });
 
 describe("CATEGORY_ATTRS", () => {
-  it("벽재 확장은 aco, imp (wtp 는 코어로 승격)", () => {
+  it("벽재 확장은 aco, imp", () => {
     expect(CATEGORY_ATTRS["벽재"].map((a) => a.key)).toEqual(["aco", "imp"]);
   });
 
@@ -43,26 +43,24 @@ describe("CATEGORY_ATTRS", () => {
 });
 
 describe("attrsForCategory", () => {
-  it("코어 5개 + 그 분류 확장을 순서대로 이어붙인다", () => {
+  it("코어 4개 + 그 분류 확장을 순서대로 이어붙인다", () => {
     expect(attrsForCategory("벽재").map((a) => a.key)).toEqual([
-      "fire", "eco", "hyg", "voc", "wtp", "aco", "imp",
+      "fire", "eco", "hyg", "voc", "aco", "imp",
     ]);
-    expect(attrsForCategory("바닥재")).toHaveLength(5 + 3);
-    expect(attrsForCategory("천장재")).toHaveLength(5 + 3);
+    expect(attrsForCategory("바닥재")).toHaveLength(4 + 3);
+    expect(attrsForCategory("천장재")).toHaveLength(4 + 3);
   });
 });
 
 describe("usedAttrsForCategory", () => {
   it("코어는 항상, 확장은 hasValue 가 true 인 것만", () => {
     const used = usedAttrsForCategory("바닥재", (key) => key === "slip");
-    expect(used.map((a) => a.key)).toEqual([
-      "fire", "eco", "hyg", "voc", "wtp", "slip",
-    ]);
+    expect(used.map((a) => a.key)).toEqual(["fire", "eco", "hyg", "voc", "slip"]);
   });
 
-  it("확장에 값이 하나도 없으면 코어 5개만", () => {
+  it("확장에 값이 하나도 없으면 코어 4개만", () => {
     expect(usedAttrsForCategory("천장재", () => false).map((a) => a.key)).toEqual([
-      "fire", "eco", "hyg", "voc", "wtp",
+      "fire", "eco", "hyg", "voc",
     ]);
   });
 });

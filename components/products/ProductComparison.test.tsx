@@ -13,7 +13,7 @@ function items(): ComparisonItem[] {
 describe("ProductComparison", () => {
   it("3제품 열 머리(이름)를 나란히 보여준다", () => {
     render(<ProductComparison items={items()} />);
-    expect(screen.getByRole("heading", { name: "라미네이트 판넬 10.2T", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "라미네이트 판넬", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "라미네이트 타일", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "프라임 타공보드", level: 3 })).toBeInTheDocument();
   });

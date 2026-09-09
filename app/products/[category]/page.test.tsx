@@ -41,7 +41,7 @@ describe("CategoryPage", () => {
     expect(screen.getByText("항목별 비교")).toBeInTheDocument();
 
     // 3종이 모두 열 머리로
-    expect(screen.getByRole("heading", { name: "라미네이트 판넬 10.2T", level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "라미네이트 판넬", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "라미네이트 타일", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "프라임 타공보드", level: 3 })).toBeInTheDocument();
   });

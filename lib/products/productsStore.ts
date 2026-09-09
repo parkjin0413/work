@@ -17,7 +17,7 @@ import {
   type CategoryLabel,
   type CategorySlug,
 } from "./categories";
-import { deriveAttributes } from "./attributes";
+import { deriveAttributesForType } from "./attributes";
 
 export type ProductAttributeValue = string | boolean | null;
 
@@ -32,18 +32,12 @@ export type ProductType = {
   note: string;
 };
 
-export type Certification = {
-  name: string;
-  body: string;
-  standard: string;
-  number: string;
-  issued: string;
-  expires: string;
-  result: string;
-  scope: string;
-  feeds: string; // 총괄표 성능 컬럼 key (없으면 총괄표 미반영)
-  note: string;
-};
+/**
+ * 인증 항목. 필드 구조는 **미확정** — 실제 시험성적서를 보고 정한다.
+ * 지금은 어떤 key 든 받는 열린 형태. 총괄표 성능 컬럼과 잇는 데 쓰는 key 만
+ * 관례로 둔다: `feeds`(컬럼 key), `result`(값), `scope`(국내/유럽), `name`(표시명).
+ */
+export type Certification = Record<string, string>;
 
 export type InstallationStep = {
   step: number;
@@ -156,18 +150,16 @@ function toProduct(
     colorsNote: str(fm.colors_note),
     // 항상 최소 1행 — 렌더러가 빈 types 를 만나지 않게 한다
     types: types.length > 0 ? types : [normalizeType({ type_name: "-" })],
-    certifications: arr<Record<string, unknown>>(fm.certifications).map((c) => ({
-      name: str(c.name),
-      body: str(c.body),
-      standard: str(c.standard),
-      number: str(c.number),
-      issued: str(c.issued),
-      expires: str(c.expires),
-      result: str(c.result),
-      scope: str(c.scope),
-      feeds: str(c.feeds),
-      note: str(c.note),
-    })),
+    // 들어온 key 를 그대로(문자열화해서) 통과시킨다. YAML 리스트(applies_to 등)는
+    // 쉼표로 이어 붙인다.
+    certifications: arr<Record<string, unknown>>(fm.certifications).map((c) => {
+      const out: Certification = {};
+      for (const [k, v] of Object.entries(c ?? {})) {
+        if (v == null || v === "") continue;
+        out[k] = Array.isArray(v) ? v.map(String).join(", ") : String(v);
+      }
+      return out;
+    }),
     certificationsNote: str(fm.certifications_note),
     installationMethods: arr<unknown>(fm.installation_methods).map(normalizeMethod),
     installationNote: str(fm.installation_note),
@@ -228,11 +220,10 @@ export function getRawMarkdown(
   return fs.existsSync(file) ? fs.readFileSync(file, "utf-8") : undefined;
 }
 
-/** 총괄표용 flat 행 — 제품 × 타입. 성능값은 제품의 certifications 에서 파생. */
+/** 총괄표용 flat 행 — 제품 × 타입. 성능값은 그 타입에 적용되는 certifications 에서 파생. */
 export function getCatalogRows(rootDir?: string): CatalogRow[] {
-  return getAllProducts(rootDir).flatMap((p) => {
-    const attributes = deriveAttributes(p.category, p.certifications);
-    return p.types.map((t) => ({
+  return getAllProducts(rootDir).flatMap((p) =>
+    p.types.map((t) => ({
       category: p.category,
       productName: p.name,
       slug: p.slug,
@@ -240,9 +231,9 @@ export function getCatalogRows(rootDir?: string): CatalogRow[] {
       typeName: t.typeName,
       group: t.group,
       size: t.sizeWxhxt,
-      attributes,
-    }));
-  });
+      attributes: deriveAttributesForType(p.category, p.certifications, t.typeName),
+    }))
+  );
 }
 
 /** /products/catalog.json 및 "catalog 복사"용 전체 덤프. */

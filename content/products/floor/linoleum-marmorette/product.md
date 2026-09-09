@@ -49,9 +49,15 @@ types:
     surface: Neocare™
     note: 마모층 2.50mm / 접착식
 
-# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
-certifications: []
-certifications_note: ""
+# 인증 — 실제 시험성적서 기준 (SCHEMA.md 참고).
+certifications:
+  - name: 환경표지 인증 (EL246)
+    body: 한국환경산업기술원
+    number: 제30715호
+    issued: "2024-05-07"
+    expires: "2027-05-06"
+    feeds: eco
+certifications_note: Gerflor DLW Linoleum 기준. 최초 교부 2024-05-07.
 
 installation_methods: []
 installation_note: "접착식 시공. 홈페이지에 상세 시공 단계 텍스트 없음 — 확인 후 추가 필요"

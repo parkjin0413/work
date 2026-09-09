@@ -65,9 +65,30 @@ types:
     surface: Protecsol®
     note: 마모층 0.70mm / 접착식
 
-# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
-certifications: []
-certifications_note: ""
+# 인증 — 실제 시험성적서 기준. 미끄럼저항은 두께별 성적서라 applies_to 로 지정 (SCHEMA.md 참고).
+certifications:
+  - name: 환경표지 인증 (EL246)
+    body: 한국환경산업기술원
+    number: 제29537호
+    issued: "2023-12-13"
+    expires: "2026-12-12"
+    feeds: eco
+    note: 아티스틱 타일 / 아티스틱 시트 공통 인증서. 2026-12-12 만료 예정 — 갱신(재발급) 신청 일정 확인 필요.
+  - name: 미끄럼저항 시험 (C.S.R, 건조)
+    body: KOTITI 시험연구원
+    number: "82254021102268"
+    issued: "2025-11-21"
+    result: C.S.R 0.56 (건조)
+    feeds: slip
+    applies_to: 2.6T
+  - name: 미끄럼저항 시험 (C.S.R, 건조)
+    body: KOTITI 시험연구원
+    number: "82254021102165"
+    issued: "2025-11-11"
+    result: C.S.R 0.65 (건조)
+    feeds: slip
+    applies_to: 3.8T
+certifications_note: 원본 관리자료상 "아티스틱 아트프로마". 6.3T 규격은 3.8T 로 개정(대체)되어 별도 성적서 없음.
 
 installation_methods: []
 installation_note: "접착식 시공. 홈페이지에 상세 시공 단계 텍스트 없음 — 확인 후 추가 필요"

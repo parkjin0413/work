@@ -16,7 +16,7 @@ describe("ProductsPrintPage", () => {
     expect(screen.getByRole("heading", { name: /천장재 \(2종\)/, level: 2 })).toBeInTheDocument();
 
     // 제품 데이터시트 제목 (h2 within article)
-    expect(screen.getByRole("heading", { name: "라미네이트 판넬 10.2T", level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "라미네이트 판넬", level: 2 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "이모션 시트", level: 2 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "RF타공 천장재", level: 2 })).toBeInTheDocument();
   });

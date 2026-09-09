@@ -29,6 +29,25 @@ describe("ProductsPage", () => {
     expect(screen.getByText("/products/catalog.json")).toBeInTheDocument();
   });
 
+  it("인쇄 링크 2개와 국내 기준 요약 섹션을 보여준다", () => {
+    renderPage();
+    expect(screen.getByRole("link", { name: "총괄표 인쇄" })).toHaveAttribute(
+      "href",
+      "/products/print/rollup"
+    );
+    expect(screen.getByRole("link", { name: "제품별 데이터시트 인쇄" })).toHaveAttribute(
+      "href",
+      "/products/print"
+    );
+    expect(
+      screen.getByRole("heading", { name: /국내 기준 \(요약\)/, level: 2 })
+    ).toBeInTheDocument();
+    expect(screen.getByText("준불연재료")).toBeInTheDocument();
+    expect(screen.getByText("방염(防焰)")).toBeInTheDocument();
+    // 방수·방습 컬럼은 제거됨
+    expect(screen.queryByText("방수·방습")).not.toBeInTheDocument();
+  });
+
   it("분류 요약 카드 3장 — 벽재 3종, 바닥재 7종, 천장재 2종", () => {
     renderPage();
     expect(screen.getByRole("link", { name: /벽재 3종 등록/ })).toHaveAttribute(
@@ -48,7 +67,7 @@ describe("ProductsPage", () => {
   it("검색 카드는 분류 페이지의 해당 제품 앵커로 연결한다", () => {
     renderPage();
     expect(
-      screen.getByRole("link", { name: /라미네이트 판넬 10\.2T/ })
+      screen.getByRole("link", { name: /라미네이트 판넬/ })
     ).toHaveAttribute("href", "/products/wall#laminate-panel-10-2t");
     expect(
       screen.getByRole("link", { name: /마모렛/ })

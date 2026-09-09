@@ -59,9 +59,15 @@ types:
     surface: AC6 오버레이 / Class34
     note: 연결 방식 Aluloc Prime / 특대형 플랭크 (원목 데코 디자인)
 
-# 인증 — 사용자가 새로 정리 중. 확정 자료 확보 시 SCHEMA.md 의 certifications 스키마대로 채운다.
-certifications: []
-certifications_note: ""
+# 인증 — 실제 시험성적서 기준. 두 규격 공통이라 applies_to 없음 (SCHEMA.md 참고).
+certifications:
+  - name: 유해물질 시험 (3종)
+    body: 한국산업기술시험원(KTL)
+    number: "18-065483-03-1"
+    issued: "2018-11-08"
+    result: "TVOC 0.010 · 폼알데하이드 0.013 · 톨루엔 0.000"
+    feeds: voc
+certifications_note: 성적서 시료명 "HPL 후로링" — 라미네이트 후로링과 동일 제품(담당자 확인). ORIGINAL·GRAND AVENUE 두 규격 공통 적용. 2018년 자료.
 
 installation_methods: []
 installation_note: "알루미늄 클릭 결합. 홈페이지에 상세 시공 단계 텍스트 없음 — 확인 후 추가 필요"

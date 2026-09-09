@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Table2 } from "lucide-react";
 import {
   getAllProducts,
   getCatalog,
@@ -36,7 +36,15 @@ export default function ProductsPrintPage() {
           >
             <ArrowLeft className="h-3 w-3" aria-hidden="true" /> 제품 정보로
           </Link>
-          <PrintButton />
+          <div className="flex items-center gap-3">
+            <Link
+              href="/products/print/rollup"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-black"
+            >
+              <Table2 className="h-3.5 w-3.5" aria-hidden="true" /> 규격 총괄표 인쇄
+            </Link>
+            <PrintButton />
+          </div>
         </div>
 
         {/* 표지 */}

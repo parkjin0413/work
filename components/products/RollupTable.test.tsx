@@ -12,7 +12,7 @@ const wallRows: CatalogRow[] = [
     typeName: "9T",
     group: "원형타공",
     size: "1195 x 595 x 9 mm",
-    attributes: { fire: "준불연", eco: true, hyg: true, voc: true, wtp: true, aco: true, imp: null },
+    attributes: { fire: "준불연", eco: true, hyg: true, voc: true, aco: "흡음계수 0.35", imp: null },
   },
   {
     category: "벽재",
@@ -22,7 +22,7 @@ const wallRows: CatalogRow[] = [
     typeName: "10.2T",
     group: null,
     size: "600 x 2400 x 10.2 mm",
-    attributes: { fire: null, eco: null, hyg: null, voc: null, wtp: true, aco: null, imp: true },
+    attributes: { fire: null, eco: null, hyg: null, voc: null, aco: null, imp: true },
   },
 ];
 
@@ -36,7 +36,7 @@ const floorRows: CatalogRow[] = [
     group: null,
     size: "198 x 1207 x 11 mm",
     // slip=DS, abrasion=AC6 은 값 있음, dim_stability 는 이 fixture 에선 값 없음
-    attributes: { fire: null, eco: true, hyg: null, voc: true, wtp: true, slip: "DS", abrasion: "AC6", dim_stability: null },
+    attributes: { fire: null, eco: true, hyg: null, voc: true, slip: "DS", abrasion: "AC6", dim_stability: null },
   },
 ];
 
@@ -48,8 +48,8 @@ describe("RollupTable", () => {
     expect(screen.getByText("FLOOR · 바닥 마감재")).toBeInTheDocument();
     expect(screen.getByText("CEILING · 천장 마감재")).toBeInTheDocument();
 
-    // 코어 5개는 3개 분류 그룹 헤더에 반복
-    for (const label of ["화재", "환경표지", "항균", "유해물질", "방수·방습"]) {
+    // 코어 4개는 3개 분류 그룹 헤더에 반복
+    for (const label of ["화재", "환경표지", "항균", "유해물질"]) {
       expect(screen.getAllByText(label)).toHaveLength(3);
     }
 

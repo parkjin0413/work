@@ -12,6 +12,7 @@ import {
 } from "@/lib/products/categories";
 import { presentBadgeLabels } from "@/lib/products/attributes";
 import { RollupTable } from "@/components/products/RollupTable";
+import { CertStandards } from "@/components/products/CertStandards";
 import { CatalogCopyBar } from "@/components/products/CatalogCopyBar";
 import { ProductSearch, type ProductListItem } from "@/components/products/ProductSearch";
 
@@ -74,12 +75,20 @@ export default function ProductsPage() {
               편집은 <code className="font-mono text-xs">content/products/</code> 파일에서 합니다.
             </p>
           </div>
-          <Link
-            href="/products/print"
-            className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-hover"
-          >
-            인쇄용 보기
-          </Link>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Link
+              href="/products/print/rollup"
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-hover"
+            >
+              총괄표 인쇄
+            </Link>
+            <Link
+              href="/products/print"
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-hover"
+            >
+              제품별 데이터시트 인쇄
+            </Link>
+          </div>
         </div>
 
         <CatalogCopyBar catalogJson={catalogJson} />
@@ -108,10 +117,16 @@ export default function ProductsPage() {
           <h2 className="text-sm font-semibold text-foreground">제품 규격 총괄표</h2>
           <RollupTable rows={rows} />
           <p className="text-[11px] leading-relaxed text-muted">
-            채운 점 = 원본 자료에 명시됨 · 빈 점 = 정보 없음(해당없음 확정 아님) ·
-            화재는 국내 불연/준불연 기준만 표시 · 모든 값은 각 제품 원문에 명시된
-            내용만 반영합니다.
+            채운 점 = 해당 시험성적서 보유 · 빈 점 = 성적서 없음(해당없음 확정 아님) ·
+            화재는 국내 불연 / 준불연 / 방염만 표시 · 미끄럼저항·흡음·차음 등은 성적서
+            실측값 · 모든 값은 각 제품 <code className="font-mono">certifications</code> 에서
+            파생됩니다.
           </p>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">인증·성능 항목의 국내 기준 (요약)</h2>
+          <CertStandards />
         </section>
 
         <section className="space-y-3">

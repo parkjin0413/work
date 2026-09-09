@@ -53,6 +53,11 @@ describe("CategoryPage", () => {
     expect(screen.getByRole("heading", { name: "이모션 시트", level: 3 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "마모렛 (리노륨)", level: 3 })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Claude용" })).toHaveLength(7);
+    // 제품마다 개별 MD 다운로드 + 분류 전체 MD 다운로드
+    expect(screen.getAllByRole("button", { name: "MD 다운로드" })).toHaveLength(7);
+    expect(
+      screen.getByRole("button", { name: "바닥재 전체 MD 다운로드" })
+    ).toBeInTheDocument();
   });
 
   it("천장재: 2종을 보여준다", () => {

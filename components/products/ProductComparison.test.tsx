@@ -38,12 +38,13 @@ describe("ProductComparison", () => {
     expect(screen.getByText("Calacatta")).toBeInTheDocument();
   });
 
-  it("제품마다 복사 버튼 4종을 열 머리에 준다", () => {
+  it("제품마다 복사 버튼 4종 + MD 다운로드를 열 머리에 준다", () => {
     render(<ProductComparison items={items()} />);
     expect(screen.getAllByRole("button", { name: "텍스트" })).toHaveLength(3);
     expect(screen.getAllByRole("button", { name: "마크다운 원문" })).toHaveLength(3);
     expect(screen.getAllByRole("button", { name: "JSON" })).toHaveLength(3);
     expect(screen.getAllByRole("button", { name: "Claude용" })).toHaveLength(3);
+    expect(screen.getAllByRole("button", { name: "MD 다운로드" })).toHaveLength(3);
   });
 
   it("제품 열 머리에 앵커용 id 를 단다", () => {

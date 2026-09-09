@@ -69,6 +69,7 @@ export function ProductComparison({ items }: { items: ComparisonItem[] }) {
                 markdown={copy.markdown}
                 json={copy.json}
                 claude={copy.claude}
+                downloadName={`${product.slug}.md`}
               />
             </div>
           </div>

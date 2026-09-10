@@ -12,7 +12,9 @@ function makeQuery(result: QueryResult) {
   builder.eq = vi.fn(chain);
   builder.is = vi.fn(chain);
   builder.not = vi.fn(chain);
+  builder.in = vi.fn(chain);
   builder.order = vi.fn(chain);
+  builder.single = vi.fn(chain);
   builder.then = (resolve: (value: QueryResult) => void, reject?: (reason: unknown) => void) =>
     Promise.resolve(result).then(resolve, reject);
   return builder;
@@ -37,6 +39,8 @@ import {
   updateTask,
   setTaskCompletion,
   deleteTask,
+  addTaskNote,
+  deleteTaskNote,
 } from "./tasksStore";
 
 describe("tasksStore", () => {
@@ -124,6 +128,7 @@ describe("tasksStore", () => {
         ],
         error: null,
       }); // general rows
+      queueResult({ data: [], error: null }); // task_notes
 
       const result = await getBoard();
 
@@ -137,6 +142,7 @@ describe("tasksStore", () => {
           completedAt: null,
           createdAt: "2026-08-10T00:00:00.000Z",
           sortOrder: 5,
+          notes: [],
         },
       ]);
     });
@@ -159,11 +165,12 @@ describe("tasksStore", () => {
         ],
         error: null,
       }); // general rows
+      queueResult({ data: [], error: null }); // task_notes
 
       const result = await getBoard();
 
       expect(result.incomplete).toEqual([
-        expect.objectContaining({ id: "task-legacy", taskDate: "2026-09-04" }),
+        expect.objectContaining({ id: "task-legacy", taskDate: "2026-09-04", notes: [] }),
       ]);
     });
 
@@ -195,6 +202,7 @@ describe("tasksStore", () => {
         ],
         error: null,
       }); // general rows
+      queueResult({ data: [], error: null }); // task_notes
 
       const result = await getBoard();
 
@@ -229,6 +237,7 @@ describe("tasksStore", () => {
         ],
         error: null,
       }); // general rows
+      queueResult({ data: [], error: null }); // task_notes
 
       const result = await getBoard();
 
@@ -262,6 +271,41 @@ describe("tasksStore", () => {
       queueResult({ data: null, error: { message: "db down" } });
 
       await expect(getBoard()).rejects.toThrow("db down");
+    });
+
+    it("수시 업무에 진행 메모를 task 별로 시간순으로 묶어 붙인다", async () => {
+      queueResult({ data: [], error: null }); // templates
+      queueResult({ data: [], error: null }); // fixed rows
+      queueResult({
+        data: [
+          {
+            id: "task-1",
+            name: "마우스패드 제작",
+            memo: "개요",
+            task_date: "2026-09-10",
+            is_completed: false,
+            completed_at: null,
+            sort_order: 0,
+            created_at: "2026-09-10T00:00:00.000Z",
+          },
+        ],
+        error: null,
+      }); // general rows
+      queueResult({
+        data: [
+          { id: "n1", task_id: "task-1", body: "샘플 방문 일정 조율", created_at: "2026-09-10T05:00:00.000Z" },
+          { id: "n2", task_id: "task-1", body: "CMYK 인쇄 비용 확인", created_at: "2026-09-10T07:00:00.000Z" },
+          { id: "n3", task_id: "task-없음", body: "다른 업무 메모", created_at: "2026-09-10T08:00:00.000Z" },
+        ],
+        error: null,
+      }); // task_notes
+
+      const result = await getBoard();
+
+      expect(result.incomplete[0].notes).toEqual([
+        { id: "n1", body: "샘플 방문 일정 조율", createdAt: "2026-09-10T05:00:00.000Z" },
+        { id: "n2", body: "CMYK 인쇄 비용 확인", createdAt: "2026-09-10T07:00:00.000Z" },
+      ]);
     });
   });
 
@@ -373,6 +417,40 @@ describe("tasksStore", () => {
 
       expect(fromMock).toHaveBeenCalledWith("tasks");
       expect(query.eq).toHaveBeenCalledWith("id", "task-1");
+    });
+  });
+
+  describe("addTaskNote", () => {
+    it("task_notes 에 넣고 생성된 메모를 반환한다", async () => {
+      const query = makeQuery({
+        data: { id: "n1", body: "샘플 방문 조율", created_at: "2026-09-10T05:00:00.000Z" },
+        error: null,
+      });
+      fromMock.mockImplementationOnce(() => query);
+
+      const note = await addTaskNote("task-1", "샘플 방문 조율");
+
+      expect(fromMock).toHaveBeenCalledWith("task_notes");
+      expect(query.insert).toHaveBeenCalledWith({ task_id: "task-1", body: "샘플 방문 조율" });
+      expect(note).toEqual({ id: "n1", body: "샘플 방문 조율", createdAt: "2026-09-10T05:00:00.000Z" });
+    });
+
+    it("에러면 던진다", async () => {
+      fromMock.mockImplementationOnce(() => makeQuery({ data: null, error: { message: "boom" } }));
+      await expect(addTaskNote("task-1", "메모")).rejects.toThrow("boom");
+    });
+  });
+
+  describe("deleteTaskNote", () => {
+    it("id 로 task_notes 행을 지운다", async () => {
+      const query = makeQuery({ error: null });
+      fromMock.mockImplementationOnce(() => query);
+
+      await deleteTaskNote("n1");
+
+      expect(fromMock).toHaveBeenCalledWith("task_notes");
+      expect(query.delete).toHaveBeenCalled();
+      expect(query.eq).toHaveBeenCalledWith("id", "n1");
     });
   });
 });

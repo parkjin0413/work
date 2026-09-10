@@ -59,3 +59,11 @@ export function formatMonthDayWeekday(dateISO: string): string {
   const [, m, d] = dateISO.split("-").map(Number);
   return `${m}월 ${d}일 (${WEEKDAY_LABELS[getWeekdayIndex(dateISO)]})`;
 }
+
+/** ISO 타임스탬프를 한국 표준시(KST) 기준 "M.D HH:mm" 로 표시한다 (진행 메모 작성시각용). */
+export function formatNoteTimestamp(iso: string): string {
+  const shifted = new Date(new Date(iso).getTime() + KST_OFFSET_MS);
+  const m = shifted.getUTCMonth() + 1;
+  const d = shifted.getUTCDate();
+  return `${m}.${d} ${pad(shifted.getUTCHours())}:${pad(shifted.getUTCMinutes())}`;
+}

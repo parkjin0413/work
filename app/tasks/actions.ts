@@ -10,6 +10,9 @@ import {
   updateTask,
   setTaskCompletion,
   deleteTask,
+  addTaskNote,
+  deleteTaskNote,
+  type TaskNote,
 } from "@/lib/tasks/tasksStore";
 
 function assertValidWeekday(weekday: number): void {
@@ -99,5 +102,25 @@ export async function deleteTaskAction(id: string): Promise<void> {
   await requireAdmin();
 
   await deleteTask(id);
+  revalidatePath("/tasks");
+}
+
+export async function addTaskNoteAction(taskId: string, body: string): Promise<TaskNote> {
+  await requireAdmin();
+
+  const trimmed = body.trim();
+  if (!trimmed) {
+    throw new Error("메모 내용을 입력해주세요.");
+  }
+
+  const note = await addTaskNote(taskId, trimmed);
+  revalidatePath("/tasks");
+  return note;
+}
+
+export async function deleteTaskNoteAction(noteId: string): Promise<void> {
+  await requireAdmin();
+
+  await deleteTaskNote(noteId);
   revalidatePath("/tasks");
 }

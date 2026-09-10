@@ -1,12 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
-import type { GeneralTask } from "@/lib/tasks/tasksStore";
-import { formatMonthDayWeekday } from "@/lib/tasks/week";
-import { setTaskCompletionAction, deleteTaskAction, updateTaskAction } from "./actions";
+import { useEffect, useState, type FormEvent } from "react";
+import { Pencil, Trash2, X } from "lucide-react";
+import type { GeneralTask, TaskNote } from "@/lib/tasks/tasksStore";
+import { formatMonthDayWeekday, formatNoteTimestamp } from "@/lib/tasks/week";
+import {
+  setTaskCompletionAction,
+  deleteTaskAction,
+  updateTaskAction,
+  addTaskNoteAction,
+  deleteTaskNoteAction,
+} from "./actions";
 
-const CARD_GRID_BASE = "grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6";
+const CARD_GRID_BASE = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3";
 
 export function TaskList({
   incomplete: initialIncomplete,
@@ -70,6 +76,21 @@ export function TaskList({
     setCompleted((prev) => prev.map((t) => (t.id === id ? { ...t, name, memo, taskDate } : t)));
   }
 
+  function patchNotes(id: string, updater: (notes: TaskNote[]) => TaskNote[]) {
+    const apply = (list: GeneralTask[]) =>
+      list.map((t) => (t.id === id ? { ...t, notes: updater(t.notes) } : t));
+    setIncomplete(apply);
+    setCompleted(apply);
+  }
+
+  function handleNoteAdded(taskId: string, note: TaskNote) {
+    patchNotes(taskId, (notes) => [...notes, note]);
+  }
+
+  function handleNoteDeleted(taskId: string, noteId: string) {
+    patchNotes(taskId, (notes) => notes.filter((n) => n.id !== noteId));
+  }
+
   return (
     <section className="mt-6">
       <h2 className="text-base font-semibold text-foreground">업무 목록</h2>
@@ -91,6 +112,8 @@ export function TaskList({
               onToggle={(next) => handleToggle(task, next)}
               onDelete={() => handleDelete(task)}
               onSaved={(name, memo, taskDate) => handleSaved(task.id, name, memo, taskDate)}
+              onNoteAdded={(note) => handleNoteAdded(task.id, note)}
+              onNoteDeleted={(noteId) => handleNoteDeleted(task.id, noteId)}
             />
           ))}
         </div>
@@ -107,6 +130,8 @@ export function TaskList({
                 onToggle={(next) => handleToggle(task, next)}
                 onDelete={() => handleDelete(task)}
                 onSaved={(name, memo, taskDate) => handleSaved(task.id, name, memo, taskDate)}
+                onNoteAdded={(note) => handleNoteAdded(task.id, note)}
+                onNoteDeleted={(noteId) => handleNoteDeleted(task.id, noteId)}
               />
             ))}
           </div>
@@ -121,11 +146,15 @@ function TaskCard({
   onToggle,
   onDelete,
   onSaved,
+  onNoteAdded,
+  onNoteDeleted,
 }: {
   task: GeneralTask;
   onToggle: (next: boolean) => void;
   onDelete: () => void;
   onSaved: (name: string, memo: string | null, taskDate: string) => void;
+  onNoteAdded: (note: TaskNote) => void;
+  onNoteDeleted: (noteId: string) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -270,8 +299,115 @@ function TaskCard({
         {task.memo || "진행상황 없음"}
       </div>
 
+      <TaskNotes
+        taskId={task.id}
+        notes={task.notes}
+        onNoteAdded={onNoteAdded}
+        onNoteDeleted={onNoteDeleted}
+      />
+
       {task.completedAt ? (
         <span className="text-xs text-muted">완료 {formatMonthDayWeekday(task.completedAt.slice(0, 10))}</span>
+      ) : null}
+    </div>
+  );
+}
+
+function TaskNotes({
+  taskId,
+  notes,
+  onNoteAdded,
+  onNoteDeleted,
+}: {
+  taskId: string;
+  notes: TaskNote[];
+  onNoteAdded: (note: TaskNote) => void;
+  onNoteDeleted: (noteId: string) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleAdd(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const body = draft.trim();
+    if (!body || isAdding) return;
+
+    setError(null);
+    setIsAdding(true);
+    try {
+      const note = await addTaskNoteAction(taskId, body);
+      onNoteAdded(note);
+      setDraft("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "메모 추가에 실패했습니다.");
+    } finally {
+      setIsAdding(false);
+    }
+  }
+
+  async function handleDelete(noteId: string) {
+    setError(null);
+    try {
+      await deleteTaskNoteAction(noteId);
+      onNoteDeleted(noteId);
+    } catch {
+      setError("메모 삭제에 실패했습니다.");
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <p className="text-[11px] font-medium uppercase tracking-wide text-muted">진행 메모</p>
+
+      {notes.length > 0 ? (
+        <ul className="flex flex-col gap-1">
+          {notes.map((note) => (
+            <li
+              key={note.id}
+              className="group flex items-start gap-2 rounded-lg bg-bg px-2 py-1.5 text-xs"
+            >
+              <span className="shrink-0 font-mono text-[10px] leading-5 text-muted">
+                {formatNoteTimestamp(note.createdAt)}
+              </span>
+              <span className="min-w-0 flex-1 whitespace-pre-wrap break-words text-foreground">
+                {note.body}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleDelete(note.id)}
+                aria-label="진행 메모 삭제"
+                className="shrink-0 rounded p-0.5 text-muted opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
+              >
+                <X size={12} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <form onSubmit={handleAdd} className="flex items-end gap-1.5">
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="진행 메모 추가"
+          aria-label="진행 메모 추가"
+          rows={2}
+          className="min-w-0 flex-1 resize-y rounded-lg border border-border bg-bg px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+        />
+        <button
+          type="submit"
+          disabled={isAdding || !draft.trim()}
+          className="shrink-0 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground hover:bg-bg disabled:opacity-50"
+        >
+          {isAdding ? "..." : "추가"}
+        </button>
+      </form>
+
+      {error ? (
+        <p role="alert" className="text-[11px] text-danger">
+          {error}
+        </p>
       ) : null}
     </div>
   );

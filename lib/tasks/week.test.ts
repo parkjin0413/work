@@ -6,6 +6,7 @@ import {
   isValidMondayISO,
   formatShortDate,
   formatMonthDayWeekday,
+  formatNoteTimestamp,
 } from "./week";
 
 describe("addDaysISO", () => {
@@ -75,5 +76,17 @@ describe("formatMonthDayWeekday", () => {
 
   it("월요일도 정확히 표시한다 (2026-08-31)", () => {
     expect(formatMonthDayWeekday("2026-08-31")).toBe("8월 31일 (월)");
+  });
+});
+
+describe("formatNoteTimestamp", () => {
+  it("ISO 타임스탬프를 KST 기준 M.D HH:mm 로 표시한다", () => {
+    // 2026-09-10T05:00:00Z → KST 14:00
+    expect(formatNoteTimestamp("2026-09-10T05:00:00.000Z")).toBe("9.10 14:00");
+  });
+
+  it("KST 기준 날짜가 넘어가는 경우도 처리한다", () => {
+    // 2026-09-09T20:30:00Z → KST 2026-09-10 05:30
+    expect(formatNoteTimestamp("2026-09-09T20:30:00.000Z")).toBe("9.10 05:30");
   });
 });

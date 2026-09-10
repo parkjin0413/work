@@ -10,6 +10,8 @@ const { requireAdminMock, storeMock, revalidatePathMock } = vi.hoisted(() => ({
     updateTask: vi.fn(),
     setTaskCompletion: vi.fn(),
     deleteTask: vi.fn(),
+    addTaskNote: vi.fn(),
+    deleteTaskNote: vi.fn(),
   },
   revalidatePathMock: vi.fn(),
 }));
@@ -32,6 +34,8 @@ import {
   updateTaskAction,
   setTaskCompletionAction,
   deleteTaskAction,
+  addTaskNoteAction,
+  deleteTaskNoteAction,
 } from "./actions";
 
 function resetAll() {
@@ -176,6 +180,43 @@ describe("deleteTaskAction", () => {
     storeMock.deleteTask.mockResolvedValue(undefined);
     await deleteTaskAction("task-1");
     expect(storeMock.deleteTask).toHaveBeenCalledWith("task-1");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/tasks");
+  });
+});
+
+describe("addTaskNoteAction", () => {
+  beforeEach(resetAll);
+
+  it("빈 내용은 거부한다", async () => {
+    await expect(addTaskNoteAction("task-1", "   ")).rejects.toThrow("메모 내용을 입력해주세요.");
+    expect(storeMock.addTaskNote).not.toHaveBeenCalled();
+  });
+
+  it("내용을 트림해서 addTaskNote를 부르고 생성된 메모를 반환한다", async () => {
+    const note = { id: "n1", body: "샘플 방문 조율", createdAt: "2026-09-10T05:00:00.000Z" };
+    storeMock.addTaskNote.mockResolvedValue(note);
+
+    const result = await addTaskNoteAction("task-1", "  샘플 방문 조율  ");
+
+    expect(storeMock.addTaskNote).toHaveBeenCalledWith("task-1", "샘플 방문 조율");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/tasks");
+    expect(result).toEqual(note);
+  });
+
+  it("requireAdmin이 실패하면 addTaskNote를 호출하지 않는다", async () => {
+    requireAdminMock.mockRejectedValue(new Error("unauthorized"));
+    await expect(addTaskNoteAction("task-1", "메모")).rejects.toThrow();
+    expect(storeMock.addTaskNote).not.toHaveBeenCalled();
+  });
+});
+
+describe("deleteTaskNoteAction", () => {
+  beforeEach(resetAll);
+
+  it("정상 삭제는 deleteTaskNote와 revalidatePath를 호출한다", async () => {
+    storeMock.deleteTaskNote.mockResolvedValue(undefined);
+    await deleteTaskNoteAction("n1");
+    expect(storeMock.deleteTaskNote).toHaveBeenCalledWith("n1");
     expect(revalidatePathMock).toHaveBeenCalledWith("/tasks");
   });
 });

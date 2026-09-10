@@ -21,7 +21,7 @@ export default async function TasksPage() {
           <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
             <p className="text-sm text-muted">
               업무 정보를 불러오지 못했습니다. Supabase 연결 상태와
-              0004_tasks.sql 마이그레이션 실행 여부를 확인해주세요.
+              tasks 관련 마이그레이션(0004~0006) 실행 여부를 확인해주세요.
             </p>
           </div>
         </main>

@@ -9,6 +9,12 @@ export type FixedTaskCard = {
   isCompleted: boolean;
 };
 
+export type TaskNote = {
+  id: string;
+  body: string;
+  createdAt: string;
+};
+
 export type GeneralTask = {
   id: string;
   name: string;
@@ -18,6 +24,8 @@ export type GeneralTask = {
   completedAt: string | null;
   createdAt: string;
   sortOrder: number;
+  /** 등록 이후 시간순으로 덧붙이는 진행 메모 (오래된 것부터) */
+  notes: TaskNote[];
 };
 
 export type Board = {
@@ -28,16 +36,19 @@ export type Board = {
 
 type TemplateRow = { id: string; name: string; weekday: number; sort_order: number };
 
-function toGeneralTask(row: {
-  id: string;
-  name: string;
-  memo: string | null;
-  task_date: string | null;
-  is_completed: boolean;
-  completed_at: string | null;
-  created_at: string;
-  sort_order: number;
-}): GeneralTask {
+function toGeneralTask(
+  row: {
+    id: string;
+    name: string;
+    memo: string | null;
+    task_date: string | null;
+    is_completed: boolean;
+    completed_at: string | null;
+    created_at: string;
+    sort_order: number;
+  },
+  notes: TaskNote[] = []
+): GeneralTask {
   return {
     id: row.id,
     name: row.name,
@@ -48,6 +59,7 @@ function toGeneralTask(row: {
     completedAt: row.completed_at,
     createdAt: row.created_at,
     sortOrder: row.sort_order,
+    notes,
   };
 }
 
@@ -138,7 +150,30 @@ export async function getBoard(): Promise<Board> {
     throw new Error(`업무 조회 실패: ${generalError.message}`);
   }
 
-  const generalTasks = (generalRows ?? []).map(toGeneralTask);
+  // 수시 업무들의 진행 메모를 한 번에 불러와 task 별로 묶는다 (오래된 것부터).
+  const generalIds = (generalRows ?? []).map((row) => row.id);
+  const notesByTask = new Map<string, TaskNote[]>();
+  if (generalIds.length > 0) {
+    const { data: noteRows, error: notesError } = await supabase
+      .from("task_notes")
+      .select("id, task_id, body, created_at")
+      .in("task_id", generalIds)
+      .order("created_at", { ascending: true });
+
+    if (notesError) {
+      throw new Error(`진행 메모 조회 실패: ${notesError.message}`);
+    }
+
+    for (const note of noteRows ?? []) {
+      const list = notesByTask.get(note.task_id) ?? [];
+      list.push({ id: note.id, body: note.body, createdAt: note.created_at });
+      notesByTask.set(note.task_id, list);
+    }
+  }
+
+  const generalTasks = (generalRows ?? []).map((row) =>
+    toGeneralTask(row, notesByTask.get(row.id) ?? [])
+  );
   const incomplete = generalTasks
     .filter((task) => !task.isCompleted)
     .sort((a, b) => a.taskDate.localeCompare(b.taskDate));
@@ -238,5 +273,29 @@ export async function deleteTask(id: string): Promise<void> {
 
   if (error) {
     throw new Error(`업무 삭제 실패: ${error.message}`);
+  }
+}
+
+export async function addTaskNote(taskId: string, body: string): Promise<TaskNote> {
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("task_notes")
+    .insert({ task_id: taskId, body })
+    .select("id, body, created_at")
+    .single();
+
+  if (error || !data) {
+    throw new Error(`진행 메모 추가 실패: ${error?.message ?? "알 수 없는 오류"}`);
+  }
+
+  return { id: data.id, body: data.body, createdAt: data.created_at };
+}
+
+export async function deleteTaskNote(noteId: string): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase.from("task_notes").delete().eq("id", noteId);
+
+  if (error) {
+    throw new Error(`진행 메모 삭제 실패: ${error.message}`);
   }
 }

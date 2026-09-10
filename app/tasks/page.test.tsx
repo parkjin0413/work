@@ -62,6 +62,7 @@ describe("TasksPage", () => {
           completedAt: null,
           createdAt: "2026-08-10T00:00:00.000Z",
           sortOrder: 0,
+          notes: [],
         },
       ],
       completed: [],
@@ -88,6 +89,7 @@ describe("TasksPage", () => {
           completedAt: "2026-08-20T00:00:00.000Z",
           createdAt: "2026-08-05T00:00:00.000Z",
           sortOrder: 0,
+          notes: [],
         },
       ],
     });
@@ -111,7 +113,7 @@ describe("TasksPage", () => {
 
     expect(
       screen.getByText(
-        "업무 정보를 불러오지 못했습니다. Supabase 연결 상태와 0004_tasks.sql 마이그레이션 실행 여부를 확인해주세요."
+        "업무 정보를 불러오지 못했습니다. Supabase 연결 상태와 tasks 관련 마이그레이션(0004~0006) 실행 여부를 확인해주세요."
       )
     ).toBeInTheDocument();
   });

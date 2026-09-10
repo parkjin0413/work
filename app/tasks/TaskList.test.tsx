@@ -2,16 +2,26 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { TaskList } from "./TaskList";
 
-const { setTaskCompletionActionMock, deleteTaskActionMock, updateTaskActionMock } = vi.hoisted(() => ({
+const {
+  setTaskCompletionActionMock,
+  deleteTaskActionMock,
+  updateTaskActionMock,
+  addTaskNoteActionMock,
+  deleteTaskNoteActionMock,
+} = vi.hoisted(() => ({
   setTaskCompletionActionMock: vi.fn(),
   deleteTaskActionMock: vi.fn(),
   updateTaskActionMock: vi.fn(),
+  addTaskNoteActionMock: vi.fn(),
+  deleteTaskNoteActionMock: vi.fn(),
 }));
 
 vi.mock("./actions", () => ({
   setTaskCompletionAction: setTaskCompletionActionMock,
   deleteTaskAction: deleteTaskActionMock,
   updateTaskAction: updateTaskActionMock,
+  addTaskNoteAction: addTaskNoteActionMock,
+  deleteTaskNoteAction: deleteTaskNoteActionMock,
 }));
 
 const adhocTask = {
@@ -23,6 +33,7 @@ const adhocTask = {
   completedAt: null,
   createdAt: "2026-08-10T00:00:00.000Z",
   sortOrder: 1,
+  notes: [],
 };
 
 describe("TaskList", () => {
@@ -30,6 +41,8 @@ describe("TaskList", () => {
     setTaskCompletionActionMock.mockReset().mockResolvedValue(undefined);
     deleteTaskActionMock.mockReset().mockResolvedValue(undefined);
     updateTaskActionMock.mockReset().mockResolvedValue(undefined);
+    addTaskNoteActionMock.mockReset().mockResolvedValue(undefined);
+    deleteTaskNoteActionMock.mockReset().mockResolvedValue(undefined);
   });
 
   it("날짜(월/일/요일)와 진행상황을 카드로 보여준다", () => {
@@ -73,6 +86,44 @@ describe("TaskList", () => {
 
     await waitFor(() => expect(deleteTaskActionMock).toHaveBeenCalledWith("task-adhoc"));
     expect(screen.queryByText("디자인 시안 검토")).not.toBeInTheDocument();
+  });
+
+  it("진행 메모를 시간순으로 보여주고, 입력해서 추가하면 addTaskNoteAction을 호출한다", async () => {
+    addTaskNoteActionMock.mockResolvedValue({
+      id: "n-new",
+      body: "샘플 방문 일정 조율",
+      createdAt: "2026-09-10T05:00:00.000Z",
+    });
+    const task = {
+      ...adhocTask,
+      notes: [{ id: "n1", body: "1차 상담 완료", createdAt: "2026-09-09T01:00:00.000Z" }],
+    };
+    render(<TaskList incomplete={[task]} completed={[]} />);
+
+    expect(screen.getByText("1차 상담 완료")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("진행 메모 추가"), {
+      target: { value: "샘플 방문 일정 조율" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "추가" }));
+
+    await waitFor(() =>
+      expect(addTaskNoteActionMock).toHaveBeenCalledWith("task-adhoc", "샘플 방문 일정 조율")
+    );
+    expect(await screen.findByText("샘플 방문 일정 조율")).toBeInTheDocument();
+  });
+
+  it("진행 메모 삭제 버튼을 누르면 deleteTaskNoteAction을 호출하고 목록에서 사라진다", async () => {
+    const task = {
+      ...adhocTask,
+      notes: [{ id: "n1", body: "지울 메모", createdAt: "2026-09-09T01:00:00.000Z" }],
+    };
+    render(<TaskList incomplete={[task]} completed={[]} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "진행 메모 삭제" }));
+
+    await waitFor(() => expect(deleteTaskNoteActionMock).toHaveBeenCalledWith("n1"));
+    expect(screen.queryByText("지울 메모")).not.toBeInTheDocument();
   });
 
   it("수정 버튼을 누르면 편집 폼이 나오고 저장하면 날짜를 포함해 updateTaskAction을 호출한다", async () => {

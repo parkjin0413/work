@@ -9,6 +9,7 @@ import {
 } from "@/lib/products/categories";
 import {
   getCatalogRows,
+  getMarkdownBundle,
   getProductsByCategory,
   getRawMarkdown,
   type Product,
@@ -81,13 +82,8 @@ export default function CategoryPage({ params }: { params: { category: string } 
 
   const rows = getCatalogRows().filter((r) => r.category === label);
 
-  // 이 분류 전 제품의 product.md 원문을 한 파일로 (AI 참고용).
-  const bundle =
-    `<!-- 강산이엔지 ${label} 제품 정보 · content/products/${params.category} · ${products.length}종 -->\n\n` +
-    products
-      .map((p) => getRawMarkdown(params.category, p.slug) ?? "")
-      .filter(Boolean)
-      .join("\n\n---\n\n");
+  // 이 분류 전 제품의 product.md 원문을 한 파일로 (AI 참고·첨부용).
+  const bundle = getMarkdownBundle(params.category);
 
   return (
     <Shell>

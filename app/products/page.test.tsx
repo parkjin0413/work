@@ -26,6 +26,7 @@ describe("ProductsPage", () => {
     expect(screen.getByRole("heading", { name: "제품 정보", level: 1 })).toBeInTheDocument();
     expect(screen.getByText("제품 규격 총괄표")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "catalog.json 복사" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "전체 MD 다운로드" })).toBeInTheDocument();
     expect(screen.getByText("/products/catalog.json")).toBeInTheDocument();
   });
 

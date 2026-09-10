@@ -220,6 +220,24 @@ export function getRawMarkdown(
   return fs.existsSync(file) ? fs.readFileSync(file, "utf-8") : undefined;
 }
 
+/**
+ * 여러 제품의 product.md 원문을 한 파일로 묶는다 (AI 참고·첨부용).
+ * 맨 앞에 범위 주석, 제품 사이 `---` 구분. categorySlug 를 주면 그 분류만, 없으면 전체.
+ */
+export function getMarkdownBundle(categorySlug?: CategorySlug, rootDir?: string): string {
+  const products = getAllProducts(rootDir).filter(
+    (p) => !categorySlug || p.categorySlug === categorySlug
+  );
+  const scope = categorySlug ? slugToLabel(categorySlug) : "전 분류";
+  const header =
+    `<!-- 강산이엔지 제품 정보 · ${scope} · ${products.length}종 · ` +
+    `content/products${categorySlug ? `/${categorySlug}` : ""} · SCHEMA.md 기준 -->`;
+  const bodies = products
+    .map((p) => getRawMarkdown(p.categorySlug, p.slug, rootDir))
+    .filter((md): md is string => Boolean(md));
+  return [header, ...bodies].join("\n\n---\n\n");
+}
+
 /** 총괄표용 flat 행 — 제품 × 타입. 성능값은 그 타입에 적용되는 certifications 에서 파생. */
 export function getCatalogRows(rootDir?: string): CatalogRow[] {
   return getAllProducts(rootDir).flatMap((p) =>

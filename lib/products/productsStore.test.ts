@@ -5,6 +5,7 @@ import {
   getProductsByCategory,
   getProductBySlug,
   getRawMarkdown,
+  getMarkdownBundle,
   getCatalogRows,
   getCatalog,
   type Product,
@@ -115,6 +116,25 @@ describe("getCatalog", () => {
     const catalog = getCatalog();
     expect(typeof catalog.generatedAt).toBe("string");
     expect(catalog.products).toHaveLength(12);
+  });
+});
+
+describe("getMarkdownBundle", () => {
+  it("전체: 주석 헤더 + 12개 product.md 를 --- 로 이어붙인다", () => {
+    const md = getMarkdownBundle();
+    expect(md).toMatch(/^<!-- 강산이엔지 제품 정보 · 전 분류 · 12종/);
+    // 헤더 + 12개 본문 = 구분자 12개
+    expect(md.split("\n\n---\n\n")).toHaveLength(13);
+    expect(md).toContain("name: 라미네이트 판넬");
+    expect(md).toContain("name: RF타공 천장재");
+  });
+
+  it("분류 지정: 그 분류 제품만", () => {
+    const md = getMarkdownBundle("ceiling");
+    expect(md).toMatch(/천장재 · 2종/);
+    expect(md.split("\n\n---\n\n")).toHaveLength(3); // 헤더 + 2
+    expect(md).toContain("name: 천연석고 천장재");
+    expect(md).not.toContain("name: 라미네이트 판넬");
   });
 });
 

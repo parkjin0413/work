@@ -4,6 +4,7 @@ import {
   getAllProducts,
   getCatalog,
   getCatalogRows,
+  getMarkdownBundle,
   type Product,
 } from "@/lib/products/productsStore";
 import {
@@ -56,6 +57,7 @@ export default function ProductsPage() {
 
   const rows = getCatalogRows();
   const catalogJson = JSON.stringify(getCatalog(), null, 2);
+  const catalogMarkdown = getMarkdownBundle();
   const countByCategory = new Map(
     CATEGORY_ORDER.map(slugToLabel).map((label) => [
       label,
@@ -91,7 +93,7 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        <CatalogCopyBar catalogJson={catalogJson} />
+        <CatalogCopyBar catalogJson={catalogJson} catalogMarkdown={catalogMarkdown} />
 
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-foreground">분류</h2>

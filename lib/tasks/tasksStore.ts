@@ -174,9 +174,11 @@ export async function getBoard(): Promise<Board> {
   const generalTasks = (generalRows ?? []).map((row) =>
     toGeneralTask(row, notesByTask.get(row.id) ?? [])
   );
+  // 미완료 업무는 사용자가 드래그로 정한 순서(sortOrder)가 우선이고, 아직 정한 적
+  // 없어 값이 같으면(기본 0) 날짜순으로 보인다.
   const incomplete = generalTasks
     .filter((task) => !task.isCompleted)
-    .sort((a, b) => a.taskDate.localeCompare(b.taskDate));
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.taskDate.localeCompare(b.taskDate));
   const completed = generalTasks
     .filter((task) => task.isCompleted)
     .sort((a, b) => (b.completedAt ?? "").localeCompare(a.completedAt ?? ""));
@@ -273,6 +275,20 @@ export async function deleteTask(id: string): Promise<void> {
 
   if (error) {
     throw new Error(`업무 삭제 실패: ${error.message}`);
+  }
+}
+
+/** 미완료 수시 업무를 드래그로 재배열한 순서를 저장한다 (전체 목록을 새 순서로 갱신). */
+export async function reorderTasks(orderedIds: string[]): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+
+  const results = await Promise.all(
+    orderedIds.map((id, index) => supabase.from("tasks").update({ sort_order: index }).eq("id", id))
+  );
+
+  const failed = results.find((result) => result.error);
+  if (failed?.error) {
+    throw new Error(`업무 순서 변경 실패: ${failed.error.message}`);
   }
 }
 

@@ -39,6 +39,7 @@ import {
   updateTask,
   setTaskCompletion,
   deleteTask,
+  reorderTasks,
   addTaskNote,
   deleteTaskNote,
 } from "./tasksStore";
@@ -207,6 +208,44 @@ describe("tasksStore", () => {
       const result = await getBoard();
 
       expect(result.incomplete.map((t) => t.id)).toEqual(["task-earlier", "task-later"]);
+    });
+
+    it("sort_order 값이 다르면 날짜보다 sort_order(드래그 순서)를 우선한다", async () => {
+      queueResult({ data: [], error: null }); // templates
+      queueResult({ data: [], error: null }); // fixed rows
+      queueResult({
+        data: [
+          {
+            id: "task-later-but-first",
+            name: "날짜는 늦지만 순서상 먼저",
+            memo: null,
+            task_date: "2026-09-10",
+            is_completed: false,
+            completed_at: null,
+            sort_order: 0,
+            created_at: "2026-09-01T00:00:00.000Z",
+          },
+          {
+            id: "task-earlier-but-second",
+            name: "날짜는 이르지만 순서상 나중",
+            memo: null,
+            task_date: "2026-09-01",
+            is_completed: false,
+            completed_at: null,
+            sort_order: 1,
+            created_at: "2026-09-01T00:00:00.000Z",
+          },
+        ],
+        error: null,
+      }); // general rows
+      queueResult({ data: [], error: null }); // task_notes
+
+      const result = await getBoard();
+
+      expect(result.incomplete.map((t) => t.id)).toEqual([
+        "task-later-but-first",
+        "task-earlier-but-second",
+      ]);
     });
 
     it("주가 바뀌어도 이전에 완료한 일반 업무를 계속 완료 목록에 보여준다", async () => {
@@ -417,6 +456,27 @@ describe("tasksStore", () => {
 
       expect(fromMock).toHaveBeenCalledWith("tasks");
       expect(query.eq).toHaveBeenCalledWith("id", "task-1");
+    });
+  });
+
+  describe("reorderTasks", () => {
+    it("주어진 순서대로 각 업무의 sort_order를 갱신한다", async () => {
+      const query = makeQuery({ error: null });
+      fromMock.mockImplementation(() => query);
+
+      await reorderTasks(["task-b", "task-a"]);
+
+      expect(fromMock).toHaveBeenCalledWith("tasks");
+      expect(query.update).toHaveBeenCalledWith({ sort_order: 0 });
+      expect(query.update).toHaveBeenCalledWith({ sort_order: 1 });
+      expect(query.eq).toHaveBeenCalledWith("id", "task-b");
+      expect(query.eq).toHaveBeenCalledWith("id", "task-a");
+    });
+
+    it("실패하면 에러를 던진다", async () => {
+      fromMock.mockImplementation(() => makeQuery({ error: { message: "db down" } }));
+
+      await expect(reorderTasks(["task-1"])).rejects.toThrow("db down");
     });
   });
 

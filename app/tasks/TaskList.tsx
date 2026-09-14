@@ -1,18 +1,47 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import { Pencil, Trash2, X } from "lucide-react";
+import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DraggableAttributes,
+  type DraggableSyntheticListeners,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, Pencil, Trash2, X } from "lucide-react";
 import type { GeneralTask, TaskNote } from "@/lib/tasks/tasksStore";
 import { formatMonthDayWeekday, formatNoteTimestamp } from "@/lib/tasks/week";
 import {
   setTaskCompletionAction,
   deleteTaskAction,
   updateTaskAction,
+  reorderTasksAction,
   addTaskNoteAction,
   deleteTaskNoteAction,
 } from "./actions";
 
 const CARD_GRID_BASE = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3";
+
+type DragHandle = {
+  setNodeRef: (node: HTMLElement | null) => void;
+  style: CSSProperties;
+  attributes: DraggableAttributes;
+  listeners: DraggableSyntheticListeners;
+  isDragging: boolean;
+};
 
 export function TaskList({
   incomplete: initialIncomplete,
@@ -91,6 +120,36 @@ export function TaskList({
     patchNotes(taskId, (notes) => notes.filter((n) => n.id !== noteId));
   }
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  async function handleDragEnd(event: DragEndEvent) {
+    setDraggingId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = incomplete.findIndex((t) => t.id === active.id);
+    const newIndex = incomplete.findIndex((t) => t.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const previousIncomplete = incomplete;
+    const reordered = arrayMove(incomplete, oldIndex, newIndex);
+    setIncomplete(reordered);
+    setErrorMessage(null);
+
+    try {
+      await reorderTasksAction(reordered.map((t) => t.id));
+    } catch {
+      setIncomplete(previousIncomplete);
+      setErrorMessage("업무 순서 변경에 실패했습니다.");
+    }
+  }
+
+  const draggingTask = draggingId ? incomplete.find((t) => t.id === draggingId) : null;
+
   return (
     <section className="mt-6">
       <h2 className="text-base font-semibold text-foreground">업무 목록</h2>
@@ -104,19 +163,37 @@ export function TaskList({
       {incomplete.length === 0 ? (
         <p className="mt-3 text-sm text-muted">할 일이 없습니다.</p>
       ) : (
-        <div className={`mt-3 ${CARD_GRID_BASE}`}>
-          {incomplete.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onToggle={(next) => handleToggle(task, next)}
-              onDelete={() => handleDelete(task)}
-              onSaved={(name, memo, taskDate) => handleSaved(task.id, name, memo, taskDate)}
-              onNoteAdded={(note) => handleNoteAdded(task.id, note)}
-              onNoteDeleted={(noteId) => handleNoteDeleted(task.id, noteId)}
-            />
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={(event) => setDraggingId(String(event.active.id))}
+          onDragEnd={handleDragEnd}
+          onDragCancel={() => setDraggingId(null)}
+        >
+          <SortableContext items={incomplete.map((t) => t.id)} strategy={rectSortingStrategy}>
+            <div className={`mt-3 ${CARD_GRID_BASE}`}>
+              {incomplete.map((task) => (
+                <SortableTaskCard
+                  key={task.id}
+                  task={task}
+                  onToggle={(next) => handleToggle(task, next)}
+                  onDelete={() => handleDelete(task)}
+                  onSaved={(name, memo, taskDate) => handleSaved(task.id, name, memo, taskDate)}
+                  onNoteAdded={(note) => handleNoteAdded(task.id, note)}
+                  onNoteDeleted={(noteId) => handleNoteDeleted(task.id, noteId)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+
+          <DragOverlay>
+            {draggingTask ? (
+              <div className="rounded-2xl border border-accent bg-surface p-4 text-sm font-medium text-foreground shadow-lg">
+                {draggingTask.name}
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       )}
 
       {completed.length > 0 ? (
@@ -141,6 +218,35 @@ export function TaskList({
   );
 }
 
+type TaskCardProps = {
+  task: GeneralTask;
+  onToggle: (next: boolean) => void;
+  onDelete: () => void;
+  onSaved: (name: string, memo: string | null, taskDate: string) => void;
+  onNoteAdded: (note: TaskNote) => void;
+  onNoteDeleted: (noteId: string) => void;
+};
+
+/** 미완료 목록 전용 — 드래그로 순서를 바꿀 수 있는 카드. */
+function SortableTaskCard(props: TaskCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: props.task.id,
+  });
+
+  return (
+    <TaskCard
+      {...props}
+      dragHandle={{
+        setNodeRef,
+        style: { transform: CSS.Transform.toString(transform), transition },
+        attributes,
+        listeners,
+        isDragging,
+      }}
+    />
+  );
+}
+
 function TaskCard({
   task,
   onToggle,
@@ -148,14 +254,8 @@ function TaskCard({
   onSaved,
   onNoteAdded,
   onNoteDeleted,
-}: {
-  task: GeneralTask;
-  onToggle: (next: boolean) => void;
-  onDelete: () => void;
-  onSaved: (name: string, memo: string | null, taskDate: string) => void;
-  onNoteAdded: (note: TaskNote) => void;
-  onNoteDeleted: (noteId: string) => void;
-}) {
+  dragHandle,
+}: TaskCardProps & { dragHandle?: DragHandle }) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
@@ -194,7 +294,11 @@ function TaskCard({
 
   if (isEditing) {
     return (
-      <div className="flex flex-col gap-2 rounded-2xl border border-accent bg-surface p-4">
+      <div
+        ref={dragHandle?.setNodeRef}
+        style={dragHandle?.style}
+        className="flex flex-col gap-2 rounded-2xl border border-accent bg-surface p-4"
+      >
         <input
           type="date"
           value={editDate}
@@ -249,9 +353,28 @@ function TaskCard({
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-4">
+    <div
+      ref={dragHandle?.setNodeRef}
+      style={dragHandle?.style}
+      className={`flex flex-col gap-2 rounded-2xl border border-border bg-surface p-4 ${
+        dragHandle?.isDragging ? "opacity-50" : ""
+      }`}
+    >
       <div className="flex items-start justify-between gap-2">
-        <span className="text-xs text-muted">{formatMonthDayWeekday(task.taskDate)}</span>
+        <div className="flex min-w-0 items-center gap-1.5">
+          {dragHandle ? (
+            <button
+              type="button"
+              aria-label={`${task.name} 순서 변경`}
+              className="shrink-0 cursor-grab touch-none rounded-md p-1 text-muted hover:bg-bg active:cursor-grabbing"
+              {...dragHandle.attributes}
+              {...dragHandle.listeners}
+            >
+              <GripVertical size={14} />
+            </button>
+          ) : null}
+          <span className="text-xs text-muted">{formatMonthDayWeekday(task.taskDate)}</span>
+        </div>
         <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"

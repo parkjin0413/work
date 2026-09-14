@@ -10,6 +10,7 @@ import {
   updateTask,
   setTaskCompletion,
   deleteTask,
+  reorderTasks,
   addTaskNote,
   deleteTaskNote,
   type TaskNote,
@@ -102,6 +103,13 @@ export async function deleteTaskAction(id: string): Promise<void> {
   await requireAdmin();
 
   await deleteTask(id);
+  revalidatePath("/tasks");
+}
+
+export async function reorderTasksAction(orderedIds: string[]): Promise<void> {
+  await requireAdmin();
+
+  await reorderTasks(orderedIds);
   revalidatePath("/tasks");
 }
 

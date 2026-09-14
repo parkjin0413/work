@@ -10,6 +10,7 @@ const { requireAdminMock, storeMock, revalidatePathMock } = vi.hoisted(() => ({
     updateTask: vi.fn(),
     setTaskCompletion: vi.fn(),
     deleteTask: vi.fn(),
+    reorderTasks: vi.fn(),
     addTaskNote: vi.fn(),
     deleteTaskNote: vi.fn(),
   },
@@ -34,6 +35,7 @@ import {
   updateTaskAction,
   setTaskCompletionAction,
   deleteTaskAction,
+  reorderTasksAction,
   addTaskNoteAction,
   deleteTaskNoteAction,
 } from "./actions";
@@ -181,6 +183,23 @@ describe("deleteTaskAction", () => {
     await deleteTaskAction("task-1");
     expect(storeMock.deleteTask).toHaveBeenCalledWith("task-1");
     expect(revalidatePathMock).toHaveBeenCalledWith("/tasks");
+  });
+});
+
+describe("reorderTasksAction", () => {
+  beforeEach(resetAll);
+
+  it("정상 처리는 reorderTasks와 revalidatePath를 호출한다", async () => {
+    storeMock.reorderTasks.mockResolvedValue(undefined);
+    await reorderTasksAction(["task-2", "task-1"]);
+    expect(storeMock.reorderTasks).toHaveBeenCalledWith(["task-2", "task-1"]);
+    expect(revalidatePathMock).toHaveBeenCalledWith("/tasks");
+  });
+
+  it("requireAdmin이 실패하면 reorderTasks를 호출하지 않는다", async () => {
+    requireAdminMock.mockRejectedValue(new Error("unauthorized"));
+    await expect(reorderTasksAction(["task-1"])).rejects.toThrow();
+    expect(storeMock.reorderTasks).not.toHaveBeenCalled();
   });
 });
 

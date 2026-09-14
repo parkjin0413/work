@@ -6,12 +6,14 @@ const {
   setTaskCompletionActionMock,
   deleteTaskActionMock,
   updateTaskActionMock,
+  reorderTasksActionMock,
   addTaskNoteActionMock,
   deleteTaskNoteActionMock,
 } = vi.hoisted(() => ({
   setTaskCompletionActionMock: vi.fn(),
   deleteTaskActionMock: vi.fn(),
   updateTaskActionMock: vi.fn(),
+  reorderTasksActionMock: vi.fn(),
   addTaskNoteActionMock: vi.fn(),
   deleteTaskNoteActionMock: vi.fn(),
 }));
@@ -20,6 +22,7 @@ vi.mock("./actions", () => ({
   setTaskCompletionAction: setTaskCompletionActionMock,
   deleteTaskAction: deleteTaskActionMock,
   updateTaskAction: updateTaskActionMock,
+  reorderTasksAction: reorderTasksActionMock,
   addTaskNoteAction: addTaskNoteActionMock,
   deleteTaskNoteAction: deleteTaskNoteActionMock,
 }));
@@ -41,8 +44,19 @@ describe("TaskList", () => {
     setTaskCompletionActionMock.mockReset().mockResolvedValue(undefined);
     deleteTaskActionMock.mockReset().mockResolvedValue(undefined);
     updateTaskActionMock.mockReset().mockResolvedValue(undefined);
+    reorderTasksActionMock.mockReset().mockResolvedValue(undefined);
     addTaskNoteActionMock.mockReset().mockResolvedValue(undefined);
     deleteTaskNoteActionMock.mockReset().mockResolvedValue(undefined);
+  });
+
+  it("미완료 카드에는 순서 변경용 드래그 핸들이 있고, 완료된 카드에는 없다", () => {
+    const completedTask = { ...adhocTask, id: "task-done", name: "완료된 업무", isCompleted: true };
+    render(<TaskList incomplete={[adhocTask]} completed={[completedTask]} />);
+
+    expect(screen.getByRole("button", { name: "디자인 시안 검토 순서 변경" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "완료된 업무 순서 변경" })
+    ).not.toBeInTheDocument();
   });
 
   it("날짜(월/일/요일)와 진행상황을 카드로 보여준다", () => {

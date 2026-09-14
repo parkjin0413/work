@@ -26,7 +26,7 @@ export function addDaysISO(dateISO: string, days: number): string {
 }
 
 /** "YYYY-MM-DD"의 요일 인덱스를 반환한다 (0=월 ... 6=일). */
-function getWeekdayIndex(dateISO: string): number {
+export function getWeekdayIndex(dateISO: string): number {
   const [y, m, d] = dateISO.split("-").map(Number);
   const jsDay = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 0=일 ... 6=토
   return jsDay === 0 ? 6 : jsDay - 1;

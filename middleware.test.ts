@@ -77,7 +77,7 @@ describe("middleware", () => {
       { name: "sb-access-token", value: "access-2", options: { path: "/", httpOnly: true } },
     ];
 
-    const response = await middleware(requestFor("/gmail"));
+    const response = await middleware(requestFor("/tasks"));
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("http://localhost:3000/login");
@@ -87,13 +87,13 @@ describe("middleware", () => {
     });
   });
 
-  it("로그인한 관리자가 /login에 접근하면 홈으로 리다이렉트한다", async () => {
+  it("로그인한 관리자가 /login에 접근하면 업무관리로 리다이렉트한다", async () => {
     state.user = { email: "admin@example.com" };
 
     const response = await middleware(requestFor("/login"));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("http://localhost:3000/");
+    expect(response.headers.get("location")).toBe("http://localhost:3000/tasks");
   });
 
   it("로그인한 관리자가 홈에 접근하면 리다이렉트하지 않는다", async () => {
@@ -108,7 +108,7 @@ describe("middleware", () => {
   it("관리자가 아닌 로그인 사용자는 로그아웃 후 사유와 함께 로그인 화면으로 보낸다", async () => {
     state.user = { email: "someone@else.com" };
 
-    const response = await middleware(requestFor("/gmail"));
+    const response = await middleware(requestFor("/tasks"));
 
     expect(state.signOut).toHaveBeenCalled();
     expect(response.status).toBe(307);

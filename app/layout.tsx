@@ -11,7 +11,7 @@ const notoSansKR = Noto_Sans_KR({
 
 export const metadata: Metadata = {
   title: "개인 업무 대시보드",
-  description: "Gmail, Google Drive, Notion을 한 곳에서 관리하는 개인 업무 대시보드",
+  description: "즐겨찾기·계정관리·업무관리·제품 정보를 한 곳에서 관리하는 개인 업무 대시보드",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

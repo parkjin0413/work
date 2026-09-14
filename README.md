@@ -1,13 +1,12 @@
 # 개인 업무 대시보드
 
-Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개인 업무 대시보드입니다.
+즐겨찾기·계정관리·업무관리·제품 정보를 한 곳에서 관리하는 관리자 전용 개인 업무
+대시보드입니다.
 
 ## 요구 사항
 
 - Node.js 18.17 이상
 - Supabase 프로젝트 1개
-- Google Cloud 프로젝트 1개 (Gmail/Drive 연동 단계에서 필요)
-- Notion Internal Integration (Notion 연동 단계에서 필요)
 
 ## 로컬 실행
 
@@ -35,59 +34,14 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
    같은 방식으로 붙여넣고 실행 (즐겨찾기 기능용 테이블)
 7. `supabase/migrations/0003_accounts.sql`도 같은 방식으로 붙여넣고 실행
    (계정관리 기능용 테이블)
-8. `supabase/migrations/0004_tasks.sql`, `0005_tasks_task_date.sql`도 순서대로
-   같은 방식으로 붙여넣고 실행 (업무관리 기능용 테이블)
-
-## Google 연동 설정 (Gmail/Drive)
-
-1. https://console.cloud.google.com 에서 새 프로젝트 생성
-2. "API 및 서비스 > OAuth 동의 화면"에서 User Type을 "외부"로 선택하고,
-   게시 상태를 반드시 **"테스트"**로 유지 (심사 불필요). "테스트 사용자"에
-   본인 Google 계정 이메일을 추가
-3. "API 및 서비스 > 라이브러리"에서 Gmail API와 Google Drive API를 각각 사용 설정
-4. "API 및 서비스 > 사용자 인증 정보"에서 OAuth 클라이언트 ID 생성
-   (애플리케이션 유형: 웹 애플리케이션). "승인된 리디렉션 URI"에
-   `http://localhost:3000/api/auth/google/callback` (로컬 개발용)과
-   배포 후에는 `https://<Vercel 도메인>/api/auth/google/callback`을 등록
-5. 발급받은 클라이언트 ID/보안 비밀번호를 `.env.local`의
-   `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`에 입력하고,
-   `GOOGLE_REDIRECT_URI`에는 4번에서 등록한 콜백 URL을 그대로 입력
-6. 토큰 암호화 키 생성: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
-   실행 결과를 `.env.local`의 `TOKEN_ENCRYPTION_KEY`에 입력
-   (64자리 16진수 문자열이어야 함)
-7. Supabase 프로젝트 설정 > API 메뉴에서 `service_role` 키를 복사해
-   `.env.local`의 `SUPABASE_SERVICE_ROLE_KEY`에 입력 (이 키는 절대
-   `NEXT_PUBLIC_` 접두사를 붙이지 말 것 — 브라우저에 노출되면 안 됨)
-8. Supabase 대시보드의 SQL Editor에서 `supabase/migrations/0001_oauth_tokens.sql`
-   내용을 실행해 `oauth_tokens` 테이블 생성
-
-### Google 연동 시 알아둘 점
-
-- **"Google에서 확인하지 않은 앱입니다" 경고**: OAuth 동의 화면에서 이 경고가 뜨는 것은
-  정상입니다 (Gmail/Drive 스코프가 민감 스코프이기 때문). "고급"을 클릭한 뒤
-  "\<앱 이름\>(으)로 이동(안전하지 않음)"을 눌러 계속 진행하세요. 본인이 테스트
-  사용자로 등록한 계정이라면 안전합니다.
-- **토큰 7일 만료**: OAuth 동의 화면이 "테스트" 게시 상태인 동안 발급되는
-  refresh token은 7일 후 자동 만료됩니다. 이 기간이 지나면 Gmail/Drive 페이지에
-  재연결 안내가 표시되며, "Google 계정 다시 연결"을 눌러 다시 동의하면 됩니다.
-
-## Notion 연동 설정
-
-1. https://www.notion.so/my-integrations 에서 "새 통합 만들기"로 Internal
-   Integration 생성 (이름 예: "개인 업무 대시보드")
-2. 생성된 "Internal Integration Secret" 값을 복사해 `.env.local`의
-   `NOTION_API_KEY`에 입력
-3. Notion에서 대시보드에 표시하고 싶은 데이터베이스를 열고, 우측 상단 "..."
-   메뉴 > "연결 추가"(Add connections)에서 2번에서 만든 Integration을 선택해
-   공유 (이 단계는 API로 자동화할 수 없으며, 대시보드에 보이길 원하는
-   데이터베이스마다 반복해야 함)
-4. 공유하지 않은 데이터베이스는 대시보드에 나타나지 않음 — 새 데이터베이스를
-   추가하고 싶다면 3번 과정을 반복
-
-**참고**: `@notionhq/client`는 `2.x` 버전에 고정되어 있습니다. 5.x부터는 Notion의
-"멀티소스 데이터베이스" 모델로 API 타입이 바뀌어 이 앱이 사용하는 조회 방식
-(`search`의 `object: "database"` 필터)과 호환되지 않습니다. `npm install
-@notionhq/client@latest`로 임의 업그레이드하지 마세요.
+8. `supabase/migrations/0004_tasks.sql`, `0005_tasks_task_date.sql`, `0006_task_notes.sql`도
+   순서대로 같은 방식으로 붙여넣고 실행 (업무관리 기능용 테이블)
+9. 토큰 암호화 키 생성: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+   실행 결과를 `.env.local`의 `TOKEN_ENCRYPTION_KEY`에 입력 (64자리 16진수
+   문자열이어야 함 — 계정관리의 아이디/비밀번호 암호화에 사용)
+10. Supabase 프로젝트 설정 > API 메뉴에서 `service_role` 키를 복사해
+    `.env.local`의 `SUPABASE_SERVICE_ROLE_KEY`에 입력 (이 키는 절대
+    `NEXT_PUBLIC_` 접두사를 붙이지 말 것 — 브라우저에 노출되면 안 됨)
 
 ## GitHub / Vercel 연결
 
@@ -95,11 +49,7 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
 2. Vercel에서 해당 GitHub 저장소를 Import
 3. Vercel 프로젝트 설정 > Environment Variables에 `.env.local`과 동일한
    값을 등록 (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-   `ADMIN_EMAIL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
-   `GOOGLE_REDIRECT_URI`, `TOKEN_ENCRYPTION_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
-   `NOTION_API_KEY`).
-   `GOOGLE_REDIRECT_URI`는 실제 배포 도메인의 콜백 URL로 설정할 것
-   (`https://<Vercel 도메인>/api/auth/google/callback`)
+   `ADMIN_EMAIL`, `TOKEN_ENCRYPTION_KEY`, `SUPABASE_SERVICE_ROLE_KEY`)
 4. main 브랜치에 push하면 자동 배포됨
 
 ### 배포 시 주의사항
@@ -112,15 +62,20 @@ Gmail, Google Drive, Notion을 한 곳에서 관리하는 관리자 전용 개�
 ## 진행 현황
 
 - [x] 1단계: 기반 구축 (인증, 다크모드, 빈 라우트)
-- [x] 2단계: Gmail 연동
-- [x] 3단계: Google Drive 연동
-- [x] 4단계: Notion 연동
-- [x] 5단계: 홈 화면 통합
 - [x] UI 리디자인: 색상 토큰(다크/라이트), 사이드바 내비게이션, 아이콘, 타이포그래피
 - [x] URL 즐겨찾기: 카테고리별 관리 페이지, 사이드바 연동
 - [x] 계정관리: 카테고리별 카드 그리드, 아이디/비밀번호 암호화 저장·복사
-- [x] 업무관리: 고정 업무(요일별 자동 재생성) + 일반 업무(날짜 지정)
+- [x] 업무관리: 고정 업무(요일별 자동 재생성) + 일반 업무(날짜 지정) + 진행 메모 로그
 - [x] 제품 정보: 파일 기반 카탈로그(벽/바닥/천장), 총괄표·데이터시트·복사(텍스트/마크다운/JSON/Claude용)
+- [x] 별도 홈 대시보드 없음 — "/"·로그인 직후 모두 업무관리(`/tasks`)로 이동.
+  사이드바 메뉴 순서도 업무관리 → 계정관리 → 즐겨찾기 → 제품 정보
+
+### 제거된 기능
+
+Gmail·Google Drive·Notion 연동은 실사용 결과 불필요하다고 판단해 2026-09에
+완전히 제거했습니다 (라우트·OAuth 연동·요약카드·`oauth_tokens` 테이블까지 모두
+정리, `supabase/migrations/0007_drop_oauth_tokens.sql`). 필요해지면 이 커밋
+이전 git 이력에서 복구할 수 있습니다.
 
 ### 제품 정보 데이터 편집
 

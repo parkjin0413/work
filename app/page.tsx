@@ -1,28 +1,10 @@
-export const dynamic = "force-dynamic";
+import { redirect } from "next/navigation";
 
-import { Sidebar } from "@/components/layout/Sidebar";
-import { GmailSummaryCard } from "@/components/dashboard/GmailSummaryCard";
-import { DriveSummaryCard } from "@/components/dashboard/DriveSummaryCard";
-import { NotionSummaryCard } from "@/components/dashboard/NotionSummaryCard";
-import { getGmailSummary, getDriveSummary, getNotionSummary } from "@/lib/dashboard/homeSummary";
-
-export default async function HomePage() {
-  const [gmailSummary, driveSummary, notionSummary] = await Promise.all([
-    getGmailSummary(),
-    getDriveSummary(),
-    getNotionSummary(),
-  ]);
-
-  return (
-    <div className="flex min-h-screen flex-col bg-bg md:flex-row">
-      <Sidebar />
-      <main className="min-w-0 flex-1 p-6">
-        <section aria-label="서비스 요약" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <GmailSummaryCard summary={gmailSummary} />
-          <DriveSummaryCard summary={driveSummary} />
-          <NotionSummaryCard summary={notionSummary} />
-        </section>
-      </main>
-    </div>
-  );
+/**
+ * 별도 홈 대시보드는 두지 않는다 — 업무관리가 사실상 기본 화면.
+ * 로그인 성공 시에는 미들웨어(resolveRedirect)가 곧바로 /tasks 로 보내므로
+ * 이 리다이렉트는 "/"를 직접 열거나 북마크해둔 경우를 위한 안전망이다.
+ */
+export default function HomePage() {
+  redirect("/tasks");
 }

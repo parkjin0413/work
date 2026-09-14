@@ -13,7 +13,7 @@ export function resolveRedirect(pathname: string, session: MiddlewareSession): s
   }
 
   if (isAuthorized && isPublicPath) {
-    return "/";
+    return "/tasks";
   }
 
   return null;

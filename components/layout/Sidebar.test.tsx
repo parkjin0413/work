@@ -36,7 +36,7 @@ describe("Sidebar", () => {
     refreshMock.mockClear();
     signOutMock.mockClear();
     signOutMock.mockResolvedValue({ error: null });
-    usePathnameMock.mockReturnValue("/");
+    usePathnameMock.mockReturnValue("/tasks");
   });
 
   it("대시보드 제목을 한글로 보여준다", () => {
@@ -44,24 +44,28 @@ describe("Sidebar", () => {
     expect(screen.getByText("개인 업무 대시보드")).toBeInTheDocument();
   });
 
-  it("8개의 메뉴 링크를 올바른 경로로 보여준다", () => {
+  it("4개의 메뉴 링크를 업무관리·계정관리·즐겨찾기·제품 정보 순서로 보여준다 (별도 홈 없음)", () => {
     renderSidebar();
-    expect(screen.getByRole("link", { name: "홈" })).toHaveAttribute("href", "/");
-    expect(screen.getByRole("link", { name: "Gmail" })).toHaveAttribute("href", "/gmail");
-    expect(screen.getByRole("link", { name: "Drive" })).toHaveAttribute("href", "/drive");
-    expect(screen.getByRole("link", { name: "Notion" })).toHaveAttribute("href", "/notion");
-    expect(screen.getByRole("link", { name: "즐겨찾기" })).toHaveAttribute("href", "/favorites");
-    expect(screen.getByRole("link", { name: "계정관리" })).toHaveAttribute("href", "/accounts");
+    const links = screen.getAllByRole("link");
+    expect(links.map((link) => link.getAttribute("aria-label"))).toEqual([
+      "업무관리",
+      "계정관리",
+      "즐겨찾기",
+      "제품 정보",
+    ]);
     expect(screen.getByRole("link", { name: "업무관리" })).toHaveAttribute("href", "/tasks");
+    expect(screen.getByRole("link", { name: "계정관리" })).toHaveAttribute("href", "/accounts");
+    expect(screen.getByRole("link", { name: "즐겨찾기" })).toHaveAttribute("href", "/favorites");
     expect(screen.getByRole("link", { name: "제품 정보" })).toHaveAttribute("href", "/products");
+    expect(screen.queryByRole("link", { name: "홈" })).not.toBeInTheDocument();
   });
 
   it("현재 경로의 메뉴 항목에 aria-current를 표시한다", () => {
-    usePathnameMock.mockReturnValue("/gmail");
+    usePathnameMock.mockReturnValue("/tasks");
     renderSidebar();
 
-    expect(screen.getByRole("link", { name: "Gmail" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "홈" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "업무관리" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "계정관리" })).not.toHaveAttribute("aria-current");
   });
 
   it("로그아웃 버튼을 누르면 로그아웃 후 로그인 화면으로 이동한다", async () => {

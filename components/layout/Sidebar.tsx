@@ -2,28 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  CheckSquare,
-  HardDrive,
-  KeyRound,
-  LayoutDashboard,
-  LogOut,
-  Mail,
-  NotebookText,
-  Package,
-  Star,
-} from "lucide-react";
+import { CheckSquare, KeyRound, LogOut, Package, Star } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
+// 별도 홈 대시보드 없음 — 업무관리가 사실상 기본 화면(첫 메뉴)이라 "/" 항목은 두지 않는다.
 const NAV_ITEMS = [
-  { href: "/", label: "홈", icon: LayoutDashboard },
-  { href: "/gmail", label: "Gmail", icon: Mail },
-  { href: "/drive", label: "Drive", icon: HardDrive },
-  { href: "/notion", label: "Notion", icon: NotebookText },
-  { href: "/favorites", label: "즐겨찾기", icon: Star },
-  { href: "/accounts", label: "계정관리", icon: KeyRound },
   { href: "/tasks", label: "업무관리", icon: CheckSquare },
+  { href: "/accounts", label: "계정관리", icon: KeyRound },
+  { href: "/favorites", label: "즐겨찾기", icon: Star },
   { href: "/products", label: "제품 정보", icon: Package },
 ];
 
@@ -49,7 +36,7 @@ export function Sidebar() {
 
       <ul className="flex flex-1 flex-row flex-wrap items-center justify-center gap-x-0.5 gap-y-1 md:mt-8 md:flex-1 md:flex-nowrap md:flex-col md:items-stretch md:justify-start md:gap-1">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const isActive = href === "/" ? pathname === "/" : pathname?.startsWith(href);
+          const isActive = pathname?.startsWith(href);
           return (
             <li key={href}>
               <Link

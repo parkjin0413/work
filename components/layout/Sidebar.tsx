@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CheckSquare, KeyRound, LogOut, Package, Star } from "lucide-react";
+import { Building2, CheckSquare, KeyRound, LogOut, Package, Star } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/accounts", label: "계정관리", icon: KeyRound },
   { href: "/favorites", label: "즐겨찾기", icon: Star },
   { href: "/products", label: "제품 정보", icon: Package },
+  { href: "/partners", label: "회사 정보", icon: Building2 },
 ];
 
 export function Sidebar() {

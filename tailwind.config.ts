@@ -21,7 +21,7 @@ const config: Config = {
         "success-bg": "var(--color-success-bg)",
       },
       fontFamily: {
-        sans: ["var(--font-noto-sans-kr)", "system-ui", "sans-serif"],
+        sans: ["Pretendard", "system-ui", "sans-serif"],
       },
     },
   },

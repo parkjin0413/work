@@ -33,7 +33,7 @@ import {
   deleteTaskNoteAction,
 } from "./actions";
 
-const CARD_GRID_BASE = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3";
+const CARD_GRID_BASE = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
 type DragHandle = {
   setNodeRef: (node: HTMLElement | null) => void;
@@ -152,7 +152,7 @@ export function TaskList({
 
   return (
     <section className="mt-6">
-      <h2 className="text-base font-semibold text-foreground">업무 목록</h2>
+      <h2 className="text-lg font-semibold text-foreground">업무 목록</h2>
 
       {errorMessage ? (
         <p role="alert" className="mb-4 mt-2 text-sm text-danger">
@@ -481,29 +481,24 @@ function TaskNotes({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-[11px] font-medium uppercase tracking-wide text-muted">진행 메모</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted">진행 메모</p>
 
       {notes.length > 0 ? (
         <ul className="flex flex-col gap-1">
           {notes.map((note) => (
-            <li
-              key={note.id}
-              className="group flex items-start gap-2 rounded-lg bg-bg px-2 py-1.5 text-xs"
-            >
-              <span className="shrink-0 font-mono text-[10px] leading-5 text-muted">
-                {formatNoteTimestamp(note.createdAt)}
-              </span>
-              <span className="min-w-0 flex-1 whitespace-pre-wrap break-words text-foreground">
-                {note.body}
-              </span>
-              <button
-                type="button"
-                onClick={() => handleDelete(note.id)}
-                aria-label="진행 메모 삭제"
-                className="shrink-0 rounded p-0.5 text-muted opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
-              >
-                <X size={12} />
-              </button>
+            <li key={note.id} className="group flex flex-col gap-1 rounded-lg bg-bg px-2 py-1.5 text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-xs text-muted">{formatNoteTimestamp(note.createdAt)}</span>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(note.id)}
+                  aria-label="진행 메모 삭제"
+                  className="shrink-0 rounded p-0.5 text-muted opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+              <span className="whitespace-pre-wrap break-words text-foreground">{note.body}</span>
             </li>
           ))}
         </ul>
@@ -528,7 +523,7 @@ function TaskNotes({
       </form>
 
       {error ? (
-        <p role="alert" className="text-[11px] text-danger">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       ) : null}

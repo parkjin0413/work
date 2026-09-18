@@ -10,7 +10,7 @@ import { createTemplateAction, renameTemplateAction, archiveTemplateAction, setT
 const inputClass =
   "w-full min-w-0 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent";
 
-const CARD_GRID_STYLE = { gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))" };
+const CARD_GRID_STYLE = { gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))" };
 
 export function FixedTaskBoard({ tasks }: { tasks: FixedTaskCard[] }) {
   return (

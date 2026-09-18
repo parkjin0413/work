@@ -35,7 +35,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           href="/products"
           className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-foreground"
         >
-          <ArrowLeft className="h-3 w-3" aria-hidden="true" /> 제품 정보
+          <ArrowLeft className="h-3 w-3" aria-hidden="true" /> 제품정보
         </Link>
         {children}
       </main>

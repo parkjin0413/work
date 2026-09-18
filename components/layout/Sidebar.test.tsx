@@ -44,21 +44,23 @@ describe("Sidebar", () => {
     expect(screen.getByText("개인 업무 대시보드")).toBeInTheDocument();
   });
 
-  it("5개의 메뉴 링크를 업무관리·계정관리·즐겨찾기·제품 정보·회사 정보 순서로 보여준다 (별도 홈 없음)", () => {
+  it("6개의 메뉴 링크를 업무관리·계정관리·즐겨찾기·제품정보·회사정보·직원명단 순서로 보여준다 (별도 홈 없음)", () => {
     renderSidebar();
     const links = screen.getAllByRole("link");
     expect(links.map((link) => link.getAttribute("aria-label"))).toEqual([
       "업무관리",
       "계정관리",
       "즐겨찾기",
-      "제품 정보",
-      "회사 정보",
+      "제품정보",
+      "회사정보",
+      "직원명단",
     ]);
     expect(screen.getByRole("link", { name: "업무관리" })).toHaveAttribute("href", "/tasks");
     expect(screen.getByRole("link", { name: "계정관리" })).toHaveAttribute("href", "/accounts");
     expect(screen.getByRole("link", { name: "즐겨찾기" })).toHaveAttribute("href", "/favorites");
-    expect(screen.getByRole("link", { name: "제품 정보" })).toHaveAttribute("href", "/products");
-    expect(screen.getByRole("link", { name: "회사 정보" })).toHaveAttribute("href", "/partners");
+    expect(screen.getByRole("link", { name: "제품정보" })).toHaveAttribute("href", "/products");
+    expect(screen.getByRole("link", { name: "회사정보" })).toHaveAttribute("href", "/partners");
+    expect(screen.getByRole("link", { name: "직원명단" })).toHaveAttribute("href", "/employees");
     expect(screen.queryByRole("link", { name: "홈" })).not.toBeInTheDocument();
   });
 

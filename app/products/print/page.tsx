@@ -34,7 +34,7 @@ export default function ProductsPrintPage() {
             href="/products"
             className="inline-flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-black"
           >
-            <ArrowLeft className="h-3 w-3" aria-hidden="true" /> 제품 정보로
+            <ArrowLeft className="h-3 w-3" aria-hidden="true" /> 제품정보로
           </Link>
           <div className="flex items-center gap-3">
             <Link

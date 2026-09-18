@@ -163,9 +163,10 @@ function FixedTaskItem({ task }: { task: FixedTaskCard }) {
           onChange={handleToggle}
           disabled={isToggling}
           aria-label={`${task.name} 완료`}
+          className="shrink-0"
         />
         <span
-          className={`text-sm font-medium ${task.isCompleted ? "text-muted line-through" : "text-foreground"}`}
+          className={`min-w-0 break-words text-sm font-medium ${task.isCompleted ? "text-muted line-through" : "text-foreground"}`}
         >
           {task.name}
         </span>

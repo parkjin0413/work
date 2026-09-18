@@ -59,15 +59,16 @@ export function Sidebar() {
         })}
       </ul>
 
-      <div className="hidden items-center gap-2 md:flex md:flex-col md:items-stretch md:gap-2">
+      <div className="flex shrink-0 items-center gap-1 md:flex-col md:items-stretch md:gap-2">
         <ThemeToggle />
         <button
           type="button"
           onClick={handleLogout}
-          className="flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-hover"
+          aria-label="로그아웃"
+          className="flex items-center justify-center gap-2 rounded-lg border border-border px-2 py-2 text-sm font-medium text-foreground hover:bg-surface-hover md:px-3"
         >
           <LogOut className="h-4 w-4" aria-hidden="true" />
-          로그아웃
+          <span className="hidden md:inline">로그아웃</span>
         </button>
       </div>
     </nav>

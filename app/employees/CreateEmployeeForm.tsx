@@ -134,7 +134,7 @@ export function CreateEmployeeForm({
         className="rounded-lg border border-border bg-bg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
       />
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <input
           value={birthdayMonth}
           onChange={(e) => setBirthdayMonth(e.target.value)}

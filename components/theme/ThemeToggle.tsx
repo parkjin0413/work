@@ -30,7 +30,7 @@ export function ThemeToggle() {
       ) : (
         <Moon className="h-4 w-4" aria-hidden="true" />
       )}
-      {isDark ? "라이트 모드" : "다크 모드"}
+      <span className="hidden md:inline">{isDark ? "라이트 모드" : "다크 모드"}</span>
     </button>
   );
 }

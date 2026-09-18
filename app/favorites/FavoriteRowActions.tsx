@@ -51,19 +51,19 @@ export function FavoriteRowActions({
 
   if (isRenaming) {
     return (
-      <div className="flex flex-col items-end gap-1">
-        <div className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-col items-end gap-1">
+        <div className="flex flex-wrap items-center gap-2">
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             aria-label="새 이름"
-            className="rounded-md border border-border bg-bg px-2 py-1 text-sm text-foreground"
+            className="min-w-0 flex-1 rounded-md border border-border bg-bg px-2 py-1 text-sm text-foreground"
           />
           <input
             value={newUrl}
             onChange={(e) => setNewUrl(e.target.value)}
             aria-label="새 URL"
-            className="rounded-md border border-border bg-bg px-2 py-1 text-sm text-foreground"
+            className="min-w-0 flex-1 rounded-md border border-border bg-bg px-2 py-1 text-sm text-foreground"
           />
           <button
             type="button"

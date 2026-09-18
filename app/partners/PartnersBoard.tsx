@@ -32,7 +32,7 @@ export type DragHandleProps = {
   listeners: SyntheticListenerMap | undefined;
 };
 
-const CARD_GRID_STYLE = { gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))" };
+const CARD_GRID_STYLE = { gridTemplateColumns: "repeat(auto-fill, minmax(min(360px, 100%), 1fr))" };
 
 export function PartnersBoard({ partners: initialPartners }: { partners: Partner[] }) {
   const [partners, setPartners] = useState(initialPartners);

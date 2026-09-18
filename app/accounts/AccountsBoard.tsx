@@ -35,7 +35,7 @@ export type DragHandleProps = {
 
 type DragItemData = { categoryId: string };
 
-const CARD_GRID_STYLE = { gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" };
+const CARD_GRID_STYLE = { gridTemplateColumns: "repeat(auto-fill, minmax(min(260px, 100%), 1fr))" };
 
 export function AccountsBoard({ categories: initialCategories }: { categories: CategoryWithAccounts[] }) {
   const [categories, setCategories] = useState(initialCategories);

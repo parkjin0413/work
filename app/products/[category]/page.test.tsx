@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { ThemeProvider } from "next-themes";
 import CategoryPage, { generateStaticParams } from "./page";
 
 vi.mock("next/navigation", () => ({
@@ -16,11 +15,7 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 function renderPage(category: string) {
-  return render(
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      {CategoryPage({ params: { category } })}
-    </ThemeProvider>
-  );
+  return render(CategoryPage({ params: { category } }));
 }
 
 describe("generateStaticParams", () => {

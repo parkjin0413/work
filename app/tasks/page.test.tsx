@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { ThemeProvider } from "next-themes";
 import TasksPage from "./page";
 
 vi.mock("next/navigation", () => ({
@@ -22,11 +21,7 @@ vi.mock("@/lib/tasks/tasksStore", () => ({
 
 async function renderTasksPage() {
   const element = await TasksPage();
-  return render(
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      {element}
-    </ThemeProvider>
-  );
+  return render(element);
 }
 
 describe("TasksPage", () => {

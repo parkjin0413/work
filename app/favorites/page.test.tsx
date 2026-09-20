@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { ThemeProvider } from "next-themes";
 import FavoritesPage from "./page";
 
 vi.mock("next/navigation", () => ({
@@ -22,11 +21,7 @@ vi.mock("@/lib/favorites/favoritesStore", () => ({
 
 async function renderFavoritesPage() {
   const element = await FavoritesPage();
-  return render(
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      {element}
-    </ThemeProvider>
-  );
+  return render(element);
 }
 
 describe("FavoritesPage", () => {

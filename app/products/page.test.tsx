@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { ThemeProvider } from "next-themes";
 import ProductsPage from "./page";
 
 vi.mock("next/navigation", () => ({
@@ -13,11 +12,7 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 function renderPage() {
-  return render(
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      {ProductsPage()}
-    </ThemeProvider>
-  );
+  return render(ProductsPage());
 }
 
 describe("ProductsPage", () => {

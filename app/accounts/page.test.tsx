@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { ThemeProvider } from "next-themes";
 import AccountsPage from "./page";
 
 vi.mock("next/navigation", () => ({
@@ -22,11 +21,7 @@ vi.mock("@/lib/accounts/accountsStore", () => ({
 
 async function renderAccountsPage() {
   const element = await AccountsPage();
-  return render(
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      {element}
-    </ThemeProvider>
-  );
+  return render(element);
 }
 
 describe("AccountsPage", () => {

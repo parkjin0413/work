@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { ThemeProvider } from "next-themes";
 import { Sidebar } from "./Sidebar";
 
 const pushMock = vi.fn();
@@ -23,11 +22,7 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 function renderSidebar() {
-  return render(
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-      <Sidebar />
-    </ThemeProvider>
-  );
+  return render(<Sidebar />);
 }
 
 describe("Sidebar", () => {

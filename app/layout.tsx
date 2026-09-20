@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "pretendard/dist/web/static/pretendard.css";
-import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,10 +9,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" suppressHydrationWarning>
-      <body className="bg-bg font-sans text-foreground">
-        <ThemeProvider>{children}</ThemeProvider>
-      </body>
+    <html lang="ko">
+      <body className="bg-bg font-sans text-foreground">{children}</body>
     </html>
   );
 }

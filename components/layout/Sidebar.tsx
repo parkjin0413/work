@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Building2, CheckSquare, KeyRound, LogOut, Package, Star, Users } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 // 별도 홈 대시보드 없음 — 업무관리가 사실상 기본 화면(첫 메뉴)이라 "/" 항목은 두지 않는다.
 const NAV_ITEMS = [
@@ -30,13 +29,13 @@ export function Sidebar() {
   return (
     <nav
       aria-label="주요 메뉴"
-      className="flex shrink-0 flex-row items-center justify-between gap-2 border-b border-border bg-surface px-4 py-3 md:h-screen md:w-60 md:flex-col md:items-stretch md:justify-start md:border-b-0 md:border-r md:px-4 md:py-6 md:sticky md:top-0"
+      className="flex shrink-0 flex-row items-center justify-between gap-1 border-b border-border bg-surface px-3 py-3 md:h-screen md:w-60 md:flex-col md:items-stretch md:justify-start md:gap-2 md:border-b-0 md:border-r md:px-4 md:py-6 md:sticky md:top-0"
     >
       <div className="hidden items-center gap-2 md:flex">
         <span className="text-base font-semibold text-foreground">개인 업무 대시보드</span>
       </div>
 
-      <ul className="flex flex-1 flex-row flex-wrap items-center justify-center gap-x-0.5 gap-y-1 md:mt-8 md:flex-1 md:flex-nowrap md:flex-col md:items-stretch md:justify-start md:gap-1">
+      <ul className="flex flex-1 flex-row flex-nowrap items-center justify-center gap-x-0.5 md:mt-8 md:flex-1 md:flex-col md:items-stretch md:justify-start md:gap-1">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive = pathname?.startsWith(href);
           return (
@@ -45,7 +44,7 @@ export function Sidebar() {
                 href={href}
                 aria-label={label}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center justify-center gap-3 rounded-lg px-2 py-2 text-sm font-medium md:justify-start md:px-3 ${
+                className={`flex items-center justify-center gap-3 rounded-lg px-1.5 py-2 text-sm font-medium md:justify-start md:px-3 ${
                   isActive
                     ? "bg-accent/10 text-accent"
                     : "text-muted hover:bg-surface-hover hover:text-foreground"
@@ -59,18 +58,15 @@ export function Sidebar() {
         })}
       </ul>
 
-      <div className="flex shrink-0 items-center gap-1 md:flex-col md:items-stretch md:gap-2">
-        <ThemeToggle />
-        <button
-          type="button"
-          onClick={handleLogout}
-          aria-label="로그아웃"
-          className="flex items-center justify-center gap-2 rounded-lg border border-border px-2 py-2 text-sm font-medium text-foreground hover:bg-surface-hover md:px-3"
-        >
-          <LogOut className="h-4 w-4" aria-hidden="true" />
-          <span className="hidden md:inline">로그아웃</span>
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={handleLogout}
+        aria-label="로그아웃"
+        className="flex shrink-0 items-center justify-center gap-2 rounded-lg border border-border px-2 py-2 text-sm font-medium text-foreground hover:bg-surface-hover md:px-3"
+      >
+        <LogOut className="h-4 w-4" aria-hidden="true" />
+        <span className="hidden md:inline">로그아웃</span>
+      </button>
     </nav>
   );
 }

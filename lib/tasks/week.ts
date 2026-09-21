@@ -60,6 +60,12 @@ export function formatMonthDayWeekday(dateISO: string): string {
   return `${m}월 ${d}일 (${WEEKDAY_LABELS[getWeekdayIndex(dateISO)]})`;
 }
 
+/** ISO 타임스탬프가 속하는 한국 표준시(KST) 기준 날짜를 "YYYY-MM-DD"로 반환한다. */
+export function getKstDateFromISO(iso: string): string {
+  const shifted = new Date(new Date(iso).getTime() + KST_OFFSET_MS);
+  return toISODate(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate());
+}
+
 /** ISO 타임스탬프를 한국 표준시(KST) 기준 "M.D HH:mm" 로 표시한다 (진행 메모 작성시각용). */
 export function formatNoteTimestamp(iso: string): string {
   const shifted = new Date(new Date(iso).getTime() + KST_OFFSET_MS);

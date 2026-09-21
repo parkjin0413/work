@@ -1,5 +1,5 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/serviceClient";
-import { getKstTodayISO, getMondayOfISO } from "./week";
+import { addDaysISO, getKstDateFromISO, getKstTodayISO, getMondayOfISO, getWeekEndISO } from "./week";
 
 export type FixedTaskCard = {
   taskId: string;
@@ -95,6 +95,10 @@ async function materializeWeek(
   );
 
   if (insertError) {
+    // 23505 = unique_violation: 짧은 간격의 동시 요청(반복 새로고침 등)이 먼저 같은
+    // 인스턴스를 만들었다는 뜻 — DB 유니크 인덱스(0011)가 막아준 정상 상황이라 무시한다.
+    // (막지 않으면 check-then-insert 특성상 각 요청이 서로를 못 보고 중복 생성한다.)
+    if (insertError.code === "23505") return;
     throw new Error(`이번 주 고정 업무 생성 실패: ${insertError.message}`);
   }
 }
@@ -290,6 +294,85 @@ export async function reorderTasks(orderedIds: string[]): Promise<void> {
   if (failed?.error) {
     throw new Error(`업무 순서 변경 실패: ${failed.error.message}`);
   }
+}
+
+export type NoteLogEntry = {
+  noteId: string;
+  taskId: string;
+  taskName: string;
+  body: string;
+  createdAt: string;
+};
+
+export type NoteLogDay = {
+  date: string;
+  entries: NoteLogEntry[];
+};
+
+export type NoteLog = {
+  weekStart: string;
+  weekEnd: string;
+  days: NoteLogDay[];
+};
+
+/**
+ * week_start(월요일)가 속한 한 주 동안 실제로 작성된 진행 메모를, 메모를 작성한 날짜
+ * (KST, task_notes.created_at 기준) 별로 묶어 반환한다. 업무에 지정된 taskDate 가 아니라
+ * 메모를 남긴 시점을 기준으로 삼는다 — "그날 무엇을 했는지" 복기가 목적이기 때문.
+ */
+export async function getNoteLogForWeek(weekStartISO: string): Promise<NoteLog> {
+  const supabase = createSupabaseServiceClient();
+  const weekEndISO = getWeekEndISO(weekStartISO);
+  const rangeEndExclusiveISO = addDaysISO(weekEndISO, 1);
+
+  const { data: noteRows, error: notesError } = await supabase
+    .from("task_notes")
+    .select("id, task_id, body, created_at")
+    .gte("created_at", `${weekStartISO}T00:00:00+09:00`)
+    .lt("created_at", `${rangeEndExclusiveISO}T00:00:00+09:00`)
+    .order("created_at", { ascending: true });
+
+  if (notesError) {
+    throw new Error(`진행 메모 조회 실패: ${notesError.message}`);
+  }
+
+  const days = new Map<string, NoteLogEntry[]>();
+  for (let cursor = weekStartISO; cursor <= weekEndISO; cursor = addDaysISO(cursor, 1)) {
+    days.set(cursor, []);
+  }
+
+  const rows = noteRows ?? [];
+  if (rows.length > 0) {
+    const taskIds = Array.from(new Set(rows.map((row) => row.task_id)));
+    const { data: taskRows, error: tasksError } = await supabase
+      .from("tasks")
+      .select("id, name, template_id")
+      .in("id", taskIds);
+
+    if (tasksError) {
+      throw new Error(`업무 조회 실패: ${tasksError.message}`);
+    }
+
+    // 진행 메모는 수시 업무에만 달리지만, 혹시 남아있는 고정 업무 메모는 방어적으로 제외한다.
+    const taskNameById = new Map(
+      (taskRows ?? []).filter((task) => task.template_id == null).map((task) => [task.id, task.name])
+    );
+
+    for (const row of rows) {
+      const taskName = taskNameById.get(row.task_id);
+      if (!taskName) continue;
+      const date = getKstDateFromISO(row.created_at);
+      const list = days.get(date);
+      if (!list) continue;
+      list.push({ noteId: row.id, taskId: row.task_id, taskName, body: row.body, createdAt: row.created_at });
+    }
+  }
+
+  return {
+    weekStart: weekStartISO,
+    weekEnd: weekEndISO,
+    days: Array.from(days.entries()).map(([date, entries]) => ({ date, entries })),
+  };
 }
 
 export async function addTaskNote(taskId: string, body: string): Promise<TaskNote> {

@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
+import { NotebookText } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { getBoard, type Board } from "@/lib/tasks/tasksStore";
 import { CreateTaskForm } from "./CreateTaskForm";
@@ -33,7 +35,15 @@ export default async function TasksPage() {
     <div className="flex min-h-screen flex-col bg-bg md:flex-row">
       <Sidebar />
       <main className="min-w-0 flex-1 p-6">
-        <h1 className="text-lg font-semibold text-foreground">업무관리</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-lg font-semibold text-foreground">업무관리</h1>
+          <Link
+            href="/tasks/notes"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-hover"
+          >
+            <NotebookText className="h-3.5 w-3.5" aria-hidden="true" /> 주간 메모 정리
+          </Link>
+        </div>
 
         <FixedTaskBoard tasks={board.fixedTasks} />
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-type QueryResult = { data?: unknown; error?: { message: string } | null };
+type QueryResult = { data?: unknown; error?: { message: string; code?: string } | null };
 
 function makeQuery(result: QueryResult) {
   const builder: Record<string, unknown> = {};
@@ -13,6 +13,8 @@ function makeQuery(result: QueryResult) {
   builder.is = vi.fn(chain);
   builder.not = vi.fn(chain);
   builder.in = vi.fn(chain);
+  builder.gte = vi.fn(chain);
+  builder.lt = vi.fn(chain);
   builder.order = vi.fn(chain);
   builder.single = vi.fn(chain);
   builder.then = (resolve: (value: QueryResult) => void, reject?: (reason: unknown) => void) =>
@@ -42,6 +44,7 @@ import {
   reorderTasks,
   addTaskNote,
   deleteTaskNote,
+  getNoteLogForWeek,
 } from "./tasksStore";
 
 describe("tasksStore", () => {
@@ -109,6 +112,34 @@ describe("tasksStore", () => {
       await getBoard();
 
       expect(fromMock).toHaveBeenCalledTimes(5);
+    });
+
+    it("동시 요청이 먼저 만들어 유니크 제약(23505)에 걸리면 에러 없이 넘어간다", async () => {
+      queueResult({
+        data: [{ id: "tpl-1", name: "홍보부 회의", weekday: 0, sort_order: 0 }],
+        error: null,
+      }); // templates
+      queueResult({ data: [], error: null }); // existing check → 없음(이 요청 기준)
+      queueResult({ error: { message: "duplicate key value violates unique constraint", code: "23505" } }); // insert — 동시 요청이 먼저 생성
+      queueResult({ data: [{ id: "task-1", template_id: "tpl-1", name: "홍보부 회의", weekday: 0, is_completed: false }], error: null }); // fixed rows
+      queueResult({ data: [], error: null }); // general rows
+
+      const result = await getBoard();
+
+      expect(result.fixedTasks).toEqual([
+        { taskId: "task-1", templateId: "tpl-1", name: "홍보부 회의", weekday: 0, isCompleted: false },
+      ]);
+    });
+
+    it("유니크 제약 외의 삽입 실패는 그대로 에러를 던진다", async () => {
+      queueResult({
+        data: [{ id: "tpl-1", name: "홍보부 회의", weekday: 0, sort_order: 0 }],
+        error: null,
+      }); // templates
+      queueResult({ data: [], error: null }); // existing check
+      queueResult({ error: { message: "db down" } }); // insert — 다른 이유로 실패
+
+      await expect(getBoard()).rejects.toThrow("db down");
     });
 
     it("일반 업무는 등록일을 포함해서 완료 전까지 계속 노출된다", async () => {
@@ -511,6 +542,82 @@ describe("tasksStore", () => {
       expect(fromMock).toHaveBeenCalledWith("task_notes");
       expect(query.delete).toHaveBeenCalled();
       expect(query.eq).toHaveBeenCalledWith("id", "n1");
+    });
+  });
+
+  describe("getNoteLogForWeek", () => {
+    it("메모를 작성한 날짜(KST) 기준으로 묶어 요일 순서대로 반환한다", async () => {
+      queueResult({
+        data: [
+          { id: "n1", task_id: "task-1", body: "샘플 방문 일정 조율", created_at: "2026-09-08T01:00:00.000Z" }, // KST 9/8 10:00
+          { id: "n2", task_id: "task-1", body: "CMYK 인쇄 비용 확인", created_at: "2026-09-08T05:00:00.000Z" }, // KST 9/8 14:00
+          { id: "n3", task_id: "task-2", body: "거래처 견적서 발송", created_at: "2026-09-09T20:30:00.000Z" }, // KST 9/10 05:30
+        ],
+        error: null,
+      }); // task_notes
+      queueResult({
+        data: [
+          { id: "task-1", name: "마우스패드 제작", template_id: null },
+          { id: "task-2", name: "거래처 미팅", template_id: null },
+        ],
+        error: null,
+      }); // tasks
+
+      const log = await getNoteLogForWeek("2026-09-07"); // 월요일
+
+      expect(log.weekStart).toBe("2026-09-07");
+      expect(log.weekEnd).toBe("2026-09-13");
+      expect(log.days).toHaveLength(7);
+      expect(log.days.map((d) => d.date)).toEqual([
+        "2026-09-07",
+        "2026-09-08",
+        "2026-09-09",
+        "2026-09-10",
+        "2026-09-11",
+        "2026-09-12",
+        "2026-09-13",
+      ]);
+
+      const monday = log.days.find((d) => d.date === "2026-09-07")!;
+      expect(monday.entries).toEqual([]);
+
+      const tuesday = log.days.find((d) => d.date === "2026-09-08")!;
+      expect(tuesday.entries).toEqual([
+        { noteId: "n1", taskId: "task-1", taskName: "마우스패드 제작", body: "샘플 방문 일정 조율", createdAt: "2026-09-08T01:00:00.000Z" },
+        { noteId: "n2", taskId: "task-1", taskName: "마우스패드 제작", body: "CMYK 인쇄 비용 확인", createdAt: "2026-09-08T05:00:00.000Z" },
+      ]);
+
+      const wednesday = log.days.find((d) => d.date === "2026-09-10")!;
+      expect(wednesday.entries).toEqual([
+        { noteId: "n3", taskId: "task-2", taskName: "거래처 미팅", body: "거래처 견적서 발송", createdAt: "2026-09-09T20:30:00.000Z" },
+      ]);
+    });
+
+    it("메모가 하나도 없으면 tasks 조회 없이 빈 날짜 목록만 반환한다", async () => {
+      queueResult({ data: [], error: null }); // task_notes
+
+      const log = await getNoteLogForWeek("2026-09-07");
+
+      expect(fromMock).toHaveBeenCalledTimes(1);
+      expect(log.days.every((d) => d.entries.length === 0)).toBe(true);
+    });
+
+    it("삭제된 업무나 고정 업무에 남은 메모는 제외한다", async () => {
+      queueResult({
+        data: [{ id: "n1", task_id: "task-deleted", body: "고아 메모", created_at: "2026-09-08T01:00:00.000Z" }],
+        error: null,
+      }); // task_notes
+      queueResult({ data: [], error: null }); // tasks — 조회되는 업무 없음(삭제됨)
+
+      const log = await getNoteLogForWeek("2026-09-07");
+
+      expect(log.days.flatMap((d) => d.entries)).toEqual([]);
+    });
+
+    it("진행 메모 조회가 실패하면 에러를 던진다", async () => {
+      queueResult({ data: null, error: { message: "db down" } });
+
+      await expect(getNoteLogForWeek("2026-09-07")).rejects.toThrow("db down");
     });
   });
 });

@@ -49,13 +49,13 @@ export function CertStandards({ variant = "screen" }: { variant?: "screen" | "pr
 
   return (
     <div className="space-y-3">
-      <p className="text-[11px] leading-relaxed text-muted">{CERT_STANDARDS_INTRO}</p>
+      <p className="text-[0.61rem] leading-relaxed text-muted">{CERT_STANDARDS_INTRO}</p>
       <ul className="grid gap-3 md:grid-cols-2">
         {CERT_STANDARDS.map((s) => (
           <li key={s.id} className="rounded-xl border border-border bg-surface p-4">
             <p className="text-sm font-semibold text-foreground">{s.term}</p>
             <p className="mt-1 text-xs leading-relaxed text-muted">{s.gist}</p>
-            <dl className="mt-2 space-y-1 text-[11px] leading-relaxed">
+            <dl className="mt-2 space-y-1 text-[0.61rem] leading-relaxed">
               <Row k="근거" v={s.basis} />
               <Row k="시험" v={s.test} />
               {s.criteria ? <Row k="기준치" v={s.criteria} /> : null}

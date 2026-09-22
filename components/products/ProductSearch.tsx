@@ -92,15 +92,15 @@ export function ProductSearch({ products }: { products: ProductListItem[] }) {
                 className="flex h-full flex-col gap-2 rounded-xl border border-border bg-surface p-4 hover:border-accent"
               >
                 <div className="flex items-center gap-2">
-                  <span className="rounded bg-surface-hover px-1.5 py-0.5 text-[11px] font-medium text-muted">
+                  <span className="rounded bg-surface-hover px-1.5 py-0.5 text-[0.61rem] font-medium text-muted">
                     {p.category}
                   </span>
                   {p.discontinued ? (
-                    <span className="rounded bg-danger-bg px-1.5 py-0.5 text-[11px] font-medium text-danger">
+                    <span className="rounded bg-danger-bg px-1.5 py-0.5 text-[0.61rem] font-medium text-danger">
                       단종
                     </span>
                   ) : null}
-                  <span className="text-[11px] text-muted">타입 {p.typeCount}개</span>
+                  <span className="text-[0.61rem] text-muted">타입 {p.typeCount}개</span>
                 </div>
                 <h3 className="text-sm font-semibold text-foreground">{p.name}</h3>
                 <p className="text-xs text-muted">{p.productType}</p>
@@ -109,7 +109,7 @@ export function ProductSearch({ products }: { products: ProductListItem[] }) {
                     {p.badges.map((b) => (
                       <span
                         key={b}
-                        className="rounded border border-border px-1.5 py-0.5 text-[10px] text-muted"
+                        className="rounded border border-border px-1.5 py-0.5 text-[0.56rem] text-muted"
                       >
                         {b}
                       </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -35,6 +35,29 @@ import {
 
 const CARD_GRID_BASE = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
+/** 서버가 준 목록에, 아직 서버 응답에 반영되지 않은 로컬 메모 추가/삭제를 얹어준다. */
+function withPendingNotes(
+  serverTasks: GeneralTask[],
+  addedNotes: Map<string, { taskId: string; note: TaskNote }>,
+  removedNoteIds: Set<string>
+): GeneralTask[] {
+  if (addedNotes.size === 0 && removedNoteIds.size === 0) return serverTasks;
+
+  return serverTasks.map((task) => {
+    const kept = task.notes.filter((note) => !removedNoteIds.has(note.id));
+    const extras = [...addedNotes.values()]
+      .filter((pending) => pending.taskId === task.id)
+      .map((pending) => pending.note);
+
+    if (extras.length === 0 && kept.length === task.notes.length) return task;
+
+    return {
+      ...task,
+      notes: [...kept, ...extras].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    };
+  });
+}
+
 type DragHandle = {
   setNodeRef: (node: HTMLElement | null) => void;
   style: CSSProperties;
@@ -54,13 +77,29 @@ export function TaskList({
   const [completed, setCompleted] = useState(initialCompleted);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    setIncomplete(initialIncomplete);
-  }, [initialIncomplete]);
+  // 서버 액션이 끝날 때마다 페이지가 다시 렌더링돼 새 목록(props)이 내려온다. 그런데 다른
+  // 카드의 작업이 먼저 만들어 둔 "옛날 스냅샷"이 뒤늦게 도착하면, 방금 추가한 진행 메모가
+  // 그 스냅샷에는 없어서 화면에서 사라져 버렸다. 서버가 아직 모르는 로컬 메모 변경을
+  // 여기 담아두고, 서버 응답에 반영된 게 확인되면 스스로 비운다.
+  const pendingAddedNotes = useRef(new Map<string, { taskId: string; note: TaskNote }>());
+  const pendingRemovedNoteIds = useRef(new Set<string>());
 
   useEffect(() => {
-    setCompleted(initialCompleted);
-  }, [initialCompleted]);
+    const serverNoteIds = new Set<string>();
+    for (const task of [...initialIncomplete, ...initialCompleted]) {
+      for (const note of task.notes) serverNoteIds.add(note.id);
+    }
+
+    for (const noteId of pendingAddedNotes.current.keys()) {
+      if (serverNoteIds.has(noteId)) pendingAddedNotes.current.delete(noteId);
+    }
+    for (const noteId of pendingRemovedNoteIds.current) {
+      if (!serverNoteIds.has(noteId)) pendingRemovedNoteIds.current.delete(noteId);
+    }
+
+    setIncomplete(withPendingNotes(initialIncomplete, pendingAddedNotes.current, pendingRemovedNoteIds.current));
+    setCompleted(withPendingNotes(initialCompleted, pendingAddedNotes.current, pendingRemovedNoteIds.current));
+  }, [initialIncomplete, initialCompleted]);
 
   async function handleToggle(task: GeneralTask, nextCompleted: boolean) {
     const previousIncomplete = incomplete;
@@ -113,10 +152,14 @@ export function TaskList({
   }
 
   function handleNoteAdded(taskId: string, note: TaskNote) {
+    pendingAddedNotes.current.set(note.id, { taskId, note });
+    pendingRemovedNoteIds.current.delete(note.id);
     patchNotes(taskId, (notes) => [...notes, note]);
   }
 
   function handleNoteDeleted(taskId: string, noteId: string) {
+    pendingRemovedNoteIds.current.add(noteId);
+    pendingAddedNotes.current.delete(noteId);
     patchNotes(taskId, (notes) => notes.filter((n) => n.id !== noteId));
   }
 
@@ -151,9 +194,7 @@ export function TaskList({
   const draggingTask = draggingId ? incomplete.find((t) => t.id === draggingId) : null;
 
   return (
-    <section className="mt-6">
-      <h2 className="text-lg font-semibold text-foreground">업무 목록</h2>
-
+    <div className="mt-4">
       {errorMessage ? (
         <p role="alert" className="mb-4 mt-2 text-sm text-danger">
           {errorMessage}
@@ -161,7 +202,7 @@ export function TaskList({
       ) : null}
 
       {incomplete.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">할 일이 없습니다.</p>
+        <p className="text-sm text-muted">할 일이 없습니다.</p>
       ) : (
         <DndContext
           sensors={sensors}
@@ -171,7 +212,7 @@ export function TaskList({
           onDragCancel={() => setDraggingId(null)}
         >
           <SortableContext items={incomplete.map((t) => t.id)} strategy={rectSortingStrategy}>
-            <div className={`mt-3 ${CARD_GRID_BASE}`}>
+            <div className={CARD_GRID_BASE}>
               {incomplete.map((task) => (
                 <SortableTaskCard
                   key={task.id}
@@ -188,7 +229,7 @@ export function TaskList({
 
           <DragOverlay>
             {draggingTask ? (
-              <div className="rounded-2xl border border-accent bg-surface p-4 text-sm font-medium text-foreground shadow-lg">
+              <div className="rounded-2xl border border-accent bg-surface-highlight p-4 text-sm font-medium text-highlight-foreground shadow-lg">
                 {draggingTask.name}
               </div>
             ) : null}
@@ -214,7 +255,7 @@ export function TaskList({
           </div>
         </div>
       ) : null}
-    </section>
+    </div>
   );
 }
 
@@ -297,20 +338,20 @@ function TaskCard({
       <div
         ref={dragHandle?.setNodeRef}
         style={dragHandle?.style}
-        className="flex flex-col gap-2 rounded-2xl border border-accent bg-surface p-4"
+        className="flex flex-col gap-2 rounded-2xl border border-accent bg-surface-highlight p-4"
       >
         <input
           type="date"
           value={editDate}
           onChange={(e) => setEditDate(e.target.value)}
           aria-label="날짜"
-          className="w-full min-w-0 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground"
+          className="w-full min-w-0 rounded-lg border border-highlight-line bg-surface-highlight-soft px-2 py-1 text-sm text-highlight-foreground"
         />
         <input
           value={editName}
           onChange={(e) => setEditName(e.target.value)}
           aria-label="업무 이름"
-          className="w-full min-w-0 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground"
+          className="w-full min-w-0 rounded-lg border border-highlight-line bg-surface-highlight-soft px-2 py-1 text-sm text-highlight-foreground"
         />
         <textarea
           value={editMemo}
@@ -318,7 +359,7 @@ function TaskCard({
           placeholder="진행상황 (선택)"
           aria-label="진행상황"
           rows={3}
-          className="w-full min-w-0 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground"
+          className="w-full min-w-0 rounded-lg border border-highlight-line bg-surface-highlight-soft px-2 py-1 text-sm text-highlight-foreground"
         />
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -338,7 +379,7 @@ function TaskCard({
               setErrorMessage(null);
               setIsEditing(false);
             }}
-            className="rounded-md border border-border px-2 py-1 text-xs text-muted"
+            className="rounded-md border border-highlight-line px-2 py-1 text-xs text-highlight-muted"
           >
             취소
           </button>
@@ -356,7 +397,7 @@ function TaskCard({
     <div
       ref={dragHandle?.setNodeRef}
       style={dragHandle?.style}
-      className={`flex flex-col gap-2 rounded-2xl border border-border bg-surface p-4 ${
+      className={`flex flex-col gap-2 rounded-2xl border border-highlight-line bg-surface-highlight p-4 ${
         dragHandle?.isDragging ? "opacity-50" : ""
       }`}
     >
@@ -366,21 +407,21 @@ function TaskCard({
             <button
               type="button"
               aria-label={`${task.name} 순서 변경`}
-              className="shrink-0 cursor-grab touch-none rounded-md p-1 text-muted hover:bg-bg active:cursor-grabbing"
+              className="shrink-0 cursor-grab touch-none rounded-md p-1 text-highlight-muted hover:bg-surface-highlight-soft active:cursor-grabbing"
               {...dragHandle.attributes}
               {...dragHandle.listeners}
             >
               <GripVertical size={14} />
             </button>
           ) : null}
-          <span className="text-xs text-muted">{formatMonthDayWeekday(task.taskDate)}</span>
+          <span className="text-xs text-highlight-muted">{formatMonthDayWeekday(task.taskDate)}</span>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={() => setIsEditing(true)}
             aria-label={`${task.name} 수정`}
-            className="rounded-md p-1 text-muted hover:bg-bg hover:text-foreground"
+            className="rounded-md p-1 text-highlight-muted hover:bg-surface-highlight-soft hover:text-highlight-foreground"
           >
             <Pencil size={13} />
           </button>
@@ -389,7 +430,7 @@ function TaskCard({
             onClick={handleDeleteClick}
             disabled={isDeleting}
             aria-label={`${task.name} 삭제`}
-            className="rounded-md p-1 text-danger hover:bg-bg disabled:opacity-50"
+            className="rounded-md p-1 text-danger hover:bg-surface-highlight-soft disabled:opacity-50"
           >
             <Trash2 size={13} />
           </button>
@@ -407,7 +448,7 @@ function TaskCard({
         />
         <span
           className={`min-w-0 break-words text-sm font-medium ${
-            task.isCompleted ? "text-muted line-through" : "text-foreground"
+            task.isCompleted ? "text-highlight-muted line-through" : "text-highlight-foreground"
           }`}
         >
           {task.name}
@@ -415,7 +456,7 @@ function TaskCard({
       </label>
 
       <div
-        className={`min-h-[3rem] whitespace-pre-wrap break-words rounded-lg bg-bg p-2 text-xs text-muted ${
+        className={`min-h-[3rem] whitespace-pre-wrap break-words rounded-lg bg-surface-highlight-soft p-2 text-xs text-highlight-muted ${
           task.isCompleted ? "line-through" : ""
         }`}
       >
@@ -430,7 +471,7 @@ function TaskCard({
       />
 
       {task.completedAt ? (
-        <span className="text-xs text-muted">완료 {formatMonthDayWeekday(task.completedAt.slice(0, 10))}</span>
+        <span className="text-xs text-highlight-muted">완료 {formatMonthDayWeekday(task.completedAt.slice(0, 10))}</span>
       ) : null}
     </div>
   );
@@ -481,24 +522,24 @@ function TaskNotes({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted">진행 메모</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-highlight-muted">진행 메모</p>
 
       {notes.length > 0 ? (
         <ul className="flex flex-col gap-1">
           {notes.map((note) => (
-            <li key={note.id} className="group flex flex-col gap-1 rounded-lg bg-bg px-2 py-1.5 text-xs">
+            <li key={note.id} className="group flex flex-col gap-1 rounded-lg bg-surface-highlight-soft px-2 py-1.5 text-xs">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-xs text-muted">{formatNoteTimestamp(note.createdAt)}</span>
+                <span className="font-mono text-xs text-highlight-muted">{formatNoteTimestamp(note.createdAt)}</span>
                 <button
                   type="button"
                   onClick={() => handleDelete(note.id)}
                   aria-label="진행 메모 삭제"
-                  className="shrink-0 rounded p-0.5 text-muted opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
+                  className="shrink-0 rounded p-0.5 text-highlight-muted opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
                 >
                   <X size={12} />
                 </button>
               </div>
-              <span className="whitespace-pre-wrap break-words text-foreground">{note.body}</span>
+              <span className="whitespace-pre-wrap break-words text-highlight-foreground">{note.body}</span>
             </li>
           ))}
         </ul>
@@ -511,12 +552,12 @@ function TaskNotes({
           placeholder="진행 메모 추가"
           aria-label="진행 메모 추가"
           rows={2}
-          className="min-w-0 flex-1 resize-y rounded-lg border border-border bg-bg px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+          className="min-w-0 flex-1 resize-y rounded-lg border border-highlight-line bg-surface-highlight-soft px-2 py-1 text-xs text-highlight-foreground focus:outline-none focus:ring-1 focus:ring-accent"
         />
         <button
           type="submit"
           disabled={isAdding || !draft.trim()}
-          className="shrink-0 rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground hover:bg-bg disabled:opacity-50"
+          className="shrink-0 rounded-md border border-highlight-line px-2 py-1 text-xs font-medium text-highlight-foreground hover:bg-surface-highlight-soft disabled:opacity-50"
         >
           {isAdding ? "..." : "추가"}
         </button>

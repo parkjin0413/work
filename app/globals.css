@@ -6,6 +6,14 @@
   --color-bg: #F7F7F9;
   --color-surface: #FFFFFF;
   --color-surface-hover: #F1F1F4;
+  /* 업무 목록 카드용 강조 면. 앱 액센트(인디고)와 같은 계열의 옅은 톤이라
+     흰 카드들 사이에서 확실히 구분되면서도 넓은 면적에 깔려도 눈이 편하다.
+     카드 안쪽 면/테두리/글자까지 같은 계열로 맞춘다. */
+  --color-surface-highlight: #EEF1FC;
+  --color-surface-highlight-soft: #FAFBFF;
+  --color-highlight-line: #D8DDF4;
+  --color-highlight-foreground: #1E2033;
+  --color-highlight-muted: #5C6180;
   --color-border: #E4E4E9;
   --color-text: #121214;
   --color-text-muted: #6B6B76;
@@ -21,4 +29,27 @@
 html {
   color-scheme: light;
   font-size: 18px;
+}
+
+/* 4K 모니터에서만 글자를 키운다. Tailwind 크기·여백이 전부 rem 기반이라
+   기준 글자 크기 하나로 UI 전체가 비례해서 커진다.
+   - 4K + 배율 150%: devicePixelRatio 1.5, 창 폭 2560px → 아래 두 규칙 모두 해당
+   - 4K + 배율 100~125%: 창 폭 3072~3840px → 폭 기준 규칙에 해당
+   - 1920 모니터(dppx 1, 폭 1920px)는 어디에도 해당 없음 → 기존 18px 유지 */
+@media (min-resolution: 1.5dppx) and (min-width: 1500px) {
+  html {
+    font-size: 20px;
+  }
+}
+
+@media (min-width: 2300px) {
+  html {
+    font-size: 20px;
+  }
+}
+
+@media (min-width: 3200px) {
+  html {
+    font-size: 22px;
+  }
 }

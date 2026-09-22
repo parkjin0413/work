@@ -11,22 +11,39 @@ vi.mock("@/lib/supabase/client", () => ({
   createSupabaseBrowserClient: () => ({ auth: { signOut: vi.fn() } }),
 }));
 
-const { getBoardMock } = vi.hoisted(() => ({
+const { getBoardMock, getNoteLogForWeekMock } = vi.hoisted(() => ({
   getBoardMock: vi.fn(),
+  getNoteLogForWeekMock: vi.fn(),
 }));
 
 vi.mock("@/lib/tasks/tasksStore", () => ({
   getBoard: getBoardMock,
+  getNoteLogForWeek: getNoteLogForWeekMock,
 }));
 
-async function renderTasksPage() {
-  const element = await TasksPage();
+const emptyLog = {
+  weekStart: "2026-09-21",
+  weekEnd: "2026-09-27",
+  days: [
+    "2026-09-21",
+    "2026-09-22",
+    "2026-09-23",
+    "2026-09-24",
+    "2026-09-25",
+    "2026-09-26",
+    "2026-09-27",
+  ].map((date) => ({ date, entries: [] })),
+};
+
+async function renderTasksPage(searchParams: { week?: string } = {}) {
+  const element = await TasksPage({ searchParams });
   return render(element);
 }
 
 describe("TasksPage", () => {
   beforeEach(() => {
     getBoardMock.mockReset();
+    getNoteLogForWeekMock.mockReset().mockResolvedValue(emptyLog);
   });
 
   it("고정 업무를 카드로 보여준다", async () => {
@@ -111,5 +128,32 @@ describe("TasksPage", () => {
         "업무 정보를 불러오지 못했습니다. Supabase 연결 상태와 tasks 관련 마이그레이션(0004~0006) 실행 여부를 확인해주세요."
       )
     ).toBeInTheDocument();
+  });
+
+  it("주간 메모 정리를 업무 목록보다 위에 보여준다", async () => {
+    getBoardMock.mockResolvedValue({ fixedTasks: [], incomplete: [], completed: [] });
+
+    const { container } = await renderTasksPage();
+
+    const headings = Array.from(container.querySelectorAll("h1, h2")).map((el) => el.textContent);
+    expect(headings).toEqual(["업무관리", "주간 메모 정리", "고정 업무", "업무 목록"]);
+  });
+
+  it("쿼리로 준 주(week)가 유효한 월요일이면 그 주의 메모를 조회한다", async () => {
+    getBoardMock.mockResolvedValue({ fixedTasks: [], incomplete: [], completed: [] });
+
+    await renderTasksPage({ week: "2026-09-07" });
+
+    expect(getNoteLogForWeekMock).toHaveBeenCalledWith("2026-09-07");
+  });
+
+  it("월요일이 아닌 week 값은 무시하고 이번 주를 조회한다", async () => {
+    getBoardMock.mockResolvedValue({ fixedTasks: [], incomplete: [], completed: [] });
+
+    await renderTasksPage({ week: "2026-09-09" }); // 수요일 → 무효
+
+    const calledWith = getNoteLogForWeekMock.mock.calls[0][0];
+    expect(calledWith).not.toBe("2026-09-09");
+    expect(/^\d{4}-\d{2}-\d{2}$/.test(calledWith)).toBe(true);
   });
 });

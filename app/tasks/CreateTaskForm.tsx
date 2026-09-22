@@ -43,7 +43,7 @@ export function CreateTaskForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 flex flex-wrap items-center gap-2">
+    <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-2">
       <input
         type="date"
         value={taskDate}

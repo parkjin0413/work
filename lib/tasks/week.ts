@@ -54,6 +54,11 @@ export function formatShortDate(dateISO: string): string {
   return `${m}.${d}`;
 }
 
+/** "YYYY-MM-DD"를 "M.D (요일)" 형태로 짧게 표시한다 (좁은 카드 머리말용). */
+export function formatShortDateWeekday(dateISO: string): string {
+  return `${formatShortDate(dateISO)} (${WEEKDAY_LABELS[getWeekdayIndex(dateISO)]})`;
+}
+
 /** "YYYY-MM-DD"를 "M월 D일 (요일)" 형태로 표시한다. */
 export function formatMonthDayWeekday(dateISO: string): string {
   const [, m, d] = dateISO.split("-").map(Number);

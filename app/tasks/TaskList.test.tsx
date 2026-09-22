@@ -127,6 +127,39 @@ describe("TaskList", () => {
     expect(await screen.findByText("샘플 방문 일정 조율")).toBeInTheDocument();
   });
 
+  it("방금 추가한 메모가 빠진 옛날 서버 응답이 뒤늦게 와도 메모가 사라지지 않는다", async () => {
+    const newNote = { id: "n-new", body: "샘플 방문 일정 조율", createdAt: "2026-09-10T05:00:00.000Z" };
+    addTaskNoteActionMock.mockResolvedValue(newNote);
+    const { rerender } = render(<TaskList incomplete={[adhocTask]} completed={[]} />);
+
+    fireEvent.change(screen.getByLabelText("진행 메모 추가"), {
+      target: { value: "샘플 방문 일정 조율" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "추가" }));
+    expect(await screen.findByText("샘플 방문 일정 조율")).toBeInTheDocument();
+
+    // 다른 카드의 작업 때문에 메모 추가 이전 시점의 목록이 뒤늦게 내려오는 상황
+    rerender(<TaskList incomplete={[{ ...adhocTask, notes: [] }]} completed={[]} />);
+    expect(screen.getByText("샘플 방문 일정 조율")).toBeInTheDocument();
+
+    // 서버가 메모를 인지한 응답이 오면 그 뒤로는 서버 데이터를 그대로 따른다
+    rerender(<TaskList incomplete={[{ ...adhocTask, notes: [newNote] }]} completed={[]} />);
+    expect(screen.getByText("샘플 방문 일정 조율")).toBeInTheDocument();
+  });
+
+  it("방금 삭제한 메모가 남아있는 옛날 서버 응답이 와도 다시 살아나지 않는다", async () => {
+    const note = { id: "n1", body: "지울 메모", createdAt: "2026-09-09T01:00:00.000Z" };
+    const { rerender } = render(
+      <TaskList incomplete={[{ ...adhocTask, notes: [note] }]} completed={[]} />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "진행 메모 삭제" }));
+    await waitFor(() => expect(deleteTaskNoteActionMock).toHaveBeenCalledWith("n1"));
+
+    rerender(<TaskList incomplete={[{ ...adhocTask, notes: [note] }]} completed={[]} />);
+    expect(screen.queryByText("지울 메모")).not.toBeInTheDocument();
+  });
+
   it("진행 메모 삭제 버튼을 누르면 deleteTaskNoteAction을 호출하고 목록에서 사라진다", async () => {
     const task = {
       ...adhocTask,

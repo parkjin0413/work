@@ -82,7 +82,7 @@ export function RollupTable({
               </tr>
               {/* 컬럼 헤더 — 분류 색 옅게 */}
               <tr
-                className="text-left text-[11px] uppercase tracking-wide"
+                className="text-left text-[0.61rem] uppercase tracking-wide"
                 style={{ background: c.tint, color: c.text }}
               >
                 <th className="whitespace-nowrap border-l-4 px-3 py-2 font-semibold" style={{ borderColor: c.bar }}>

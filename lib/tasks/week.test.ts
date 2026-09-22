@@ -5,6 +5,7 @@ import {
   getWeekEndISO,
   isValidMondayISO,
   formatShortDate,
+  formatShortDateWeekday,
   formatMonthDayWeekday,
   formatNoteTimestamp,
   getKstDateFromISO,
@@ -67,6 +68,12 @@ describe("getWeekEndISO", () => {
 describe("formatShortDate", () => {
   it("M.D 형태로 표시한다", () => {
     expect(formatShortDate("2026-09-01")).toBe("9.1");
+  });
+});
+
+describe("formatShortDateWeekday", () => {
+  it("M.D (요일) 형태로 표시한다 (2026-09-04는 금요일)", () => {
+    expect(formatShortDateWeekday("2026-09-04")).toBe("9.4 (금)");
   });
 });
 

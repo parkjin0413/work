@@ -118,7 +118,7 @@ export default function ProductsPage() {
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-foreground">제품 규격 총괄표</h2>
           <RollupTable rows={rows} />
-          <p className="text-[11px] leading-relaxed text-muted">
+          <p className="text-[0.61rem] leading-relaxed text-muted">
             채운 점 = 해당 시험성적서 보유 · 빈 점 = 성적서 없음(해당없음 확정 아님) ·
             화재는 국내 불연 / 준불연 / 방염만 표시 · 미끄럼저항·흡음·차음 등은 성적서
             실측값 · 모든 값은 각 제품 <code className="font-mono">certifications</code> 에서

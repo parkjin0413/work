@@ -34,7 +34,7 @@ export function NoteBlock({ prefix, text }: { prefix: string; text: string }) {
 function ImgSlot({ text, className = "" }: { text: string; className?: string }) {
   return (
     <div
-      className={`flex min-h-[52px] items-center justify-center rounded border border-dashed border-border bg-surface-hover px-2 py-3 text-center font-mono text-[10px] text-muted ${className}`}
+      className={`flex min-h-[52px] items-center justify-center rounded border border-dashed border-border bg-surface-hover px-2 py-3 text-center font-mono text-[0.56rem] text-muted ${className}`}
     >
       {text}
     </div>
@@ -57,7 +57,7 @@ export function PerfCell({ product }: { product: Product }) {
         return (
           <span
             key={d.key}
-            className="inline-flex items-center rounded-full border border-accent bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent"
+            className="inline-flex items-center rounded-full border border-accent bg-accent/10 px-2 py-0.5 text-[0.61rem] font-medium text-accent"
           >
             {text}
           </span>
@@ -74,10 +74,10 @@ export function BasicInfoCell({ product }: { product: Product }) {
     ["설치", product.installationSummary],
   ];
   return (
-    <dl className="space-y-1.5 text-[13px]">
+    <dl className="space-y-1.5 text-[0.72rem]">
       {rows.map(([k, val]) => (
         <div key={k} className="flex gap-2">
-          <dt className="w-10 shrink-0 text-[11px] font-medium uppercase text-muted">{k}</dt>
+          <dt className="w-10 shrink-0 text-[0.61rem] font-medium uppercase text-muted">{k}</dt>
           <dd className="min-w-0 text-foreground">
             {val || <span className="italic text-muted">{EMPTY}</span>}
           </dd>
@@ -92,7 +92,7 @@ export function HighlightsCell({ product }: { product: Product }) {
   return (
     <ul className="space-y-1.5">
       {product.highlightFeatures.slice(0, 6).map((h, i) => (
-        <li key={i} className="text-[13px]">
+        <li key={i} className="text-[0.72rem]">
           <span className="font-medium text-foreground">{h.title}</span>
           {h.description ? <span className="block text-xs text-muted">{h.description}</span> : null}
         </li>
@@ -108,7 +108,7 @@ export function FeaturesCell({ product }: { product: Product }) {
       {product.features.map((f, i) => (
         <li
           key={i}
-          className="relative pl-4 text-[13px] text-muted before:absolute before:left-0 before:top-2 before:h-1.5 before:w-1.5 before:rounded-full before:bg-accent"
+          className="relative pl-4 text-[0.72rem] text-muted before:absolute before:left-0 before:top-2 before:h-1.5 before:w-1.5 before:rounded-full before:bg-accent"
         >
           {f}
         </li>
@@ -180,7 +180,7 @@ function CertRow({ cert }: { cert: Product["certifications"][number] }) {
 
   return (
     <div className="rounded-lg border border-border p-3">
-      {name ? <p className="text-[13px] font-semibold text-foreground">{name}</p> : null}
+      {name ? <p className="text-[0.72rem] font-semibold text-foreground">{name}</p> : null}
       {rest.length ? (
         <dl className="mt-1.5 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-xs">
           {rest.map(([k, v]) => (
@@ -225,7 +225,7 @@ export function InstallCell({ product }: { product: Product }) {
     <div className="space-y-3">
       {product.installationMethods.map((m, mi) => (
         <div key={mi}>
-          <h5 className="mb-1.5 text-[13px] font-bold text-foreground">{m.methodName}</h5>
+          <h5 className="mb-1.5 text-[0.72rem] font-bold text-foreground">{m.methodName}</h5>
           <ol className="space-y-1">
             {m.steps.map((s, si) => (
               <li key={si} className="text-xs text-muted">
@@ -270,7 +270,7 @@ export function ImagesCell({ product }: { product: Product }) {
 export function BodyCell({ product }: { product: Product }) {
   if (!product.body) return <EmptyBlock />;
   return (
-    <div className="whitespace-pre-line text-[13px] leading-relaxed text-muted">{product.body}</div>
+    <div className="whitespace-pre-line text-[0.72rem] leading-relaxed text-muted">{product.body}</div>
   );
 }
 

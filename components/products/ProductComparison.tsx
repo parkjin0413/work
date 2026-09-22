@@ -27,7 +27,7 @@ export function ProductComparison({ items }: { items: ComparisonItem[] }) {
   const hasDataNote = items.some(({ product }) => product.dataNote);
   const lastIndex = DATASHEET_SECTIONS.length - 1;
 
-  const gutter = "pt-3 pr-2 text-[11px] font-semibold uppercase tracking-wide text-muted";
+  const gutter = "pt-3 pr-2 text-[0.61rem] font-semibold uppercase tracking-wide text-muted";
   const cellBase = "border-x border-border bg-surface px-4 py-3 min-w-0";
 
   return (
@@ -41,13 +41,13 @@ export function ProductComparison({ items }: { items: ComparisonItem[] }) {
             id={product.slug}
             className="scroll-mt-20 rounded-t-lg border-x border-t border-border bg-surface px-4 pb-3 pt-4"
           >
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-accent">
+            <p className="text-[0.61rem] font-semibold uppercase tracking-wide text-accent">
               {product.productType}
             </p>
             <div className="mt-0.5 flex flex-wrap items-center gap-2">
               <h3 className="text-base font-bold text-foreground">{product.name}</h3>
               {product.status === "discontinued" ? (
-                <span className="rounded bg-danger-bg px-1.5 py-0.5 text-[10px] font-medium text-danger">
+                <span className="rounded bg-danger-bg px-1.5 py-0.5 text-[0.56rem] font-medium text-danger">
                   단종
                 </span>
               ) : null}
@@ -56,7 +56,7 @@ export function ProductComparison({ items }: { items: ComparisonItem[] }) {
               {product.types.map((t, i) => (
                 <span
                   key={i}
-                  className="rounded bg-surface-hover px-1.5 py-0.5 text-[10px] font-medium text-muted"
+                  className="rounded bg-surface-hover px-1.5 py-0.5 text-[0.56rem] font-medium text-muted"
                 >
                   {t.group ? `${t.group} · ` : ""}
                   {t.typeName}

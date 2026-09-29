@@ -114,20 +114,53 @@ describe("TasksPage", () => {
     expect(screen.getByText("완료 8월 20일 (목)")).toBeInTheDocument();
   });
 
-  it("조회가 실패하면 안내 문구를 보여준다", async () => {
+  it("재시도까지 실패하면 안내 문구를 보여준다", async () => {
     getBoardMock.mockRejectedValue(new Error("db down"));
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     await renderTasksPage();
 
+    expect(getBoardMock).toHaveBeenCalledTimes(2);
     expect(consoleErrorSpy).toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
 
     expect(
       screen.getByText(
         "업무 정보를 불러오지 못했습니다. Supabase 연결 상태와 tasks 관련 마이그레이션(0004~0006) 실행 여부를 확인해주세요."
       )
     ).toBeInTheDocument();
+  });
+
+  it("첫 조회가 실패해도 재시도가 성공하면 정상 화면을 보여준다", async () => {
+    // 콜드 스타트 직후 첫 요청만 실패하는 상황
+    getBoardMock
+      .mockRejectedValueOnce(new Error("fetch failed"))
+      .mockResolvedValue({ fixedTasks: [], incomplete: [], completed: [] });
+    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await renderTasksPage();
+
+    expect(getBoardMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByText("업무 목록")).toBeInTheDocument();
+    expect(screen.queryByText(/업무 정보를 불러오지 못했습니다/)).not.toBeInTheDocument();
+    consoleWarnSpy.mockRestore();
+  });
+
+  it("주간 메모만 실패하면 업무 목록은 그대로 보여주고 메모 영역에만 안내를 띄운다", async () => {
+    getBoardMock.mockResolvedValue({ fixedTasks: [], incomplete: [], completed: [] });
+    getNoteLogForWeekMock.mockRejectedValue(new Error("db down"));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await renderTasksPage();
+
+    expect(screen.getByText(/진행 메모를 불러오지 못했습니다/)).toBeInTheDocument();
+    expect(screen.getByText("업무 목록")).toBeInTheDocument();
+    expect(screen.queryByText(/업무 정보를 불러오지 못했습니다/)).not.toBeInTheDocument();
+    consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   it("주간 메모 정리를 업무 목록보다 위에 보여준다", async () => {

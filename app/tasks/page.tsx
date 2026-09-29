@@ -1,8 +1,10 @@
 export const dynamic = "force-dynamic";
 
-import { ListChecks } from "lucide-react";
+import Link from "next/link";
+import { ListChecks, NotebookText } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { getBoard, getNoteLogForWeek, type Board, type NoteLog } from "@/lib/tasks/tasksStore";
+import { withRetry } from "@/lib/supabase/withRetry";
+import { getBoard, getNoteLogForWeek } from "@/lib/tasks/tasksStore";
 import { getKstTodayISO, getMondayOfISO, isValidMondayISO } from "@/lib/tasks/week";
 import { CreateTaskForm } from "./CreateTaskForm";
 import { FixedTaskBoard } from "./FixedTaskBoard";
@@ -15,13 +17,15 @@ export default async function TasksPage({ searchParams }: { searchParams: { week
   const currentWeekStart = getMondayOfISO(todayISO);
   const weekStart = isValidMondayISO(searchParams.week) ? searchParams.week : currentWeekStart;
 
-  let board: Board;
-  let noteLog: NoteLog;
+  // 둘 중 하나가 실패해도 나머지는 보여준다. 콜드 스타트 직후 첫 요청이 드물게
+  // 실패하는 경우가 있어 각각 한 번씩 재시도한다.
+  const [boardResult, noteLogResult] = await Promise.allSettled([
+    withRetry(() => getBoard(), "tasks"),
+    withRetry(() => getNoteLogForWeek(weekStart), "tasks/notes"),
+  ]);
 
-  try {
-    [board, noteLog] = await Promise.all([getBoard(), getNoteLogForWeek(weekStart)]);
-  } catch (error) {
-    console.error("[tasks] 업무 정보 조회 실패:", error);
+  if (boardResult.status === "rejected") {
+    console.error("[tasks] 업무 정보 조회 실패:", boardResult.reason);
     return (
       <div className="flex min-h-screen flex-col bg-bg md:flex-row">
         <Sidebar />
@@ -38,6 +42,12 @@ export default async function TasksPage({ searchParams }: { searchParams: { week
     );
   }
 
+  const board = boardResult.value;
+
+  if (noteLogResult.status === "rejected") {
+    console.error("[tasks] 주간 메모 조회 실패:", noteLogResult.reason);
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-bg md:flex-row">
       <Sidebar />
@@ -45,7 +55,23 @@ export default async function TasksPage({ searchParams }: { searchParams: { week
         <h1 className="text-lg font-semibold text-foreground">업무관리</h1>
 
         <div className="mt-6 space-y-8">
-          <WeeklyNoteBoard log={noteLog} currentWeekStart={currentWeekStart} todayISO={todayISO} />
+          {noteLogResult.status === "fulfilled" ? (
+            <WeeklyNoteBoard
+              log={noteLogResult.value}
+              currentWeekStart={currentWeekStart}
+              todayISO={todayISO}
+            />
+          ) : (
+            <section>
+              <SectionHeader icon={NotebookText} title="주간 메모 정리" />
+              <p className="text-sm text-muted">
+                진행 메모를 불러오지 못했습니다.{" "}
+                <Link href="/tasks" className="text-accent hover:underline">
+                  다시 시도
+                </Link>
+              </p>
+            </section>
+          )}
 
           <FixedTaskBoard tasks={board.fixedTasks} />
 

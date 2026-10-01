@@ -36,7 +36,7 @@ describe("Sidebar", () => {
 
   it("대시보드 제목을 한글로 보여준다", () => {
     renderSidebar();
-    expect(screen.getByText("개인 업무 대시보드")).toBeInTheDocument();
+    expect(screen.getByText("강산이엔지 업무 대시보드")).toBeInTheDocument();
   });
 
   it("6개의 메뉴 링크를 업무관리·계정관리·즐겨찾기·제품정보·회사정보·직원명단 순서로 보여준다 (별도 홈 없음)", () => {

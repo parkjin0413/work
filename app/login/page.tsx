@@ -66,7 +66,7 @@ function LoginForm() {
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/10 text-accent">
             <LayoutDashboard className="h-5 w-5" aria-hidden="true" />
           </span>
-          <span className="text-base font-semibold text-foreground">개인 업무 대시보드</span>
+          <span className="text-base font-semibold text-foreground">강산이엔지 업무 대시보드</span>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">

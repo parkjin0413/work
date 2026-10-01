@@ -32,7 +32,7 @@ export function Sidebar() {
       className="flex shrink-0 flex-row items-center justify-between gap-1 border-b border-border bg-surface px-3 py-3 md:h-screen md:w-60 md:flex-col md:items-stretch md:justify-start md:gap-2 md:border-b-0 md:border-r md:px-4 md:py-6 md:sticky md:top-0"
     >
       <div className="hidden items-center gap-2 md:flex">
-        <span className="text-base font-semibold text-foreground">개인 업무 대시보드</span>
+        <span className="text-base font-semibold text-foreground">강산이엔지 업무 대시보드</span>
       </div>
 
       <ul className="flex flex-1 flex-row flex-nowrap items-center justify-center gap-x-0.5 md:mt-8 md:flex-1 md:flex-col md:items-stretch md:justify-start md:gap-1">

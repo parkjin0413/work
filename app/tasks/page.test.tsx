@@ -145,7 +145,8 @@ describe("TasksPage", () => {
 
     await renderTasksPage();
 
-    expect(getBoardMock).toHaveBeenCalledTimes(2);
+    // 최초 1회 + 재시도 2회
+    expect(getBoardMock).toHaveBeenCalledTimes(3);
     expect(consoleErrorSpy).toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
     consoleWarnSpy.mockRestore();

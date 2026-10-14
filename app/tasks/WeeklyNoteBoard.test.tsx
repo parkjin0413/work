@@ -7,7 +7,10 @@ function day(date: string, entries: NoteLogDay["entries"] = []): NoteLogDay {
   return { date, entries };
 }
 
-function makeLog(overrides: Partial<Record<string, NoteLogDay["entries"]>> = {}): NoteLog {
+function makeLog(
+  overrides: Partial<Record<string, NoteLogDay["entries"]>> = {},
+  completed: NoteLog["completed"] = []
+): NoteLog {
   const dates = [
     "2026-09-07",
     "2026-09-08",
@@ -21,6 +24,7 @@ function makeLog(overrides: Partial<Record<string, NoteLogDay["entries"]>> = {})
     weekStart: "2026-09-07",
     weekEnd: "2026-09-13",
     days: dates.map((date) => day(date, overrides[date] ?? [])),
+    completed,
   };
 }
 
@@ -94,6 +98,49 @@ describe("WeeklyNoteBoard", () => {
     render(<WeeklyNoteBoard log={makeLog()} currentWeekStart="2026-09-07" todayISO="2026-09-08" />);
 
     expect(screen.queryByRole("button", { name: "표 복사 (엑셀용)" })).not.toBeInTheDocument();
+  });
+
+  it("그 주 완료한 업무를 따로 보여준다", () => {
+    render(
+      <WeeklyNoteBoard
+        log={makeLog({}, [{ taskId: "t1", name: "3단 리플렛 제작", completedDate: "2026-09-10" }])}
+        currentWeekStart="2026-09-07"
+        todayISO="2026-09-08"
+      />
+    );
+
+    expect(screen.getByText("이번 주 완료한 업무 1건")).toBeInTheDocument();
+    expect(screen.getByText("3단 리플렛 제작")).toBeInTheDocument();
+  });
+
+  it("복사 텍스트에 그 주 완료한 업무를 함께 담는다", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+
+    render(
+      <WeeklyNoteBoard
+        log={makeLog({ "2026-09-08": [entry] }, [
+          { taskId: "t1", name: "3단 리플렛 제작", completedDate: "2026-09-10" },
+        ])}
+        currentWeekStart="2026-09-07"
+        todayISO="2026-09-08"
+      />
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "표 복사 (엑셀용)" }));
+    });
+
+    expect(writeText).toHaveBeenCalledWith(
+      [
+        "날짜\t업무명\t메모",
+        "9월 8일 (화)\t마우스패드 제작\t샘플 방문 일정 조율",
+        "",
+        "완료한 업무",
+        "완료일\t업무명",
+        "9월 10일 (목)\t3단 리플렛 제작",
+      ].join("\n")
+    );
   });
 
   it("표 복사를 누르면 날짜/업무명/메모를 탭으로 구분해 클립보드에 담는다", async () => {

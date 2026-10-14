@@ -309,10 +309,18 @@ export type NoteLogDay = {
   entries: NoteLogEntry[];
 };
 
+export type CompletedInWeek = {
+  taskId: string;
+  name: string;
+  completedDate: string;
+};
+
 export type NoteLog = {
   weekStart: string;
   weekEnd: string;
   days: NoteLogDay[];
+  /** 그 주에 완료 처리한 수시 업무 (주간 일지의 "완료한 일" 칸용) */
+  completed: CompletedInWeek[];
 };
 
 /**
@@ -335,6 +343,27 @@ export async function getNoteLogForWeek(weekStartISO: string): Promise<NoteLog> 
   if (notesError) {
     throw new Error(`진행 메모 조회 실패: ${notesError.message}`);
   }
+
+  const { data: completedRows, error: completedError } = await supabase
+    .from("tasks")
+    .select("id, name, completed_at")
+    .is("template_id", null)
+    .eq("is_completed", true)
+    .gte("completed_at", `${weekStartISO}T00:00:00+09:00`)
+    .lt("completed_at", `${rangeEndExclusiveISO}T00:00:00+09:00`)
+    .order("completed_at", { ascending: true });
+
+  if (completedError) {
+    throw new Error(`완료 업무 조회 실패: ${completedError.message}`);
+  }
+
+  const completed: CompletedInWeek[] = (completedRows ?? [])
+    .filter((row): row is { id: string; name: string; completed_at: string } => row.completed_at != null)
+    .map((row) => ({
+      taskId: row.id,
+      name: row.name,
+      completedDate: getKstDateFromISO(row.completed_at),
+    }));
 
   const days = new Map<string, NoteLogEntry[]>();
   for (let cursor = weekStartISO; cursor <= weekEndISO; cursor = addDaysISO(cursor, 1)) {
@@ -372,6 +401,7 @@ export async function getNoteLogForWeek(weekStartISO: string): Promise<NoteLog> 
     weekStart: weekStartISO,
     weekEnd: weekEndISO,
     days: Array.from(days.entries()).map(([date, entries]) => ({ date, entries })),
+    completed,
   };
 }
 
@@ -385,6 +415,22 @@ export async function addTaskNote(taskId: string, body: string): Promise<TaskNot
 
   if (error || !data) {
     throw new Error(`진행 메모 추가 실패: ${error?.message ?? "알 수 없는 오류"}`);
+  }
+
+  return { id: data.id, body: data.body, createdAt: data.created_at };
+}
+
+export async function updateTaskNote(noteId: string, body: string): Promise<TaskNote> {
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("task_notes")
+    .update({ body })
+    .eq("id", noteId)
+    .select("id, body, created_at")
+    .single();
+
+  if (error || !data) {
+    throw new Error(`진행 메모 수정 실패: ${error?.message ?? "알 수 없는 오류"}`);
   }
 
   return { id: data.id, body: data.body, createdAt: data.created_at };

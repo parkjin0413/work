@@ -5,7 +5,7 @@ import { ListChecks, NotebookText } from "lucide-react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { withRetry } from "@/lib/supabase/withRetry";
 import { getBoard, getNoteLogForWeek } from "@/lib/tasks/tasksStore";
-import { getKstTodayISO, getMondayOfISO, isValidMondayISO } from "@/lib/tasks/week";
+import { getKstTodayISO, getMondayOfISO, getWeekdayIndex, isValidMondayISO } from "@/lib/tasks/week";
 import { CreateTaskForm } from "./CreateTaskForm";
 import { FixedTaskBoard } from "./FixedTaskBoard";
 import { SectionHeader } from "./SectionHeader";
@@ -73,7 +73,7 @@ export default async function TasksPage({ searchParams }: { searchParams: { week
             </section>
           )}
 
-          <FixedTaskBoard tasks={board.fixedTasks} />
+          <FixedTaskBoard tasks={board.fixedTasks} todayWeekday={getWeekdayIndex(todayISO)} />
 
           <section>
             <SectionHeader icon={ListChecks} title="업무 목록" />

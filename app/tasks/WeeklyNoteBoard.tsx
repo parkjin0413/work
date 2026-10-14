@@ -1,22 +1,30 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, NotebookText } from "lucide-react";
 import { CopyButton } from "@/components/CopyButton";
-import type { NoteLog, NoteLogDay } from "@/lib/tasks/tasksStore";
+import type { CompletedInWeek, NoteLog, NoteLogDay } from "@/lib/tasks/tasksStore";
 import { addDaysISO, formatMonthDayWeekday, formatShortDateWeekday } from "@/lib/tasks/week";
 import { SectionHeader } from "./SectionHeader";
 
-/** 엑셀에 날짜/업무명/메모 3열로 그대로 붙여넣을 수 있는 탭 구분 텍스트를 만든다. */
-function buildTsv(days: NoteLogDay[]): string {
+/** 탭 구분 셀 값으로 쓸 수 있게 줄바꿈·탭을 공백으로 접는다. */
+function cell(value: string): string {
+  return value.replace(/\r?\n+/g, " ").replace(/\t/g, " ");
+}
+
+/** 엑셀에 그대로 붙여넣을 수 있는 탭 구분 텍스트. 진행 메모 표 + 그 주 완료 업무. */
+function buildTsv(days: NoteLogDay[], completed: CompletedInWeek[]): string {
   const lines = ["날짜\t업무명\t메모"];
 
   for (const day of days) {
     const dateLabel = formatMonthDayWeekday(day.date);
     for (const entry of day.entries) {
-      // 줄바꿈은 공백으로 접어 한 메모 = 표 한 줄이 깨지지 않게 하고, 다른 곳에서
-      // 붙여넣기로 들어왔을 수 있는 탭 문자는 열 구분과 충돌하지 않게 공백으로 바꾼다.
-      const taskName = entry.taskName.replace(/\t/g, " ");
-      const body = entry.body.replace(/\r?\n+/g, " ").replace(/\t/g, " ");
-      lines.push(`${dateLabel}\t${taskName}\t${body}`);
+      lines.push(`${dateLabel}\t${cell(entry.taskName)}\t${cell(entry.body)}`);
+    }
+  }
+
+  if (completed.length > 0) {
+    lines.push("", "완료한 업무", "완료일\t업무명");
+    for (const task of completed) {
+      lines.push(`${formatMonthDayWeekday(task.completedDate)}\t${cell(task.name)}`);
     }
   }
 
@@ -40,6 +48,7 @@ export function WeeklyNoteBoard({
   const filledDays = log.days.filter((day) => day.entries.length > 0);
   const totalCount = filledDays.reduce((sum, day) => sum + day.entries.length, 0);
   const isCurrentWeek = log.weekStart === currentWeekStart;
+  const hasAnything = totalCount > 0 || log.completed.length > 0;
 
   return (
     <section>
@@ -70,7 +79,7 @@ export function WeeklyNoteBoard({
           ) : null}
         </div>
         <span className="text-xs text-muted">총 {totalCount}건</span>
-        {totalCount > 0 ? <CopyButton text={buildTsv(filledDays)} label="표 복사 (엑셀용)" /> : null}
+        {totalCount > 0 ? <CopyButton text={buildTsv(filledDays, log.completed)} label="표 복사 (엑셀용)" /> : null}
       </SectionHeader>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -105,6 +114,22 @@ export function WeeklyNoteBoard({
           </div>
         ))}
       </div>
+
+      {log.completed.length > 0 ? (
+        <div className="mt-3 rounded-2xl border border-border bg-surface p-3">
+          <p className="text-xs font-medium text-foreground">
+            이번 주 완료한 업무 {log.completed.length}건
+          </p>
+          <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
+            {log.completed.map((task) => (
+              <li key={task.taskId} className="text-xs text-muted">
+                <span className="font-mono">{formatShortDateWeekday(task.completedDate)}</span>{" "}
+                <span className="text-foreground">{task.name}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 }

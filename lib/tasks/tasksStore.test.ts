@@ -556,12 +556,16 @@ describe("tasksStore", () => {
         error: null,
       }); // task_notes
       queueResult({
+        data: [{ id: "task-9", name: "3단 리플렛 제작", completed_at: "2026-09-10T02:00:00.000Z" }],
+        error: null,
+      }); // tasks — 그 주 완료 업무
+      queueResult({
         data: [
           { id: "task-1", name: "마우스패드 제작", template_id: null },
           { id: "task-2", name: "거래처 미팅", template_id: null },
         ],
         error: null,
-      }); // tasks
+      }); // tasks — 메모가 달린 업무 이름
 
       const log = await getNoteLogForWeek("2026-09-07"); // 월요일
 
@@ -587,6 +591,10 @@ describe("tasksStore", () => {
         { noteId: "n2", taskId: "task-1", taskName: "마우스패드 제작", body: "CMYK 인쇄 비용 확인", createdAt: "2026-09-08T05:00:00.000Z" },
       ]);
 
+      expect(log.completed).toEqual([
+        { taskId: "task-9", name: "3단 리플렛 제작", completedDate: "2026-09-10" },
+      ]);
+
       const wednesday = log.days.find((d) => d.date === "2026-09-10")!;
       expect(wednesday.entries).toEqual([
         { noteId: "n3", taskId: "task-2", taskName: "거래처 미팅", body: "거래처 견적서 발송", createdAt: "2026-09-09T20:30:00.000Z" },
@@ -595,10 +603,11 @@ describe("tasksStore", () => {
 
     it("메모가 하나도 없으면 tasks 조회 없이 빈 날짜 목록만 반환한다", async () => {
       queueResult({ data: [], error: null }); // task_notes
+      queueResult({ data: [], error: null }); // tasks — 그 주 완료 업무
 
       const log = await getNoteLogForWeek("2026-09-07");
 
-      expect(fromMock).toHaveBeenCalledTimes(1);
+      expect(fromMock).toHaveBeenCalledTimes(2);
       expect(log.days.every((d) => d.entries.length === 0)).toBe(true);
     });
 
@@ -607,6 +616,7 @@ describe("tasksStore", () => {
         data: [{ id: "n1", task_id: "task-deleted", body: "고아 메모", created_at: "2026-09-08T01:00:00.000Z" }],
         error: null,
       }); // task_notes
+      queueResult({ data: [], error: null }); // tasks — 그 주 완료 업무
       queueResult({ data: [], error: null }); // tasks — 조회되는 업무 없음(삭제됨)
 
       const log = await getNoteLogForWeek("2026-09-07");

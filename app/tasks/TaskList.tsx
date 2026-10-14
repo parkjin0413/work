@@ -21,19 +21,31 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil, Trash2, X } from "lucide-react";
+import { ChevronDown, GripVertical, Pencil, Search, Trash2, X } from "lucide-react";
 import type { GeneralTask, TaskNote } from "@/lib/tasks/tasksStore";
-import { formatMonthDayWeekday, formatNoteTimestamp } from "@/lib/tasks/week";
+import {
+  daysBetweenISO,
+  formatMonthDayWeekday,
+  formatNoteTimestamp,
+  formatShortDate,
+  getKstDateFromISO,
+  getKstTodayISO,
+} from "@/lib/tasks/week";
 import {
   setTaskCompletionAction,
   deleteTaskAction,
   updateTaskAction,
   reorderTasksAction,
   addTaskNoteAction,
+  updateTaskNoteAction,
   deleteTaskNoteAction,
 } from "./actions";
 
 const CARD_GRID_BASE = "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+/** 이 일수 이상 진행 메모가 없으면 정체된 업무로 표시한다. */
+const STALE_DAYS = 7;
+/** 카드에 펼쳐 보여줄 최근 메모 개수. 나머지는 접는다. */
+const VISIBLE_NOTES = 3;
 
 /** 서버가 준 목록에, 아직 서버 응답에 반영되지 않은 로컬 메모 추가/삭제를 얹어준다. */
 function withPendingNotes(
@@ -76,6 +88,8 @@ export function TaskList({
   const [incomplete, setIncomplete] = useState(initialIncomplete);
   const [completed, setCompleted] = useState(initialCompleted);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [isCompletedOpen, setIsCompletedOpen] = useState(false);
 
   // 서버 액션이 끝날 때마다 페이지가 다시 렌더링돼 새 목록(props)이 내려온다. 그런데 다른
   // 카드의 작업이 먼저 만들어 둔 "옛날 스냅샷"이 뒤늦게 도착하면, 방금 추가한 진행 메모가
@@ -157,6 +171,12 @@ export function TaskList({
     patchNotes(taskId, (notes) => [...notes, note]);
   }
 
+  function handleNoteUpdated(taskId: string, note: TaskNote) {
+    const pending = pendingAddedNotes.current.get(note.id);
+    if (pending) pendingAddedNotes.current.set(note.id, { ...pending, note });
+    patchNotes(taskId, (notes) => notes.map((n) => (n.id === note.id ? note : n)));
+  }
+
   function handleNoteDeleted(taskId: string, noteId: string) {
     pendingRemovedNoteIds.current.add(noteId);
     pendingAddedNotes.current.delete(noteId);
@@ -193,6 +213,22 @@ export function TaskList({
 
   const draggingTask = draggingId ? incomplete.find((t) => t.id === draggingId) : null;
 
+  // 업무명·진행상황·진행 메모를 한 번에 훑는 검색. 데이터가 이미 전부 내려와 있어
+  // 서버를 다시 부르지 않고 바로 거른다.
+  const keyword = query.trim().toLowerCase();
+  const isSearching = keyword.length > 0;
+  const matches = (task: GeneralTask) =>
+    !isSearching ||
+    [task.name, task.memo ?? "", ...task.notes.map((note) => note.body)]
+      .join("\n")
+      .toLowerCase()
+      .includes(keyword);
+
+  const visibleIncomplete = incomplete.filter(matches);
+  const visibleCompleted = completed.filter(matches);
+  // 검색 중에는 완료된 업무에서도 찾아야 하므로 접힘을 무시하고 펼친다.
+  const showCompleted = isSearching || isCompletedOpen;
+
   return (
     <div className="mt-4">
       {errorMessage ? (
@@ -201,8 +237,41 @@ export function TaskList({
         </p>
       ) : null}
 
-      {incomplete.length === 0 ? (
-        <p className="text-sm text-muted">할 일이 없습니다.</p>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-1 sm:max-w-xs">
+          <Search
+            size={14}
+            aria-hidden="true"
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted"
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="업무명·진행상황·메모 검색"
+            aria-label="업무 검색"
+            className="w-full min-w-0 rounded-lg border border-border bg-surface py-1.5 pl-8 pr-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+        </div>
+        {isSearching ? (
+          <>
+            <span className="text-xs text-muted">
+              미완료 {visibleIncomplete.length}건 · 완료 {visibleCompleted.length}건
+            </span>
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="rounded-md border border-border px-2 py-1 text-xs text-muted hover:text-foreground"
+            >
+              검색 해제
+            </button>
+          </>
+        ) : null}
+      </div>
+
+      {visibleIncomplete.length === 0 ? (
+        <p className="text-sm text-muted">
+          {isSearching ? "검색 결과가 없습니다." : "할 일이 없습니다."}
+        </p>
       ) : (
         <DndContext
           sensors={sensors}
@@ -211,9 +280,9 @@ export function TaskList({
           onDragEnd={handleDragEnd}
           onDragCancel={() => setDraggingId(null)}
         >
-          <SortableContext items={incomplete.map((t) => t.id)} strategy={rectSortingStrategy}>
+          <SortableContext items={visibleIncomplete.map((t) => t.id)} strategy={rectSortingStrategy}>
             <div className={CARD_GRID_BASE}>
-              {incomplete.map((task) => (
+              {visibleIncomplete.map((task) => (
                 <SortableTaskCard
                   key={task.id}
                   task={task}
@@ -221,6 +290,7 @@ export function TaskList({
                   onDelete={() => handleDelete(task)}
                   onSaved={(name, memo, taskDate) => handleSaved(task.id, name, memo, taskDate)}
                   onNoteAdded={(note) => handleNoteAdded(task.id, note)}
+                  onNoteUpdated={(note) => handleNoteUpdated(task.id, note)}
                   onNoteDeleted={(noteId) => handleNoteDeleted(task.id, noteId)}
                 />
               ))}
@@ -237,11 +307,24 @@ export function TaskList({
         </DndContext>
       )}
 
-      {completed.length > 0 ? (
+      {visibleCompleted.length > 0 ? (
         <div className="mt-6">
-          <h3 className="text-sm font-medium text-muted">완료됨</h3>
+          <button
+            type="button"
+            onClick={() => setIsCompletedOpen((prev) => !prev)}
+            aria-expanded={showCompleted}
+            className="flex items-center gap-1 rounded-md text-sm font-medium text-muted hover:text-foreground"
+          >
+            <ChevronDown
+              size={14}
+              aria-hidden="true"
+              className={`transition-transform ${showCompleted ? "" : "-rotate-90"}`}
+            />
+            완료됨 {visibleCompleted.length}건
+          </button>
+          {showCompleted ? (
           <div className={`mt-2 ${CARD_GRID_BASE}`}>
-            {completed.map((task) => (
+            {visibleCompleted.map((task) => (
               <TaskCard
                 key={task.id}
                 task={task}
@@ -249,10 +332,12 @@ export function TaskList({
                 onDelete={() => handleDelete(task)}
                 onSaved={(name, memo, taskDate) => handleSaved(task.id, name, memo, taskDate)}
                 onNoteAdded={(note) => handleNoteAdded(task.id, note)}
+                onNoteUpdated={(note) => handleNoteUpdated(task.id, note)}
                 onNoteDeleted={(noteId) => handleNoteDeleted(task.id, noteId)}
               />
             ))}
           </div>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -265,6 +350,7 @@ type TaskCardProps = {
   onDelete: () => void;
   onSaved: (name: string, memo: string | null, taskDate: string) => void;
   onNoteAdded: (note: TaskNote) => void;
+  onNoteUpdated: (note: TaskNote) => void;
   onNoteDeleted: (noteId: string) => void;
 };
 
@@ -294,6 +380,7 @@ function TaskCard({
   onDelete,
   onSaved,
   onNoteAdded,
+  onNoteUpdated,
   onNoteDeleted,
   dragHandle,
 }: TaskCardProps & { dragHandle?: DragHandle }) {
@@ -305,6 +392,12 @@ function TaskCard({
   const [editMemo, setEditMemo] = useState(task.memo ?? "");
   const [editDate, setEditDate] = useState(task.taskDate);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // 시작일은 금방 과거가 되므로, 실제로 궁금한 "마지막으로 손댄 날"을 함께 보여준다.
+  // 완료된 업무는 더 손댈 일이 없으니 정체 표시를 하지 않는다.
+  const lastNoteDate = task.notes.length > 0 ? getKstDateFromISO(task.notes[task.notes.length - 1].createdAt) : null;
+  const daysSinceLastNote = lastNoteDate ? daysBetweenISO(lastNoteDate, getKstTodayISO()) : 0;
+  const isStale = !task.isCompleted && daysSinceLastNote >= STALE_DAYS;
 
   async function handleCheckboxChange() {
     setIsToggling(true);
@@ -414,7 +507,20 @@ function TaskCard({
               <GripVertical size={14} />
             </button>
           ) : null}
-          <span className="text-xs text-highlight-muted">{formatMonthDayWeekday(task.taskDate)}</span>
+          <span className="shrink-0 text-xs text-highlight-muted">{formatMonthDayWeekday(task.taskDate)}</span>
+          {lastNoteDate ? (
+            <span
+              title={`최근 진행 메모 ${formatMonthDayWeekday(lastNoteDate)}`}
+              className={`min-w-0 truncate rounded-full px-1.5 py-0.5 text-[0.61rem] ${
+                isStale
+                  ? "bg-danger-bg text-danger"
+                  : "bg-surface-highlight-soft text-highlight-muted"
+              }`}
+            >
+              최근 {formatShortDate(lastNoteDate)}
+              {isStale ? ` · ${daysSinceLastNote}일째` : ""}
+            </span>
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button
@@ -467,6 +573,7 @@ function TaskCard({
         taskId={task.id}
         notes={task.notes}
         onNoteAdded={onNoteAdded}
+        onNoteUpdated={onNoteUpdated}
         onNoteDeleted={onNoteDeleted}
       />
 
@@ -481,19 +588,26 @@ function TaskNotes({
   taskId,
   notes,
   onNoteAdded,
+  onNoteUpdated,
   onNoteDeleted,
 }: {
   taskId: string;
   notes: TaskNote[];
   onNoteAdded: (note: TaskNote) => void;
+  onNoteUpdated: (note: TaskNote) => void;
   onNoteDeleted: (noteId: string) => void;
 }) {
   const [draft, setDraft] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleAdd(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  // 최신 메모가 가장 중요하므로 위로 올리고, 오래된 메모는 접어둔다.
+  const newestFirst = [...notes].reverse();
+  const visibleNotes = isExpanded ? newestFirst : newestFirst.slice(0, VISIBLE_NOTES);
+  const hiddenCount = newestFirst.length - visibleNotes.length;
+
+  async function submitDraft() {
     const body = draft.trim();
     if (!body || isAdding) return;
 
@@ -524,32 +638,24 @@ function TaskNotes({
     <div className="flex flex-col gap-1.5">
       <p className="text-xs font-medium uppercase tracking-wide text-highlight-muted">진행 메모</p>
 
-      {notes.length > 0 ? (
-        <ul className="flex flex-col gap-1">
-          {notes.map((note) => (
-            <li key={note.id} className="group flex flex-col gap-1 rounded-lg bg-surface-highlight-soft px-2 py-1.5 text-xs">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-xs text-highlight-muted">{formatNoteTimestamp(note.createdAt)}</span>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(note.id)}
-                  aria-label="진행 메모 삭제"
-                  className="shrink-0 rounded p-0.5 text-highlight-muted opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
-                >
-                  <X size={12} />
-                </button>
-              </div>
-              <span className="whitespace-pre-wrap break-words text-highlight-foreground">{note.body}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      <form onSubmit={handleAdd} className="flex items-end gap-1.5">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          void submitDraft();
+        }}
+        className="flex items-end gap-1.5"
+      >
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="진행 메모 추가"
+          onKeyDown={(event) => {
+            // 하루에도 여러 번 쓰는 입력이라 손을 떼지 않고 보낼 수 있게 한다.
+            if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+              event.preventDefault();
+              void submitDraft();
+            }
+          }}
+          placeholder="진행 메모 추가 (Ctrl+Enter)"
           aria-label="진행 메모 추가"
           rows={2}
           className="min-w-0 flex-1 resize-y rounded-lg border border-highlight-line bg-surface-highlight-soft px-2 py-1 text-xs text-highlight-foreground focus:outline-none focus:ring-1 focus:ring-accent"
@@ -563,11 +669,138 @@ function TaskNotes({
         </button>
       </form>
 
+      {visibleNotes.length > 0 ? (
+        <ul className="flex flex-col gap-1">
+          {visibleNotes.map((note) => (
+            <NoteItem
+              key={note.id}
+              note={note}
+              onUpdated={onNoteUpdated}
+              onDelete={() => handleDelete(note.id)}
+              onError={setError}
+            />
+          ))}
+        </ul>
+      ) : null}
+
+      {hiddenCount > 0 || isExpanded ? (
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="self-start rounded px-1 text-xs text-highlight-muted hover:text-highlight-foreground"
+        >
+          {isExpanded ? "메모 접기" : `이전 메모 ${hiddenCount}개 더 보기`}
+        </button>
+      ) : null}
+
       {error ? (
         <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       ) : null}
     </div>
+  );
+}
+
+function NoteItem({
+  note,
+  onUpdated,
+  onDelete,
+  onError,
+}: {
+  note: TaskNote;
+  onUpdated: (note: TaskNote) => void;
+  onDelete: () => void;
+  onError: (message: string | null) => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState(note.body);
+  const [isSaving, setIsSaving] = useState(false);
+
+  async function handleSave() {
+    const body = draft.trim();
+    if (!body || isSaving) return;
+
+    onError(null);
+    setIsSaving(true);
+    try {
+      const updated = await updateTaskNoteAction(note.id, body);
+      onUpdated(updated);
+      setIsEditing(false);
+    } catch (err) {
+      onError(err instanceof Error ? err.message : "메모 수정에 실패했습니다.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  if (isEditing) {
+    return (
+      <li className="flex flex-col gap-1 rounded-lg bg-surface-highlight-soft px-2 py-1.5 text-xs">
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+              event.preventDefault();
+              void handleSave();
+            }
+          }}
+          aria-label="진행 메모 수정"
+          rows={2}
+          className="w-full min-w-0 resize-y rounded-md border border-highlight-line bg-surface-highlight px-2 py-1 text-xs text-highlight-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+        />
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isSaving || !draft.trim()}
+            className="rounded-md bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground hover:bg-accent-hover disabled:opacity-50"
+          >
+            {isSaving ? "저장 중..." : "저장"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(note.body);
+              setIsEditing(false);
+            }}
+            className="rounded-md border border-highlight-line px-2 py-0.5 text-xs text-highlight-muted"
+          >
+            취소
+          </button>
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li className="group flex flex-col gap-1 rounded-lg bg-surface-highlight-soft px-2 py-1.5 text-xs">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-mono text-xs text-highlight-muted">{formatNoteTimestamp(note.createdAt)}</span>
+        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(note.body);
+              setIsEditing(true);
+            }}
+            aria-label="진행 메모 수정"
+            className="rounded p-0.5 text-highlight-muted hover:text-highlight-foreground"
+          >
+            <Pencil size={11} />
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label="진행 메모 삭제"
+            className="rounded p-0.5 text-highlight-muted hover:text-danger"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      </div>
+      <span className="whitespace-pre-wrap break-words text-highlight-foreground">{note.body}</span>
+    </li>
   );
 }

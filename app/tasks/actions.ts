@@ -12,6 +12,7 @@ import {
   deleteTask,
   reorderTasks,
   addTaskNote,
+  updateTaskNote,
   deleteTaskNote,
   type TaskNote,
 } from "@/lib/tasks/tasksStore";
@@ -122,6 +123,19 @@ export async function addTaskNoteAction(taskId: string, body: string): Promise<T
   }
 
   const note = await addTaskNote(taskId, trimmed);
+  revalidatePath("/tasks");
+  return note;
+}
+
+export async function updateTaskNoteAction(noteId: string, body: string): Promise<TaskNote> {
+  await requireAdmin();
+
+  const trimmed = body.trim();
+  if (!trimmed) {
+    throw new Error("메모 내용을 입력해주세요.");
+  }
+
+  const note = await updateTaskNote(noteId, trimmed);
   revalidatePath("/tasks");
   return note;
 }

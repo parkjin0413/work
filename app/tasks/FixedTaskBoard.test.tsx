@@ -40,8 +40,8 @@ describe("FixedTaskBoard", () => {
     setTaskCompletionActionMock.mockReset();
   });
 
-  it("카드 형태로 고정 업무 제목과 요일을 보여준다", () => {
-    render(<FixedTaskBoard tasks={tasks} />);
+  it("오늘 요일의 고정 업무를 제목과 요일로 보여준다", () => {
+    render(<FixedTaskBoard tasks={tasks} todayWeekday={3} />);
 
     expect(screen.getByText("주간업무일지 제출")).toBeInTheDocument();
     expect(screen.getByText("목요일")).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe("FixedTaskBoard", () => {
 
   it("체크박스를 누르면 setTaskCompletionAction을 호출한다", async () => {
     setTaskCompletionActionMock.mockResolvedValue(undefined);
-    render(<FixedTaskBoard tasks={tasks} />);
+    render(<FixedTaskBoard tasks={tasks} todayWeekday={3} />);
 
     fireEvent.click(screen.getByRole("checkbox", { name: "주간업무일지 제출 완료" }));
 
@@ -61,8 +61,9 @@ describe("FixedTaskBoard", () => {
 
   it("+ 고정 업무 추가 버튼으로 새 고정 업무를 만들 수 있다", async () => {
     createTemplateActionMock.mockResolvedValue(undefined);
-    render(<FixedTaskBoard tasks={[]} />);
+    render(<FixedTaskBoard tasks={[]} todayWeekday={3} />);
 
+    fireEvent.click(screen.getByRole("button", { name: "전체 보기" }));
     fireEvent.click(screen.getByRole("button", { name: "+ 고정 업무 추가" }));
     fireEvent.change(screen.getByLabelText("새 고정 업무 이름"), { target: { value: "월요 회의 준비" } });
     fireEvent.change(screen.getByLabelText("새 고정 업무 요일"), { target: { value: "0" } });
@@ -73,7 +74,7 @@ describe("FixedTaskBoard", () => {
 
   it("수정 버튼을 누르면 편집 폼이 나오고 저장하면 renameTemplateAction을 호출한다", async () => {
     renameTemplateActionMock.mockResolvedValue(undefined);
-    render(<FixedTaskBoard tasks={tasks} />);
+    render(<FixedTaskBoard tasks={tasks} todayWeekday={3} />);
 
     fireEvent.click(screen.getByRole("button", { name: "주간업무일지 제출 수정" }));
     fireEvent.change(screen.getByLabelText("고정 업무 이름"), { target: { value: "새 이름" } });
@@ -84,7 +85,7 @@ describe("FixedTaskBoard", () => {
 
   it("보관 버튼을 누르면 archiveTemplateAction을 호출한다", async () => {
     archiveTemplateActionMock.mockResolvedValue(undefined);
-    render(<FixedTaskBoard tasks={tasks} />);
+    render(<FixedTaskBoard tasks={tasks} todayWeekday={3} />);
 
     fireEvent.click(screen.getByRole("button", { name: "주간업무일지 제출 삭제" }));
 

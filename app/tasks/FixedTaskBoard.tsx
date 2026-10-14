@@ -17,19 +17,46 @@ import {
 const inputClass =
   "w-full min-w-0 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent";
 
-/** 매주 자동으로 다시 뜨는 반복 업무. 개수가 적어 카드 대신 한 줄 칩으로 표시한다. */
-export function FixedTaskBoard({ tasks }: { tasks: FixedTaskCard[] }) {
+/**
+ * 매주 자동으로 다시 뜨는 반복 업무.
+ * 평소에는 "오늘 요일"에 해당하는 업무만 알림처럼 띄우고, 나머지 요일 업무와
+ * 추가/수정은 "전체 보기"를 눌렀을 때만 펼친다. 상시 노출하면 매일 보는 화면에서
+ * 자리만 차지하기 때문.
+ */
+export function FixedTaskBoard({ tasks, todayWeekday }: { tasks: FixedTaskCard[]; todayWeekday: number }) {
+  const [showAll, setShowAll] = useState(false);
+
+  const todayTasks = tasks.filter((task) => task.weekday === todayWeekday);
+  const visibleTasks = showAll ? tasks : todayTasks;
+  const hiddenCount = tasks.length - todayTasks.length;
+
   return (
     <section>
       <SectionHeader icon={Repeat} title="고정 업무">
-        <span className="text-xs text-muted">매주 자동으로 다시 생성</span>
+        <span className="text-xs text-muted">
+          {todayTasks.length > 0 ? `오늘(${WEEKDAY_LABELS[todayWeekday]}) ${todayTasks.length}건` : "오늘 예정 없음"}
+        </span>
+        {/* 고정 업무를 추가/수정하는 입구이기도 하므로 목록이 비어도 항상 보여준다. */}
+        <button
+          type="button"
+          onClick={() => setShowAll((prev) => !prev)}
+          aria-expanded={showAll}
+          className="rounded-md border border-border px-2 py-1 text-xs text-muted hover:text-foreground"
+        >
+          {showAll ? "접기" : hiddenCount > 0 ? `전체 보기 (+${hiddenCount})` : "전체 보기"}
+        </button>
       </SectionHeader>
-      <div className="flex flex-wrap items-center gap-2">
-        {tasks.map((task) => (
-          <FixedTaskChip key={task.templateId} task={task} />
-        ))}
-        <AddFixedTaskChip />
-      </div>
+
+      {visibleTasks.length === 0 && !showAll ? (
+        <p className="text-sm text-muted">오늘 예정된 고정 업무가 없습니다.</p>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
+          {visibleTasks.map((task) => (
+            <FixedTaskChip key={task.templateId} task={task} />
+          ))}
+          {showAll ? <AddFixedTaskChip /> : null}
+        </div>
+      )}
     </section>
   );
 }

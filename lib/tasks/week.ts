@@ -25,6 +25,13 @@ export function addDaysISO(dateISO: string, days: number): string {
   return toISODate(next.getUTCFullYear(), next.getUTCMonth() + 1, next.getUTCDate());
 }
 
+/** 두 "YYYY-MM-DD" 사이의 일수를 반환한다 (to - from, 같은 날이면 0). */
+export function daysBetweenISO(fromISO: string, toISO: string): number {
+  const [fy, fm, fd] = fromISO.split("-").map(Number);
+  const [ty, tm, td] = toISO.split("-").map(Number);
+  return Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / DAY_MS);
+}
+
 /** "YYYY-MM-DD"의 요일 인덱스를 반환한다 (0=월 ... 6=일). */
 export function getWeekdayIndex(dateISO: string): number {
   const [y, m, d] = dateISO.split("-").map(Number);

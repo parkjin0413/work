@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import TasksPage from "./page";
+import { getKstTodayISO, getWeekdayIndex } from "@/lib/tasks/week";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
@@ -33,6 +34,7 @@ const emptyLog = {
     "2026-09-26",
     "2026-09-27",
   ].map((date) => ({ date, entries: [] })),
+  completed: [],
 };
 
 async function renderTasksPage(searchParams: { week?: string } = {}) {
@@ -46,10 +48,11 @@ describe("TasksPage", () => {
     getNoteLogForWeekMock.mockReset().mockResolvedValue(emptyLog);
   });
 
-  it("고정 업무를 카드로 보여준다", async () => {
+  it("오늘 요일의 고정 업무는 바로 보여준다", async () => {
+    const todayWeekday = getWeekdayIndex(getKstTodayISO());
     getBoardMock.mockResolvedValue({
       fixedTasks: [
-        { taskId: "task-1", templateId: "tpl-1", name: "주간업무일지 제출", weekday: 3, isCompleted: false },
+        { taskId: "task-1", templateId: "tpl-1", name: "오늘 할 고정 업무", weekday: todayWeekday, isCompleted: false },
       ],
       incomplete: [],
       completed: [],
@@ -57,8 +60,26 @@ describe("TasksPage", () => {
 
     await renderTasksPage();
 
-    expect(screen.getByText("주간업무일지 제출")).toBeInTheDocument();
-    expect(screen.getByText("목요일")).toBeInTheDocument();
+    expect(screen.getByText("오늘 할 고정 업무")).toBeInTheDocument();
+  });
+
+  it("다른 요일의 고정 업무는 전체 보기를 눌러야 나온다", async () => {
+    const otherWeekday = (getWeekdayIndex(getKstTodayISO()) + 1) % 7;
+    getBoardMock.mockResolvedValue({
+      fixedTasks: [
+        { taskId: "task-1", templateId: "tpl-1", name: "다른 요일 고정 업무", weekday: otherWeekday, isCompleted: false },
+      ],
+      incomplete: [],
+      completed: [],
+    });
+
+    await renderTasksPage();
+
+    expect(screen.queryByText("다른 요일 고정 업무")).not.toBeInTheDocument();
+    expect(screen.getByText("오늘 예정 없음")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "전체 보기 (+1)" }));
+    expect(screen.getByText("다른 요일 고정 업무")).toBeInTheDocument();
   });
 
   it("지정한 날짜(월/일/요일)와 함께 업무 목록을 보여준다", async () => {
@@ -108,7 +129,10 @@ describe("TasksPage", () => {
 
     await renderTasksPage();
 
-    expect(screen.getByText("완료됨")).toBeInTheDocument();
+    // 완료됨 섹션은 기본 접힘 — 건수는 바로 보이고, 펼치면 카드가 나온다
+    const toggle = screen.getByRole("button", { name: /완료됨 1건/ });
+    expect(toggle).toBeInTheDocument();
+    fireEvent.click(toggle);
     expect(screen.getByText("지난주에 끝낸 인쇄 업무")).toHaveClass("line-through");
     // completed_at 2026-08-20은 목요일
     expect(screen.getByText("완료 8월 20일 (목)")).toBeInTheDocument();

@@ -8,6 +8,7 @@ const {
   updateTaskActionMock,
   reorderTasksActionMock,
   addTaskNoteActionMock,
+  updateTaskNoteActionMock,
   deleteTaskNoteActionMock,
 } = vi.hoisted(() => ({
   setTaskCompletionActionMock: vi.fn(),
@@ -15,6 +16,7 @@ const {
   updateTaskActionMock: vi.fn(),
   reorderTasksActionMock: vi.fn(),
   addTaskNoteActionMock: vi.fn(),
+  updateTaskNoteActionMock: vi.fn(),
   deleteTaskNoteActionMock: vi.fn(),
 }));
 
@@ -24,6 +26,7 @@ vi.mock("./actions", () => ({
   updateTaskAction: updateTaskActionMock,
   reorderTasksAction: reorderTasksActionMock,
   addTaskNoteAction: addTaskNoteActionMock,
+  updateTaskNoteAction: updateTaskNoteActionMock,
   deleteTaskNoteAction: deleteTaskNoteActionMock,
 }));
 
@@ -46,6 +49,7 @@ describe("TaskList", () => {
     updateTaskActionMock.mockReset().mockResolvedValue(undefined);
     reorderTasksActionMock.mockReset().mockResolvedValue(undefined);
     addTaskNoteActionMock.mockReset().mockResolvedValue(undefined);
+    updateTaskNoteActionMock.mockReset().mockResolvedValue(undefined);
     deleteTaskNoteActionMock.mockReset().mockResolvedValue(undefined);
   });
 
@@ -79,7 +83,11 @@ describe("TaskList", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "디자인 시안 검토 완료" }));
 
     await waitFor(() => expect(setTaskCompletionActionMock).toHaveBeenCalledWith("task-adhoc", true));
-    expect(screen.getByText("완료됨")).toBeInTheDocument();
+
+    // 완료됨 섹션은 기본 접힘이라 펼쳐서 확인한다
+    const toggle = screen.getByRole("button", { name: /완료됨 1건/ });
+    expect(toggle).toBeInTheDocument();
+    fireEvent.click(toggle);
     expect(screen.getByText("디자인 시안 검토")).toHaveClass("line-through");
   });
 
@@ -90,7 +98,7 @@ describe("TaskList", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "디자인 시안 검토 완료" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("완료 처리에 실패했습니다.");
-    expect(screen.queryByText("완료됨")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /완료됨/ })).not.toBeInTheDocument();
   });
 
   it("삭제 버튼을 누르면 deleteTaskAction을 호출하고 목록에서 사라진다", async () => {
@@ -171,6 +179,87 @@ describe("TaskList", () => {
 
     await waitFor(() => expect(deleteTaskNoteActionMock).toHaveBeenCalledWith("n1"));
     expect(screen.queryByText("지울 메모")).not.toBeInTheDocument();
+  });
+
+  it("메모는 최신순으로 보이고, 3개를 넘으면 나머지는 접어둔다", () => {
+    const notes = Array.from({ length: 5 }, (_, i) => ({
+      id: `n${i + 1}`,
+      body: `메모${i + 1}`,
+      createdAt: `2026-09-${String(10 + i).padStart(2, "0")}T01:00:00.000Z`,
+    }));
+    render(<TaskList incomplete={[{ ...adhocTask, notes }]} completed={[]} />);
+
+    // 최신(메모5)이 보이고 오래된 메모(메모1, 메모2)는 접혀 있다
+    expect(screen.getByText("메모5")).toBeInTheDocument();
+    expect(screen.getByText("메모3")).toBeInTheDocument();
+    expect(screen.queryByText("메모1")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "이전 메모 2개 더 보기" }));
+    expect(screen.getByText("메모1")).toBeInTheDocument();
+  });
+
+  it("메모 입력창에서 Ctrl+Enter 로 바로 추가된다", async () => {
+    addTaskNoteActionMock.mockResolvedValue({
+      id: "n-new",
+      body: "빠른 메모",
+      createdAt: "2026-09-10T05:00:00.000Z",
+    });
+    render(<TaskList incomplete={[adhocTask]} completed={[]} />);
+
+    const input = screen.getByLabelText("진행 메모 추가");
+    fireEvent.change(input, { target: { value: "빠른 메모" } });
+    fireEvent.keyDown(input, { key: "Enter", ctrlKey: true });
+
+    await waitFor(() =>
+      expect(addTaskNoteActionMock).toHaveBeenCalledWith("task-adhoc", "빠른 메모")
+    );
+  });
+
+  it("메모를 수정하면 updateTaskNoteAction 을 호출하고 화면에 반영한다", async () => {
+    updateTaskNoteActionMock.mockResolvedValue({
+      id: "n1",
+      body: "고친 메모",
+      createdAt: "2026-09-09T01:00:00.000Z",
+    });
+    const task = {
+      ...adhocTask,
+      notes: [{ id: "n1", body: "원래 메모", createdAt: "2026-09-09T01:00:00.000Z" }],
+    };
+    render(<TaskList incomplete={[task]} completed={[]} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "진행 메모 수정" }));
+    fireEvent.change(screen.getByLabelText("진행 메모 수정"), { target: { value: "고친 메모" } });
+    fireEvent.click(screen.getByRole("button", { name: "저장" }));
+
+    await waitFor(() => expect(updateTaskNoteActionMock).toHaveBeenCalledWith("n1", "고친 메모"));
+    expect(await screen.findByText("고친 메모")).toBeInTheDocument();
+    expect(screen.queryByText("원래 메모")).not.toBeInTheDocument();
+  });
+
+  it("검색어로 업무명과 메모를 함께 거른다", () => {
+    const other = {
+      ...adhocTask,
+      id: "task-other",
+      name: "나스 관리",
+      memo: null,
+      notes: [{ id: "n9", body: "백업 주기 확인", createdAt: "2026-09-09T01:00:00.000Z" }],
+    };
+    render(<TaskList incomplete={[adhocTask, other]} completed={[]} />);
+
+    fireEvent.change(screen.getByLabelText("업무 검색"), { target: { value: "백업" } });
+
+    expect(screen.getByText("나스 관리")).toBeInTheDocument();
+    expect(screen.queryByText("디자인 시안 검토")).not.toBeInTheDocument();
+  });
+
+  it("오랫동안 메모가 없으면 카드에 정체 표시를 붙인다", () => {
+    const stale = {
+      ...adhocTask,
+      notes: [{ id: "n1", body: "오래된 메모", createdAt: "2020-01-01T01:00:00.000Z" }],
+    };
+    render(<TaskList incomplete={[stale]} completed={[]} />);
+
+    expect(screen.getByTitle("최근 진행 메모 1월 1일 (수)")).toHaveTextContent("일째");
   });
 
   it("수정 버튼을 누르면 편집 폼이 나오고 저장하면 날짜를 포함해 updateTaskAction을 호출한다", async () => {

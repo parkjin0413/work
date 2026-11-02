@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, CheckSquare, KeyRound, LogOut, Package, Star, Users } from "lucide-react";
+import { Building2, CheckSquare, Globe, KeyRound, LogOut, Package, Star, Users } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 // 별도 홈 대시보드 없음 — 업무관리가 사실상 기본 화면(첫 메뉴)이라 "/" 항목은 두지 않는다.
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/products", label: "제품정보", icon: Package },
   { href: "/partners", label: "회사정보", icon: Building2 },
   { href: "/employees", label: "직원명단", icon: Users },
+  { href: "/hosting", label: "호스팅", icon: Globe },
 ];
 
 export function Sidebar() {

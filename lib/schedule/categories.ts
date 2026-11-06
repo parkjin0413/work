@@ -1,5 +1,5 @@
-// 연간일정 분류. DB check 제약(0014_schedules_categories.sql)과 같은 목록을 유지해야 한다.
-export const SCHEDULE_CATEGORIES = ["연차", "본사", "시장조사", "미팅", "촬영", "전시회", "행사"] as const;
+// 연간일정 분류. DB check 제약(0017_schedules_category_pr.sql)과 같은 목록을 유지해야 한다.
+export const SCHEDULE_CATEGORIES = ["연차", "본사", "시장조사", "미팅", "촬영", "전시회", "행사", "홍보부"] as const;
 
 export type ScheduleCategory = (typeof SCHEDULE_CATEGORIES)[number];
 
@@ -34,6 +34,10 @@ export const CATEGORY_COLORS: Record<ScheduleCategory, ChipColors> = {
   연차: {
     chip: "border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-400/25 dark:bg-slate-400/10 dark:text-slate-200",
     dot: "bg-slate-400",
+  },
+  홍보부: {
+    chip: "border-indigo-200 bg-indigo-50 text-indigo-800 dark:border-indigo-400/25 dark:bg-indigo-400/10 dark:text-indigo-200",
+    dot: "bg-indigo-300 dark:bg-indigo-400",
   },
   본사: {
     chip: "border-teal-200 bg-teal-50 text-teal-800 dark:border-teal-400/25 dark:bg-teal-400/10 dark:text-teal-200",

@@ -47,6 +47,10 @@ export const OVERLAY_COLORS = {
     chip: "border-dashed border-amber-300 bg-amber-50/60 text-amber-800 dark:border-amber-400/40 dark:bg-amber-400/5 dark:text-amber-200",
     dot: "bg-amber-300 dark:bg-amber-400",
   },
+  leave: {
+    chip: "border-dashed border-slate-300 bg-slate-50/60 text-slate-700 dark:border-slate-400/40 dark:bg-slate-400/5 dark:text-slate-200",
+    dot: "bg-slate-400",
+  },
   birthday: {
     chip: "border-dashed border-rose-300 bg-rose-50/60 text-rose-800 dark:border-rose-400/40 dark:bg-rose-400/5 dark:text-rose-200",
     dot: "bg-rose-300 dark:bg-rose-400",

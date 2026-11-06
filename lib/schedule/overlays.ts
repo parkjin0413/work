@@ -4,7 +4,7 @@ import { enumerateDates, toLunar } from "./calendar";
 
 export type OverlayItem = {
   id: string;
-  kind: "hosting" | "birthday";
+  kind: "hosting" | "birthday" | "leave";
   date: string;
   title: string;
   detail: string;

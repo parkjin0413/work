@@ -3,9 +3,12 @@
 import { useState, type FormEvent } from "react";
 import { SCHEDULE_CATEGORIES, CATEGORY_COLORS, type ScheduleCategory } from "@/lib/schedule/categories";
 import type { ScheduleInput } from "@/lib/schedule/scheduleStore";
+import { LEAVE_TYPE_LABELS, type LeaveType } from "@/lib/leave/annualLeave";
+
+const LEAVE_TYPES: LeaveType[] = ["full", "am", "pm"];
 
 const INPUT_CLASS =
-  "w-full rounded-lg border border-border bg-bg px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent";
+  "w-full rounded-lg border border-border bg-bg px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50";
 
 export function ScheduleForm({
   initial,
@@ -23,17 +26,30 @@ export function ScheduleForm({
   const [startDate, setStartDate] = useState(initial.startDate);
   const [endDate, setEndDate] = useState(initial.endDate);
   const [memo, setMemo] = useState(initial.memo ?? "");
+  const [leaveType, setLeaveType] = useState<LeaveType>(initial.leaveType ?? "full");
+  const isLeave = category === "연차";
+  const isHalfDay = isLeave && leaveType !== "full";
+  // 연차는 내용을 비워도 되게 한다 (비우면 "연차"/"오전 반차" 등으로 저장).
+  const canSubmit = isLeave || !!title.trim();
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!title.trim()) return;
+    if (!canSubmit) return;
 
     setErrorMessage(null);
     setIsSaving(true);
     try {
-      await onSubmit({ title, category, startDate, endDate: endDate || startDate, memo });
+      const finalTitle = title.trim() || (leaveType === "full" ? "연차" : LEAVE_TYPE_LABELS[leaveType]);
+      await onSubmit({
+        title: finalTitle,
+        category,
+        startDate,
+        endDate: isHalfDay ? startDate : endDate || startDate,
+        memo,
+        leaveType: isLeave ? leaveType : null,
+      });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
       setIsSaving(false);
@@ -63,38 +79,63 @@ export function ScheduleForm({
         })}
       </div>
 
+      {isLeave ? (
+        <div className="flex gap-1" role="radiogroup" aria-label="연차 종류">
+          {LEAVE_TYPES.map((type) => (
+            <button
+              key={type}
+              type="button"
+              role="radio"
+              aria-checked={leaveType === type}
+              onClick={() => {
+                setLeaveType(type);
+                if (type !== "full") setEndDate(startDate);
+              }}
+              className={`flex min-w-0 flex-1 flex-col items-center rounded-lg border px-1 py-1.5 text-sm font-medium leading-tight ${
+                leaveType === type ? "border-accent bg-accent/10 text-accent" : "border-border text-muted hover:bg-surface-hover"
+              }`}
+            >
+              <span className="whitespace-nowrap">{LEAVE_TYPE_LABELS[type]}</span>
+              <span className="text-xs font-normal opacity-70">{type === "full" ? "1일" : "0.5일"}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="일정 내용"
+        placeholder={isLeave ? "내용 (비워두면 '연차'로 저장)" : "일정 내용"}
         aria-label="일정 내용"
         autoFocus
         className={INPUT_CLASS}
       />
 
-      <div className="grid grid-cols-2 gap-2">
-        <label className="flex flex-col gap-1 text-xs text-muted">
-          시작일
+      {/* 패널 폭이 좁아서 날짜는 한 줄에 하나씩 (라벨 왼쪽, 입력칸 오른쪽) */}
+      <div className="flex flex-col gap-2">
+        <label className="flex items-center gap-2 text-sm text-muted">
+          <span className="w-12 shrink-0">시작일</span>
           <input
             type="date"
             value={startDate}
             onChange={(e) => {
               setStartDate(e.target.value);
-              if (endDate < e.target.value) setEndDate(e.target.value);
+              if (isHalfDay || endDate < e.target.value) setEndDate(e.target.value);
             }}
             aria-label="시작일"
-            className={INPUT_CLASS}
+            className={`${INPUT_CLASS} min-w-0 flex-1`}
           />
         </label>
-        <label className="flex flex-col gap-1 text-xs text-muted">
-          종료일
+        <label className="flex items-center gap-2 text-sm text-muted">
+          <span className="w-12 shrink-0">종료일</span>
           <input
             type="date"
-            value={endDate}
+            value={isHalfDay ? startDate : endDate}
             min={startDate}
+            disabled={isHalfDay}
             onChange={(e) => setEndDate(e.target.value)}
             aria-label="종료일"
-            className={INPUT_CLASS}
+            className={`${INPUT_CLASS} min-w-0 flex-1`}
           />
         </label>
       </div>
@@ -111,7 +152,7 @@ export function ScheduleForm({
       <div className="flex items-center gap-2">
         <button
           type="submit"
-          disabled={isSaving || !title.trim()}
+          disabled={isSaving || !canSubmit}
           className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground hover:bg-accent-hover disabled:opacity-50"
         >
           {isSaving ? "저장 중..." : submitLabel}

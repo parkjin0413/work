@@ -11,6 +11,7 @@ function pick(input: ScheduleInput): ScheduleInput {
     startDate: String(input.startDate ?? ""),
     endDate: String(input.endDate ?? ""),
     memo: input.memo == null ? null : String(input.memo),
+    leaveType: input.leaveType === "am" || input.leaveType === "pm" || input.leaveType === "full" ? input.leaveType : null,
   };
 }
 

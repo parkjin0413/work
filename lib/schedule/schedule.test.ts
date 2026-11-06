@@ -103,7 +103,12 @@ describe("일정 입력 검증", () => {
   const base = { title: "거래처 미팅", category: "미팅" as const, startDate: "2026-11-06", endDate: "", memo: " 14시 " };
 
   it("종료일이 비면 시작일로 채우고 메모를 다듬는다", () => {
-    expect(validateScheduleInput(base)).toEqual({ ...base, endDate: "2026-11-06", memo: "14시" });
+    expect(validateScheduleInput(base)).toEqual({ ...base, endDate: "2026-11-06", memo: "14시", leaveType: null });
+  });
+
+  it("연차 반차는 하루짜리로 맞춘다", () => {
+    const result = validateScheduleInput({ ...base, category: "연차", endDate: "2026-11-09", leaveType: "am" });
+    expect(result).toMatchObject({ endDate: "2026-11-06", leaveType: "am" });
   });
 
   it("종료일이 시작일보다 빠르면 거부한다", () => {

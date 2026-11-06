@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Cake, ChevronLeft, ChevronRight, Globe, Pencil, Trash2 } from "lucide-react";
+import { Cake, ChevronLeft, ChevronRight, Globe, Palmtree, Pencil, Trash2 } from "lucide-react";
 import { addMonths, daysInMonth, enumerateDates, firstWeekday, monthRange, weekdayOf } from "@/lib/schedule/calendar";
 import {
   CATEGORY_COLORS,
@@ -13,13 +13,14 @@ import {
 } from "@/lib/schedule/categories";
 import type { Schedule } from "@/lib/schedule/scheduleStore";
 import type { OverlayItem } from "@/lib/schedule/overlays";
+import { LEAVE_TYPE_LABELS, type LeaveSummary } from "@/lib/leave/annualLeave";
 import { ScheduleForm } from "./ScheduleForm";
 import { createScheduleAction, deleteScheduleAction, updateScheduleAction } from "./actions";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 const MAX_CHIPS_PER_CELL = 3;
 
-type FilterKey = ScheduleCategory | "hosting" | "birthday";
+type FilterKey = ScheduleCategory | OverlayItem["kind"];
 
 type DayItem = { type: "schedule"; schedule: Schedule } | { type: "overlay"; overlay: OverlayItem };
 
@@ -27,8 +28,16 @@ function dayItemKey(item: DayItem): string {
   return item.type === "schedule" ? item.schedule.id : item.overlay.id;
 }
 
+/** 반차는 제목 앞에 "오전 반차"/"오후 반차"를 붙여 보여준다. */
+function scheduleTitle(schedule: Schedule): string {
+  const type = schedule.leaveType;
+  if (!type || type === "full") return schedule.title;
+  const label = LEAVE_TYPE_LABELS[type];
+  return schedule.title.includes(label) ? schedule.title : `${label} · ${schedule.title}`;
+}
+
 function itemTitle(item: DayItem): string {
-  return item.type === "schedule" ? item.schedule.title : item.overlay.title;
+  return item.type === "schedule" ? scheduleTitle(item.schedule) : item.overlay.title;
 }
 
 function itemColors(item: DayItem) {
@@ -41,7 +50,7 @@ function formatPeriod(start: string, end: string): string {
 }
 
 function OverlayIcon({ kind, size }: { kind: OverlayItem["kind"]; size: number }) {
-  const Icon = kind === "hosting" ? Globe : Cake;
+  const Icon = kind === "hosting" ? Globe : kind === "leave" ? Palmtree : Cake;
   return <Icon size={size} className="shrink-0" aria-hidden="true" />;
 }
 
@@ -52,6 +61,7 @@ export function CalendarBoard({
   schedules,
   overlays,
   holidays,
+  leaveSummary,
 }: {
   ym: string;
   today: string;
@@ -59,6 +69,7 @@ export function CalendarBoard({
   schedules: Schedule[];
   overlays: OverlayItem[];
   holidays: Record<string, string[]>;
+  leaveSummary: LeaveSummary | null;
 }) {
   const router = useRouter();
   const panelRef = useRef<HTMLElement>(null);
@@ -142,6 +153,7 @@ export function CalendarBoard({
 
   const filterOptions: { key: FilterKey; label: string; colors: { chip: string; dot: string } }[] = [
     ...SCHEDULE_CATEGORIES.map((c) => ({ key: c as FilterKey, label: c, colors: CATEGORY_COLORS[c] })),
+    { key: "leave", label: "연차 발생", colors: OVERLAY_COLORS.leave },
     { key: "birthday", label: "직원 생일", colors: OVERLAY_COLORS.birthday },
     { key: "hosting", label: "호스팅 만료", colors: OVERLAY_COLORS.hosting },
   ];
@@ -360,7 +372,7 @@ export function CalendarBoard({
                           <span className="font-normal">· {formatPeriod(schedule.startDate, schedule.endDate)}</span>
                         ) : null}
                       </div>
-                      <p className="break-words text-[15px] font-semibold">{schedule.title}</p>
+                      <p className="break-words text-[15px] font-semibold">{scheduleTitle(schedule)}</p>
                     </div>
                     <div className="-mr-1 flex shrink-0 items-center">
                       <button
@@ -394,6 +406,7 @@ export function CalendarBoard({
         ) : null}
       </section>
 
+        {leaveSummary ? <LeaveCard summary={leaveSummary} /> : null}
         <div className="hidden md:block">{agenda}</div>
       </div>
 
@@ -548,6 +561,78 @@ function AgendaList({
           })}
         </ol>
       )}
+    </section>
+  );
+}
+
+function formatDays(days: number): string {
+  return Number.isInteger(days) ? `${days}` : days.toFixed(1);
+}
+
+function formatKoreanDate(dateISO: string): string {
+  return `${Number(dateISO.slice(0, 4))}.${Number(dateISO.slice(5, 7))}.${Number(dateISO.slice(8, 10))}`;
+}
+
+/** 근로기준법 기준으로 계산한 내 연차 현황. 연차 분류 일정이 사용일로 반영된다. */
+function LeaveCard({ summary }: { summary: LeaveSummary }) {
+  // 가장 먼저 소멸하는 묶음 중 남은 게 있으면 마감일을 알려준다.
+  const expiring = summary.active
+    .filter((g) => g.remaining > 0)
+    .sort((a, b) => a.expires.localeCompare(b.expires))[0];
+  const expiringDays = expiring
+    ? summary.active.filter((g) => g.expires === expiring.expires).reduce((sum, g) => sum + g.remaining, 0)
+    : 0;
+
+  return (
+    <section aria-label="내 연차" className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-3">
+      <div className="flex items-baseline justify-between gap-2 px-1">
+        <h2 className="text-sm font-semibold text-foreground">내 연차</h2>
+        <span className="text-xs text-muted">입사 {formatKoreanDate(summary.hireDate)}</span>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 rounded-xl bg-bg px-3 py-2.5">
+        <div className="min-w-0">
+          <p className="text-xs text-muted">사용 가능 연차</p>
+          <p className="text-2xl font-bold leading-tight text-foreground">
+            {formatDays(summary.available)}
+            <span className="ml-0.5 text-sm font-medium text-muted">일</span>
+          </p>
+        </div>
+        <dl className="grid shrink-0 grid-cols-[auto_3.5rem] gap-x-3 gap-y-0.5 text-xs">
+          <dt className="text-muted">사용</dt>
+          <dd className="text-right font-medium tabular-nums text-foreground">{formatDays(summary.usedTotal)}일</dd>
+          <dt className="text-muted">예정</dt>
+          <dd className="text-right font-medium tabular-nums text-foreground">{formatDays(summary.plannedTotal)}일</dd>
+          <dt className="text-muted">예정 후 잔여</dt>
+          <dd className="text-right font-medium tabular-nums text-foreground">
+            {formatDays(summary.availableAfterPlanned)}일
+          </dd>
+        </dl>
+      </div>
+
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 px-1 text-xs">
+        {summary.nextGrant ? (
+          <>
+            <dt className="text-muted">다음 발생</dt>
+            <dd className="text-right text-foreground">
+              <span className="font-medium">{formatKoreanDate(summary.nextGrant.date)}</span>
+              <span className="ml-1.5 text-accent">+{summary.nextGrant.days}일</span>
+            </dd>
+          </>
+        ) : null}
+        {expiring ? (
+          <>
+            <dt className="text-muted">사용기한</dt>
+            <dd className="text-right text-foreground">
+              <span className="font-medium">{formatKoreanDate(expiring.expires)}</span>까지
+              <span className="ml-1.5 font-medium">{formatDays(expiringDays)}일</span>
+            </dd>
+          </>
+        ) : null}
+      </dl>
+      {summary.overdrawn > 0 ? (
+        <p className="px-1 text-xs text-danger">발생한 연차보다 {formatDays(summary.overdrawn)}일 더 잡혀 있습니다.</p>
+      ) : null}
     </section>
   );
 }

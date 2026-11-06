@@ -5,7 +5,9 @@ import { withRetry } from "@/lib/supabase/withRetry";
 import { getKstTodayISO } from "@/lib/tasks/week";
 import { isValidISODate, isValidYm, monthRange } from "@/lib/schedule/calendar";
 import { getMonthHolidays } from "@/lib/schedule/holidays";
-import { listSchedulesInRange } from "@/lib/schedule/scheduleStore";
+import { listLeaveSchedules, listSchedulesInRange } from "@/lib/schedule/scheduleStore";
+import { HIRE_DATE } from "@/lib/leave/config";
+import { leaveEventsInRange, summarizeLeave, type LeaveSummary } from "@/lib/leave/annualLeave";
 import { listBirthdayOverlays, listHostingOverlays, type OverlayItem } from "@/lib/schedule/overlays";
 import { CalendarBoard } from "./CalendarBoard";
 
@@ -16,6 +18,17 @@ async function loadOverlay(label: string, load: () => Promise<OverlayItem[]>): P
   } catch (error) {
     console.error(`[calendar] ${label} 조회 실패:`, error);
     return [];
+  }
+}
+
+/** 내 연차 현황. 실패하면 연차 카드만 빼고 달력은 보여준다. */
+async function loadLeaveSummary(today: string): Promise<LeaveSummary | null> {
+  try {
+    const leaves = await withRetry(() => listLeaveSchedules(), "calendar/leave");
+    return summarizeLeave(HIRE_DATE, leaves, today);
+  } catch (error) {
+    console.error("[calendar] 연차 계산 실패:", error);
+    return null;
   }
 }
 
@@ -55,10 +68,14 @@ export default async function CalendarPage({
     );
   }
 
-  const [hostingOverlays, birthdayOverlays] = await Promise.all([
+  const [hostingOverlays, birthdayOverlays, leaveSummary] = await Promise.all([
     loadOverlay("calendar/hosting", () => listHostingOverlays(first, last)),
     loadOverlay("calendar/birthdays", () => listBirthdayOverlays(first, last)),
+    loadLeaveSummary(today),
   ]);
+  const leaveOverlays: OverlayItem[] = leaveSummary
+    ? leaveEventsInRange(leaveSummary, first, last).map((event) => ({ ...event, kind: "leave" as const }))
+    : [];
 
   return (
     <div className="flex min-h-screen flex-col bg-bg md:flex-row">
@@ -76,7 +93,8 @@ export default async function CalendarPage({
           today={today}
           initialDate={selectedDate}
           schedules={schedules}
-          overlays={[...hostingOverlays, ...birthdayOverlays]}
+          overlays={[...leaveOverlays, ...hostingOverlays, ...birthdayOverlays]}
+          leaveSummary={leaveSummary}
           holidays={getMonthHolidays(ym)}
         />
       </main>

@@ -1,6 +1,7 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/serviceClient";
 import { isValidISODate } from "./calendar";
 import { isScheduleCategory, type ScheduleCategory } from "./categories";
+import type { LeaveType } from "@/lib/leave/annualLeave";
 
 export type Schedule = {
   id: string;
@@ -9,9 +10,11 @@ export type Schedule = {
   startDate: string;
   endDate: string;
   memo: string | null;
+  /** 연차 일정만: 종일 / 오전 반차 / 오후 반차. 다른 분류는 null. */
+  leaveType: LeaveType | null;
 };
 
-export type ScheduleInput = Omit<Schedule, "id">;
+export type ScheduleInput = Omit<Schedule, "id" | "leaveType"> & { leaveType?: LeaveType | null };
 
 type Row = {
   id: string;
@@ -20,6 +23,7 @@ type Row = {
   start_date: string;
   end_date: string;
   memo: string | null;
+  leave_type: string | null;
 };
 
 function toSchedule(row: Row): Schedule {
@@ -30,16 +34,21 @@ function toSchedule(row: Row): Schedule {
     startDate: row.start_date,
     endDate: row.end_date,
     memo: row.memo,
+    leaveType: row.category === "연차" ? ((row.leave_type as LeaveType | null) ?? "full") : null,
   };
 }
 
 /** 입력값 검증. 잘못된 값이면 사용자에게 보여줄 한국어 메시지로 에러를 던진다. */
-export function validateScheduleInput(input: ScheduleInput): ScheduleInput {
+export function validateScheduleInput(input: ScheduleInput): Omit<Schedule, "id"> {
   const title = input.title.trim();
   if (!title) throw new Error("일정 내용을 입력해주세요.");
   if (!isScheduleCategory(input.category)) throw new Error("분류를 선택해주세요.");
   if (!isValidISODate(input.startDate)) throw new Error("시작일이 올바르지 않습니다.");
-  const endDate = input.endDate || input.startDate;
+  const isLeave = input.category === "연차";
+  const leaveType: LeaveType | null = isLeave ? (input.leaveType ?? "full") : null;
+  if (leaveType && !["full", "am", "pm"].includes(leaveType)) throw new Error("연차 종류가 올바르지 않습니다.");
+  // 반차는 하루짜리라 종료일을 시작일로 맞춘다.
+  const endDate = leaveType && leaveType !== "full" ? input.startDate : input.endDate || input.startDate;
   if (!isValidISODate(endDate)) throw new Error("종료일이 올바르지 않습니다.");
   if (endDate < input.startDate) throw new Error("종료일은 시작일보다 빠를 수 없습니다.");
 
@@ -49,15 +58,18 @@ export function validateScheduleInput(input: ScheduleInput): ScheduleInput {
     startDate: input.startDate,
     endDate,
     memo: input.memo?.trim() || null,
+    leaveType,
   };
 }
+
+const SELECT_COLUMNS = "id, title, category, start_date, end_date, memo, leave_type";
 
 /** 기간이 [first, last]와 하루라도 겹치는 일정. */
 export async function listSchedulesInRange(first: string, last: string): Promise<Schedule[]> {
   const supabase = createSupabaseServiceClient();
   const { data, error } = await supabase
     .from("schedules")
-    .select("id, title, category, start_date, end_date, memo")
+    .select(SELECT_COLUMNS)
     .lte("start_date", last)
     .gte("end_date", first)
     .order("start_date", { ascending: true })
@@ -78,7 +90,24 @@ function toRow(input: ScheduleInput) {
     start_date: valid.startDate,
     end_date: valid.endDate,
     memo: valid.memo,
+    leave_type: valid.leaveType,
   };
+}
+
+/** 연차 계산용: 연차 분류 일정 전체. */
+export async function listLeaveSchedules(): Promise<Schedule[]> {
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("schedules")
+    .select(SELECT_COLUMNS)
+    .eq("category", "연차")
+    .order("start_date", { ascending: true });
+
+  if (error) {
+    throw new Error(`연차 일정 조회 실패: ${error.message}`);
+  }
+
+  return ((data ?? []) as Row[]).map(toSchedule);
 }
 
 export async function createSchedule(input: ScheduleInput): Promise<void> {

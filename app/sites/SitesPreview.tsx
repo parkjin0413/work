@@ -23,7 +23,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Eye, EyeOff, GripVertical, KeyRound, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
+import { Check, Copy, GripVertical, KeyRound, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import {
   buildGroups,
   displayUrl,
@@ -71,27 +71,8 @@ type DragHandleProps = { attributes: DraggableAttributes; listeners: SyntheticLi
 
 const ZONES = [
   { source: "account" as const, label: "계정", Icon: KeyRound, iconClass: "text-accent" },
-  { source: "favorite" as const, label: "즐겨찾기", Icon: Star, iconClass: "text-amber-500" },
+  { source: "favorite" as const, label: "즐겨찾기", Icon: Star, iconClass: "text-accent" },
 ];
-
-/** 분류 제목 줄 파스텔 배경. 항목 부분은 흰 배경 그대로라 튀지 않는다. */
-const HEADER_TONES = [
-  "border-sky-100 bg-sky-50 text-sky-900 dark:border-sky-400/15 dark:bg-sky-400/10 dark:text-sky-100",
-  "border-violet-100 bg-violet-50 text-violet-900 dark:border-violet-400/15 dark:bg-violet-400/10 dark:text-violet-100",
-  "border-emerald-100 bg-emerald-50 text-emerald-900 dark:border-emerald-400/15 dark:bg-emerald-400/10 dark:text-emerald-100",
-  "border-amber-100 bg-amber-50 text-amber-900 dark:border-amber-400/15 dark:bg-amber-400/10 dark:text-amber-100",
-  "border-rose-100 bg-rose-50 text-rose-900 dark:border-rose-400/15 dark:bg-rose-400/10 dark:text-rose-100",
-  "border-teal-100 bg-teal-50 text-teal-900 dark:border-teal-400/15 dark:bg-teal-400/10 dark:text-teal-100",
-  "border-indigo-100 bg-indigo-50 text-indigo-900 dark:border-indigo-400/15 dark:bg-indigo-400/10 dark:text-indigo-100",
-  "border-orange-100 bg-orange-50 text-orange-900 dark:border-orange-400/15 dark:bg-orange-400/10 dark:text-orange-100",
-];
-
-/** 분류 이름으로 색을 정해서, 순서를 옮겨도 같은 분류는 같은 색을 유지한다. */
-function toneOf(name: string): string {
-  let hash = 0;
-  for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
-  return HEADER_TONES[hash % HEADER_TONES.length];
-}
 
 /** 누르면 복사하고 1.5초간 체크 표시 */
 function useCopy() {
@@ -140,7 +121,7 @@ export function SitesPreview({ items, categories }: { items: SiteItem[]; categor
           onChange={(e) => setQuery(e.target.value)}
           placeholder="이름·주소·아이디·메모 검색"
           aria-label="검색"
-          className="w-full rounded-lg border border-border bg-surface py-2 pl-9 pr-3 text-[15px] text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+          className="w-full rounded-xl border border-border bg-surface py-2.5 pl-9 pr-3 text-[15px] text-foreground shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-shadow placeholder:text-muted focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/15"
         />
       </label>
 
@@ -151,7 +132,9 @@ export function SitesPreview({ items, categories }: { items: SiteItem[]; categor
           <section key={zone.source} aria-label={zone.label} className="flex flex-col gap-2.5">
             <div className="flex flex-wrap items-center gap-3">
               <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-                <zone.Icon size={18} className={zone.iconClass} />
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+                  <zone.Icon size={17} className={zone.iconClass} />
+                </span>
                 {zone.label}
                 <span className="text-[15px] font-normal text-muted">{zone.total}</span>
               </h2>
@@ -237,7 +220,6 @@ function ZoneGroups({
       group: g,
       categories,
       source,
-      tone: toneOf(g.name),
       canReorder,
       copied,
       onCopy,
@@ -292,7 +274,6 @@ function GroupCard({
   group,
   categories,
   source,
-  tone,
   canReorder,
   copied,
   onCopy,
@@ -302,7 +283,6 @@ function GroupCard({
   group: SiteGroup;
   categories: SiteCategory[];
   source: Source;
-  tone: string;
   /** 검색 중에는 일부만 보이므로 순서 변경을 막는다 */
   canReorder: boolean;
   headerHandle?: DragHandleProps;
@@ -390,12 +370,12 @@ function GroupCard({
 
   return (
     <div
-      className={`overflow-hidden rounded-xl border bg-surface shadow-sm ${headerHandle ? "" : "mb-4 break-inside-avoid"} ${
-        dragState === "over" ? "border-accent ring-2 ring-accent" : "border-border"
-      } ${dragState === "dragging" ? "opacity-40" : ""}`}
+      className={`overflow-hidden rounded-2xl border bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.05),0_4px_14px_-6px_rgba(16,24,40,0.08)] transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(16,24,40,0.05),0_14px_28px_-10px_rgba(16,24,40,0.16)] ${
+        headerHandle ? "" : "mb-4 break-inside-avoid"
+      } ${dragState === "over" ? "border-accent ring-2 ring-accent" : "border-border"} ${dragState === "dragging" ? "opacity-40" : ""}`}
     >
-      {/* 분류 제목: 옅은 배경 띠로 카드 안 항목들과 구분 */}
-      <div className={`group/header flex items-center justify-between gap-2 border-b px-3 py-2.5 ${tone}`}>
+      {/* 제목 줄: 테마 포인트 색(12%)을 깔아 회색 바탕과 확실히 구분 */}
+      <div className="group/header flex items-center justify-between gap-2 border-b border-accent/25 bg-accent/[0.12] px-4 py-3 text-foreground">
         {isRenaming ? (
           <NameInput
             initial={group.name}
@@ -413,7 +393,7 @@ function GroupCard({
               type="button"
               aria-label={`${group.name} 분류 순서 변경`}
               title="끌어서 분류 순서 변경"
-              className="-ml-1.5 cursor-grab touch-none rounded p-0.5 opacity-40 hover:bg-white/70 hover:opacity-100 active:cursor-grabbing dark:hover:bg-white/10 sm:opacity-0 sm:group-hover/header:opacity-60"
+              className="-ml-1.5 cursor-grab touch-none rounded p-0.5 opacity-40 hover:bg-surface hover:opacity-100 active:cursor-grabbing sm:opacity-0 sm:group-hover/header:opacity-60"
               {...headerHandle.attributes}
               {...headerHandle.listeners}
             >
@@ -433,7 +413,7 @@ function GroupCard({
                 onClick={() => setIsRenaming(true)}
                 aria-label={`${group.name} 분류 이름 변경`}
                 title="분류 이름 변경"
-                className="rounded-md p-1 opacity-60 hover:bg-white/70 hover:opacity-100 dark:hover:bg-white/10"
+                className="rounded-md p-1 opacity-60 hover:bg-surface hover:opacity-100"
               >
                 <Pencil size={14} />
               </button>
@@ -442,7 +422,7 @@ function GroupCard({
                 onClick={handleDeleteCategory}
                 aria-label={`${group.name} 분류 삭제`}
                 title="분류 삭제"
-                className="rounded-md p-1 text-danger opacity-70 hover:bg-white/70 hover:opacity-100 dark:hover:bg-white/10"
+                className="rounded-md p-1 text-danger opacity-70 hover:bg-surface hover:opacity-100"
               >
                 <Trash2 size={14} />
               </button>
@@ -455,7 +435,7 @@ function GroupCard({
               }}
               aria-label={`${group.name}에 추가`}
               title="항목 추가"
-              className="rounded-md p-1 opacity-60 hover:bg-white/70 hover:opacity-100 dark:hover:bg-white/10"
+              className="rounded-md p-1 opacity-60 hover:bg-surface hover:opacity-100"
             >
               <Plus size={18} />
             </button>
@@ -477,7 +457,7 @@ function GroupCard({
       ) : null}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
-      <ul className="flex flex-col divide-y divide-border">
+      <ul className="flex flex-col divide-y divide-accent/15">
         {items.map((item) =>
           editingId === item.id ? (
             <li key={item.id}>
@@ -777,35 +757,40 @@ function CredentialLine({
   const isCopied = copied === copyKey;
 
   return (
-    <div className="flex min-w-0 items-center gap-2 leading-6">
-      <span className="w-6 shrink-0 text-[12px] font-semibold tracking-wide text-muted">{label}</span>
-      <button
-        type="button"
-        onClick={() => onCopy(copyKey, value)}
-        title={`${label} 복사`}
-        aria-label={`${label} 복사`}
-        className={`flex min-w-0 items-center gap-1.5 rounded px-1 text-left text-[15px] ${
-          isCopied ? "bg-accent/10 text-accent" : "text-foreground hover:bg-bg"
-        }`}
-      >
-        <span className="truncate">{secret && !reveal ? "••••••••" : value}</span>
-        {isCopied ? (
-          <Check size={14} className="shrink-0" />
-        ) : (
-          <Copy size={13} className="shrink-0 text-muted opacity-60" />
-        )}
-      </button>
+    <div className="grid min-w-0 grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-x-1 leading-6">
       {secret ? (
         <button
           type="button"
           onClick={() => setReveal((v) => !v)}
           aria-label={reveal ? "비밀번호 숨기기" : "비밀번호 보기"}
-          title={reveal ? "숨기기" : "보기"}
-          className="shrink-0 rounded p-0.5 text-muted hover:text-foreground"
+          title={reveal ? "눌러서 숨기기" : "눌러서 비밀번호 보기"}
+          className={`rounded px-1 py-0.5 text-left text-[11px] font-semibold tracking-wider transition-colors ${
+            reveal ? "bg-accent/10 text-accent" : "text-muted hover:bg-accent/[0.06] hover:text-accent"
+          }`}
         >
-          {reveal ? <EyeOff size={14} /> : <Eye size={14} />}
+          {label}
         </button>
-      ) : null}
+      ) : (
+        <span className="px-1 text-[11px] font-semibold tracking-wider text-muted">{label}</span>
+      )}
+      <button
+        type="button"
+        onClick={() => onCopy(copyKey, value)}
+        title={`${label} 복사`}
+        aria-label={`${label} 복사`}
+        className={`group/copy flex min-w-0 items-center justify-between gap-2 rounded-md px-1.5 text-left text-[14.5px] transition-colors ${
+          isCopied ? "bg-accent/10 text-accent" : "text-foreground hover:bg-accent/[0.06] hover:text-accent"
+        }`}
+      >
+        <span className={`truncate ${secret && !reveal ? "tracking-[0.15em] text-muted" : ""}`}>
+          {secret && !reveal ? "••••••••" : value}
+        </span>
+        {isCopied ? (
+          <Check size={14} className="shrink-0" />
+        ) : (
+          <Copy size={13} className="shrink-0 text-muted opacity-0 transition-opacity group-hover/copy:opacity-70" />
+        )}
+      </button>
     </div>
   );
 }
@@ -827,7 +812,7 @@ function SiteRow({
   dragHandle?: DragHandleProps;
 }) {
   return (
-    <div className="group flex flex-col py-3 pl-1 pr-3 hover:bg-surface-hover">
+    <div className="group relative flex flex-col py-[11px] pl-1.5 pr-3 transition-colors duration-150 before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent before:opacity-0 before:transition-opacity hover:bg-accent/[0.04] hover:before:opacity-100">
       <div className="flex items-start gap-2">
         {dragHandle ? (
           <button
@@ -886,7 +871,7 @@ function SiteRow({
           </a>
         </div>
         {item.username || item.password ? (
-          <div className="flex min-w-0 max-w-[50%] shrink-0 flex-col">
+          <div className="ml-auto flex w-[40%] max-w-[15rem] shrink-0 flex-col">
             {item.username ? (
               <CredentialLine label="ID" value={item.username} copyKey={`${item.id}-id`} copied={copied} onCopy={onCopy} />
             ) : null}
@@ -897,7 +882,7 @@ function SiteRow({
         ) : null}
       </div>
       {item.memo ? (
-        <p className={`mt-1.5 whitespace-pre-line break-words rounded-md bg-bg px-2 py-1 text-[15px] leading-snug text-foreground ${dragHandle ? "ml-6" : ""}`}>
+        <p className={`mt-2 whitespace-pre-line break-words border-l-2 border-border pl-2.5 text-[14.5px] leading-relaxed text-muted ${dragHandle ? "ml-6" : ""}`}>
           {item.memo}
         </p>
       ) : null}

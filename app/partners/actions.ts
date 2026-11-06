@@ -36,7 +36,7 @@ export async function createPartnerAction(formData: FormData): Promise<void> {
     email: normalize(String(formData.get("email") ?? "")),
     registrationFile: readFile(formData, "registrationFile"),
   });
-  revalidatePath("/partners");
+  revalidatePath("/company");
 }
 
 export async function updatePartnerAction(formData: FormData): Promise<void> {
@@ -58,19 +58,19 @@ export async function updatePartnerAction(formData: FormData): Promise<void> {
     registrationFile: readFile(formData, "registrationFile"),
     removeRegistrationFile: formData.get("removeRegistrationFile") === "true",
   });
-  revalidatePath("/partners");
+  revalidatePath("/company");
 }
 
 export async function deletePartnerAction(id: string): Promise<void> {
   await requireAdmin();
 
   await deletePartner(id);
-  revalidatePath("/partners");
+  revalidatePath("/company");
 }
 
 export async function reorderPartnersAction(orderedIds: string[]): Promise<void> {
   await requireAdmin();
 
   await reorderPartners(orderedIds);
-  revalidatePath("/partners");
+  revalidatePath("/company");
 }

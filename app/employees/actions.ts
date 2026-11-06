@@ -37,7 +37,7 @@ export async function createDepartmentAction(name: string): Promise<void> {
   }
 
   await createDepartment(name.trim());
-  revalidatePath("/employees");
+  revalidatePath("/company");
 }
 
 export async function renameDepartmentAction(id: string, name: string): Promise<void> {
@@ -48,14 +48,14 @@ export async function renameDepartmentAction(id: string, name: string): Promise<
   }
 
   await renameDepartment(id, name.trim());
-  revalidatePath("/employees");
+  revalidatePath("/company");
 }
 
 export async function deleteDepartmentAction(id: string): Promise<void> {
   await requireAdmin();
 
   await deleteDepartment(id);
-  revalidatePath("/employees");
+  revalidatePath("/company");
 }
 
 export async function createEmployeeAction(params: {
@@ -66,6 +66,7 @@ export async function createEmployeeAction(params: {
   partnerId: string;
   workLocation: string;
   phone: string;
+  carNumber: string;
   birthdayMonth: string;
   birthdayDay: string;
   birthdayCalendar: string;
@@ -87,11 +88,12 @@ export async function createEmployeeAction(params: {
     partnerId: params.partnerId || null,
     workLocation: normalize(params.workLocation),
     phone: normalize(params.phone),
+    carNumber: normalize(params.carNumber),
     birthdayMonth: normalizeDay(params.birthdayMonth),
     birthdayDay: normalizeDay(params.birthdayDay),
     birthdayCalendar: normalizeCalendar(params.birthdayCalendar),
   });
-  revalidatePath("/employees");
+  revalidatePath("/company");
 }
 
 export async function updateEmployeeAction(params: {
@@ -103,6 +105,7 @@ export async function updateEmployeeAction(params: {
   partnerId: string;
   workLocation: string;
   phone: string;
+  carNumber: string;
   birthdayMonth: string;
   birthdayDay: string;
   birthdayCalendar: string;
@@ -124,23 +127,24 @@ export async function updateEmployeeAction(params: {
     partnerId: params.partnerId || null,
     workLocation: normalize(params.workLocation),
     phone: normalize(params.phone),
+    carNumber: normalize(params.carNumber),
     birthdayMonth: normalizeDay(params.birthdayMonth),
     birthdayDay: normalizeDay(params.birthdayDay),
     birthdayCalendar: normalizeCalendar(params.birthdayCalendar),
   });
-  revalidatePath("/employees");
+  revalidatePath("/company");
 }
 
 export async function deleteEmployeeAction(id: string): Promise<void> {
   await requireAdmin();
 
   await deleteEmployee(id);
-  revalidatePath("/employees");
+  revalidatePath("/company");
 }
 
 export async function reorderEmployeesAction(orderedIds: string[]): Promise<void> {
   await requireAdmin();
 
   await reorderEmployees(orderedIds);
-  revalidatePath("/employees");
+  revalidatePath("/company");
 }

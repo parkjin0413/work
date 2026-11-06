@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { UserPlus } from "lucide-react";
 import { createEmployeeAction } from "./actions";
 
 export function CreateEmployeeForm({
@@ -19,6 +20,7 @@ export function CreateEmployeeForm({
   const [partnerId, setPartnerId] = useState("");
   const [workLocation, setWorkLocation] = useState("");
   const [phone, setPhone] = useState("");
+  const [carNumber, setCarNumber] = useState("");
   const [birthdayMonth, setBirthdayMonth] = useState("");
   const [birthdayDay, setBirthdayDay] = useState("");
   const [birthdayCalendar, setBirthdayCalendar] = useState<"solar" | "lunar">("solar");
@@ -32,6 +34,7 @@ export function CreateEmployeeForm({
     setPartnerId("");
     setWorkLocation("");
     setPhone("");
+    setCarNumber("");
     setBirthdayMonth("");
     setBirthdayDay("");
     setBirthdayCalendar("solar");
@@ -54,6 +57,7 @@ export function CreateEmployeeForm({
         partnerId,
         workLocation,
         phone,
+        carNumber,
         birthdayMonth,
         birthdayDay,
         birthdayCalendar,
@@ -73,9 +77,11 @@ export function CreateEmployeeForm({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="rounded-lg border border-dashed border-border px-3 py-1.5 text-sm text-muted hover:border-accent hover:text-accent"
+        aria-label="직원 추가"
+        title="직원 추가"
+        className="rounded-md p-1 text-muted hover:bg-surface-hover hover:text-accent"
       >
-        + 직원 추가
+        <UserPlus size={16} />
       </button>
     );
   }
@@ -131,6 +137,13 @@ export function CreateEmployeeForm({
         onChange={(e) => setPhone(e.target.value)}
         placeholder="전화번호"
         aria-label="전화번호"
+        className="rounded-lg border border-border bg-bg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+      />
+      <input
+        value={carNumber}
+        onChange={(e) => setCarNumber(e.target.value)}
+        placeholder="차량번호 (선택, 예: 12가 3456)"
+        aria-label="차량번호"
         className="rounded-lg border border-border bg-bg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
       />
 

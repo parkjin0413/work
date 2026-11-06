@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -32,9 +32,17 @@ export type DragHandleProps = {
   listeners: SyntheticListenerMap | undefined;
 };
 
-const CARD_GRID_STYLE = { gridTemplateColumns: "repeat(auto-fill, minmax(min(360px, 100%), 1fr))" };
+/** 회사 카드 줄: 큰 화면에서 회사 3장 + 회사 차량 1장이 한 줄(4열)에 들어간다. */
+const CARD_GRID_CLASS = "grid items-start gap-6 md:grid-cols-2 2xl:grid-cols-4";
 
-export function PartnersBoard({ partners: initialPartners }: { partners: Partner[] }) {
+export function PartnersBoard({
+  partners: initialPartners,
+  trailing,
+}: {
+  partners: Partner[];
+  /** 회사 카드 뒤에 같은 줄로 붙일 카드 (예: 회사 차량) */
+  trailing?: ReactNode;
+}) {
   const [partners, setPartners] = useState(initialPartners);
   const [activeLabel, setActiveLabel] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -76,7 +84,7 @@ export function PartnersBoard({ partners: initialPartners }: { partners: Partner
   }
 
   return (
-    <div className="mt-6 flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       {errorMessage ? (
         <p role="alert" className="text-sm text-danger">
           {errorMessage}
@@ -86,7 +94,10 @@ export function PartnersBoard({ partners: initialPartners }: { partners: Partner
       <CreatePartnerForm />
 
       {partners.length === 0 ? (
-        <p className="text-sm text-muted">등록된 거래처가 없습니다.</p>
+        <div className={CARD_GRID_CLASS}>
+          <p className="text-sm text-muted">등록된 회사가 없습니다.</p>
+          {trailing}
+        </div>
       ) : (
         <DndContext
           sensors={sensors}
@@ -96,10 +107,11 @@ export function PartnersBoard({ partners: initialPartners }: { partners: Partner
           onDragCancel={() => setActiveLabel(null)}
         >
           <SortableContext items={partners.map((p) => p.id)} strategy={rectSortingStrategy}>
-            <div className="grid gap-6" style={CARD_GRID_STYLE}>
+            <div className={CARD_GRID_CLASS}>
               {partners.map((partner) => (
                 <SortablePartnerCard key={partner.id} partner={partner} />
               ))}
+              {trailing}
             </div>
           </SortableContext>
 

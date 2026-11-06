@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Pencil, Trash2 } from "lucide-react";
 import { renameDepartmentAction, deleteDepartmentAction } from "./actions";
 
 export function DepartmentRowActions({
@@ -93,23 +94,25 @@ export function DepartmentRowActions({
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center">
         <button
           type="button"
           onClick={() => setIsRenaming(true)}
           aria-label={`${currentName} 부서 이름변경`}
-          className="rounded-md border border-border px-2 py-1 text-xs text-muted"
+          title="부서 이름 변경"
+          className="rounded-md p-1 text-muted hover:bg-surface-hover hover:text-foreground"
         >
-          이름변경
+          <Pencil size={15} />
         </button>
         <button
           type="button"
           onClick={handleDelete}
           disabled={isDeleting}
           aria-label={`${currentName} 부서 삭제`}
-          className="rounded-md border border-danger px-2 py-1 text-xs text-danger disabled:opacity-50"
+          title="부서 삭제"
+          className="rounded-md p-1 text-danger hover:bg-surface-hover disabled:opacity-50"
         >
-          {isDeleting ? "삭제 중..." : "삭제"}
+          <Trash2 size={15} />
         </button>
       </div>
       {errorMessage ? (

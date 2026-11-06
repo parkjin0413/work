@@ -11,6 +11,7 @@ export type EmployeeSummary = {
   partnerName: string | null;
   workLocation: string | null;
   phone: string | null;
+  carNumber: string | null;
   birthdayMonth: number | null;
   birthdayDay: number | null;
   birthdayCalendar: BirthdayCalendar | null;
@@ -30,6 +31,7 @@ type EmployeeInput = {
   partnerId: string | null;
   workLocation: string | null;
   phone: string | null;
+  carNumber: string | null;
   birthdayMonth: number | null;
   birthdayDay: number | null;
   birthdayCalendar: BirthdayCalendar | null;
@@ -51,7 +53,7 @@ export async function listDepartmentsWithEmployees(): Promise<DepartmentWithEmpl
   const { data: employees, error: employeesError } = await supabase
     .from("employees")
     .select(
-      "id, department_id, name, position, status_note, partner_id, work_location, phone, birthday_month, birthday_day, birthday_calendar"
+      "id, department_id, name, position, status_note, partner_id, work_location, phone, car_number, birthday_month, birthday_day, birthday_calendar"
     )
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
@@ -94,6 +96,7 @@ export async function listDepartmentsWithEmployees(): Promise<DepartmentWithEmpl
         partnerName: employee.partner_id ? partnerNameById.get(employee.partner_id) ?? null : null,
         workLocation: employee.work_location,
         phone: employee.phone,
+        carNumber: employee.car_number,
         birthdayMonth: employee.birthday_month,
         birthdayDay: employee.birthday_day,
         birthdayCalendar: employee.birthday_calendar as BirthdayCalendar | null,
@@ -138,6 +141,7 @@ export async function createEmployee(input: EmployeeInput): Promise<void> {
     partner_id: input.partnerId,
     work_location: input.workLocation,
     phone: input.phone,
+    car_number: input.carNumber,
     birthday_month: input.birthdayMonth,
     birthday_day: input.birthdayDay,
     birthday_calendar: input.birthdayCalendar,
@@ -160,6 +164,7 @@ export async function updateEmployee(id: string, input: EmployeeInput): Promise<
       partner_id: input.partnerId,
       work_location: input.workLocation,
       phone: input.phone,
+      car_number: input.carNumber,
       birthday_month: input.birthdayMonth,
       birthday_day: input.birthdayDay,
       birthday_calendar: input.birthdayCalendar,

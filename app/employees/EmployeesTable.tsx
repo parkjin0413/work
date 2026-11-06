@@ -100,7 +100,9 @@ export function EmployeesTable({ groups }: { groups: Group[] }) {
                       </div>
                       <div className="mt-0.5 flex items-baseline justify-between gap-2">
                         <span className="min-w-0 truncate text-xs text-muted">{affiliationText || "-"}</span>
-                        <span className="shrink-0 text-xs text-muted">{birthdayText ?? "-"}</span>
+                        <span className="shrink-0 text-xs text-muted">
+                          {[employee.carNumber, birthdayText].filter(Boolean).join(" · ") || "-"}
+                        </span>
                       </div>
                     </div>
                   );

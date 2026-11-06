@@ -17,7 +17,7 @@ import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import {
   SortableContext,
   arrayMove,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
   sortableKeyboardCoordinates,
   useSortable,
 } from "@dnd-kit/sortable";
@@ -34,6 +34,55 @@ import { reorderEmployeesAction } from "./actions";
 
 type ViewMode = "grouped" | "flat";
 
+/**
+ * 부서 배치: 화면을 N칸(큰 화면 8칸)으로 나누고, 부서마다 "인원수만큼" 칸을 차지해 왼쪽부터 채운다.
+ * 예) 8칸일 때 [대표 1][영업1부 4] / [영업2부 8] / [관리부 4][설계부 4] / [공사부 3][홍보부 2][자재부 1]
+ * 카드 한 장이 약 260px 아래로 좁아지지 않게, 화면이 좁아지면 전체 칸 수를 6·5·4·3·2·1로 줄인다.
+ */
+const COLUMN_BREAKPOINTS: [minWidth: number, columns: number][] = [
+  [2400, 8],
+  [1900, 6],
+  [1536, 5],
+  [1280, 4],
+  [1024, 3],
+  [640, 2],
+  [0, 1],
+];
+
+function useColumnCount(): number {
+  const [columns, setColumns] = useState(4);
+  useEffect(() => {
+    function update() {
+      const width = window.innerWidth;
+      setColumns(COLUMN_BREAKPOINTS.find(([min]) => width >= min)?.[1] ?? 1);
+    }
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  return columns;
+}
+
+/** 부서 제목 아래 선 색 (파스텔). 배경은 칠하지 않아 화면이 가볍다. */
+const DEPARTMENT_LINES = [
+  "border-sky-300 dark:border-sky-400/50",
+  "border-violet-300 dark:border-violet-400/50",
+  "border-emerald-300 dark:border-emerald-400/50",
+  "border-amber-300 dark:border-amber-400/50",
+  "border-rose-300 dark:border-rose-400/50",
+  "border-teal-300 dark:border-teal-400/50",
+  "border-indigo-300 dark:border-indigo-400/50",
+  "border-orange-300 dark:border-orange-400/50",
+];
+
+/** 부서 순서대로 색을 돌려 써서, 바로 옆 부서끼리는 항상 다른 색이 된다. */
+function departmentLine(index: number) {
+  return DEPARTMENT_LINES[index % DEPARTMENT_LINES.length];
+}
+
+/** 부서 안 직원 카드 줄. 수정 중인 카드는 입력 칸이 비좁지 않게 그 부서 폭 전체를 쓴다. */
+const EMPLOYEE_GRID_CLASS = "mt-3 grid gap-2 [&>*:has([data-employee-editing])]:col-span-full";
+
 export type DragHandleProps = {
   attributes: DraggableAttributes;
   listeners: SyntheticListenerMap | undefined;
@@ -43,7 +92,14 @@ type DragItemData = { departmentId: string };
 
 function matchesQuery(employee: EmployeeSummary, departmentName: string, query: string): boolean {
   if (!query) return true;
-  const haystack = [employee.name, employee.partnerName, departmentName, employee.position]
+  const haystack = [
+    employee.name,
+    employee.partnerName,
+    departmentName,
+    employee.position,
+    employee.phone,
+    employee.carNumber,
+  ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
@@ -116,6 +172,7 @@ export function EmployeesBoard({
   }
 
   const isSearching = query.trim().length > 0;
+  const columns = useColumnCount();
 
   const flatGroups = departments
     .map((department) => ({
@@ -179,22 +236,31 @@ export function EmployeesBoard({
         </div>
       ) : null}
 
-      {viewMode === "grouped"
-        ? departments.map((department) => {
+      {viewMode === "grouped" ? (
+        <div className="grid gap-x-6 gap-y-8" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+          {departments.map((department, departmentIndex) => {
+            const line = departmentLine(departmentIndex);
             const filteredEmployees = department.employees.filter((employee) =>
               matchesQuery(employee, department.name, query)
             );
 
             if (isSearching && filteredEmployees.length === 0) return null;
 
+            // 인원수만큼 칸을 차지 (최소 1칸, 최대 전체 칸). 직원 추가·수정 중에는 부서 폭 전체를 쓴다.
+            const span = Math.max(1, Math.min(filteredEmployees.length, columns));
+
             return (
-              <section key={department.id}>
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="text-base font-semibold text-foreground">
+              <section
+                key={department.id}
+                style={{ gridColumn: `span ${span} / span ${span}` }}
+                className="min-w-0 has-[form]:!col-span-full has-[[data-employee-editing]]:!col-span-full"
+              >
+                <div className={`group/dept flex min-h-9 items-center justify-between gap-2 border-b-2 pb-1 ${line}`}>
+                  <h2 className="min-w-0 truncate text-[17px] font-bold text-foreground">
                     {department.name}{" "}
-                    <span className="text-sm font-normal text-muted">{department.employees.length}명</span>
+                    <span className="text-sm font-medium text-muted">{department.employees.length}명</span>
                   </h2>
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center sm:opacity-0 sm:group-focus-within/dept:opacity-100 sm:group-hover/dept:opacity-100 sm:has-[form]:opacity-100 sm:has-[input]:opacity-100">
                     <DepartmentRowActions departmentId={department.id} currentName={department.name} />
                     <CreateEmployeeForm departmentId={department.id} partners={partnerOptions} />
                   </div>
@@ -203,7 +269,7 @@ export function EmployeesBoard({
                 {filteredEmployees.length === 0 ? (
                   <p className="mt-3 text-sm text-muted">등록된 직원이 없습니다.</p>
                 ) : isSearching ? (
-                  <div className="mt-3 flex flex-col gap-2">
+                  <div className={EMPLOYEE_GRID_CLASS} style={{ gridTemplateColumns: `repeat(${span}, minmax(0, 1fr))` }}>
                     {filteredEmployees.map((employee) => (
                       <EmployeeRow
                         key={employee.id}
@@ -224,9 +290,9 @@ export function EmployeesBoard({
                   >
                     <SortableContext
                       items={filteredEmployees.map((employee) => employee.id)}
-                      strategy={verticalListSortingStrategy}
+                      strategy={rectSortingStrategy}
                     >
-                      <div className="mt-3 flex flex-col gap-2">
+                      <div className={EMPLOYEE_GRID_CLASS} style={{ gridTemplateColumns: `repeat(${span}, minmax(0, 1fr))` }}>
                         {filteredEmployees.map((employee) => (
                           <SortableEmployeeRow
                             key={employee.id}
@@ -250,8 +316,9 @@ export function EmployeesBoard({
                 )}
               </section>
             );
-          })
-        : null}
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

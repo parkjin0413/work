@@ -39,11 +39,12 @@ describe("Sidebar", () => {
     expect(screen.getByText("강산이엔지 업무 대시보드")).toBeInTheDocument();
   });
 
-  it("7개의 메뉴 링크를 업무관리·계정관리·즐겨찾기·제품정보·회사정보·직원명단·호스팅 순서로 보여준다 (별도 홈 없음)", () => {
+  it("8개의 메뉴 링크를 업무관리·연간일정·계정관리·즐겨찾기·제품정보·회사정보·직원명단·호스팅 순서로 보여준다 (별도 홈 없음)", () => {
     renderSidebar();
     const links = screen.getAllByRole("link");
     expect(links.map((link) => link.getAttribute("aria-label"))).toEqual([
       "업무관리",
+      "연간일정",
       "계정관리",
       "즐겨찾기",
       "제품정보",
@@ -52,6 +53,7 @@ describe("Sidebar", () => {
       "호스팅",
     ]);
     expect(screen.getByRole("link", { name: "호스팅" })).toHaveAttribute("href", "/hosting");
+    expect(screen.getByRole("link", { name: "연간일정" })).toHaveAttribute("href", "/calendar");
     expect(screen.getByRole("link", { name: "업무관리" })).toHaveAttribute("href", "/tasks");
     expect(screen.getByRole("link", { name: "계정관리" })).toHaveAttribute("href", "/accounts");
     expect(screen.getByRole("link", { name: "즐겨찾기" })).toHaveAttribute("href", "/favorites");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -35,31 +35,27 @@ import { reorderEmployeesAction } from "./actions";
 type ViewMode = "grouped" | "flat";
 
 /**
- * 부서 배치: 화면을 N칸(큰 화면 8칸)으로 나누고, 부서마다 "인원수만큼" 칸을 차지해 왼쪽부터 채운다.
- * 예) 8칸일 때 [대표 1][영업1부 4] / [영업2부 8] / [관리부 4][설계부 4] / [공사부 3][홍보부 2][자재부 1]
- * 카드 한 장이 약 260px 아래로 좁아지지 않게, 화면이 좁아지면 전체 칸 수를 6·5·4·3·2·1로 줄인다.
+ * 부서 배치: 내용 폭을 N칸으로 나누고, 부서마다 "인원수만큼" 칸을 차지해 왼쪽부터 채운다.
+ * 칸 수는 브라우저 폭이 아니라 실제 내용 폭(최대 1920px)을 재서, 카드 한 장이 약 280px 아래로
+ * 좁아지지 않는 가장 큰 값으로 정한다. 1920px 폭이면 6칸.
  */
-const COLUMN_BREAKPOINTS: [minWidth: number, columns: number][] = [
-  [2400, 8],
-  [1900, 6],
-  [1536, 5],
-  [1280, 4],
-  [1024, 3],
-  [640, 2],
-  [0, 1],
-];
+const COLUMN_CHOICES = [8, 6, 5, 4, 3, 2, 1];
+const MIN_CARD_WIDTH = 280;
+const CARD_GAP = 8;
 
-function useColumnCount(): number {
+function useColumnCount(ref: RefObject<HTMLElement>): number {
   const [columns, setColumns] = useState(4);
   useEffect(() => {
-    function update() {
-      const width = window.innerWidth;
-      setColumns(COLUMN_BREAKPOINTS.find(([min]) => width >= min)?.[1] ?? 1);
-    }
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
+    const element = ref.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry.contentRect.width;
+      const fit = COLUMN_CHOICES.find((n) => (width - CARD_GAP * (n - 1)) / n >= MIN_CARD_WIDTH) ?? 1;
+      setColumns(fit);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref]);
   return columns;
 }
 
@@ -172,7 +168,8 @@ export function EmployeesBoard({
   }
 
   const isSearching = query.trim().length > 0;
-  const columns = useColumnCount();
+  const gridRef = useRef<HTMLDivElement>(null);
+  const columns = useColumnCount(gridRef);
 
   const flatGroups = departments
     .map((department) => ({
@@ -237,7 +234,7 @@ export function EmployeesBoard({
       ) : null}
 
       {viewMode === "grouped" ? (
-        <div className="grid gap-x-6 gap-y-8" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+        <div ref={gridRef} className="grid gap-x-6 gap-y-8" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
           {departments.map((department, departmentIndex) => {
             const line = departmentLine(departmentIndex);
             const filteredEmployees = department.employees.filter((employee) =>
@@ -256,7 +253,7 @@ export function EmployeesBoard({
                 className="min-w-0 has-[form]:!col-span-full has-[[data-employee-editing]]:!col-span-full"
               >
                 <div className={`group/dept flex min-h-9 items-center justify-between gap-2 border-b-2 pb-1 ${line}`}>
-                  <h2 className="min-w-0 truncate text-[17px] font-bold text-foreground">
+                  <h2 className="min-w-0 truncate text-[0.85rem] font-bold text-foreground">
                     {department.name}{" "}
                     <span className="text-sm font-medium text-muted">{department.employees.length}명</span>
                   </h2>

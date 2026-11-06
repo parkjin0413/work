@@ -23,7 +23,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useRouter } from "next/navigation";
-import { Check, Copy, GripVertical, KeyRound, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
+import { GripVertical, KeyRound, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 import {
   buildGroups,
   displayUrl,
@@ -121,11 +121,11 @@ export function SitesPreview({ items, categories }: { items: SiteItem[]; categor
           onChange={(e) => setQuery(e.target.value)}
           placeholder="이름·주소·아이디·메모 검색"
           aria-label="검색"
-          className="w-full rounded-xl border border-border bg-surface py-2.5 pl-9 pr-3 text-[15px] text-foreground shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-shadow placeholder:text-muted focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/15"
+          className="w-full rounded-xl border border-border bg-surface py-2.5 pl-9 pr-3 text-[0.75rem] text-foreground shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-shadow placeholder:text-muted focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/15"
         />
       </label>
 
-      {resultCount === 0 ? <p className="py-8 text-center text-[15px] text-muted">검색 결과가 없습니다.</p> : null}
+      {resultCount === 0 ? <p className="py-8 text-center text-[0.75rem] text-muted">검색 결과가 없습니다.</p> : null}
 
       {zones.map((zone) =>
         searching && zone.groups.length === 0 ? null : (
@@ -136,7 +136,7 @@ export function SitesPreview({ items, categories }: { items: SiteItem[]; categor
                   <zone.Icon size={17} className={zone.iconClass} />
                 </span>
                 {zone.label}
-                <span className="text-[15px] font-normal text-muted">{zone.total}</span>
+                <span className="text-[0.75rem] font-normal text-muted">{zone.total}</span>
               </h2>
               <AddCategoryButton source={zone.source} />
             </div>
@@ -356,6 +356,10 @@ function GroupCard({
     }
   }
 
+  // ID·PW 칸 폭: 이 카드에서 가장 긴 아이디(최소 8자 = 가린 비밀번호 점 길이)에 맞춘다.
+  // 같은 카드 안에서는 폭이 같아 세로로 맞고, 짧은 아이디만 있으면 칸이 오른쪽 끝으로 붙는다.
+  const credentialChars = Math.max(8, ...items.map((i) => (i.username ?? "").length));
+
   async function handleDelete(item: SiteItem) {
     if (!window.confirm(`"${item.name}"을(를) 삭제할까요?`)) return;
     setCategoryError(null);
@@ -483,6 +487,7 @@ function GroupCard({
             (() => {
               const rowProps = {
                 item,
+                credentialChars,
                 copied,
                 onCopy,
                 onEdit: () => {
@@ -709,7 +714,7 @@ function AddCategoryButton({ source }: { source: Source }) {
   }
 
   return (
-    <div className="flex min-w-[260px] flex-col gap-1">
+    <div className="flex min-w-[13rem] flex-col gap-1">
       <NameInput
         initial=""
         label="새 분류 이름"
@@ -764,32 +769,28 @@ function CredentialLine({
           onClick={() => setReveal((v) => !v)}
           aria-label={reveal ? "비밀번호 숨기기" : "비밀번호 보기"}
           title={reveal ? "눌러서 숨기기" : "눌러서 비밀번호 보기"}
-          className={`rounded px-1 py-0.5 text-left text-[11px] font-semibold tracking-wider transition-colors ${
+          className={`rounded px-1 py-0.5 text-left text-[0.55rem] font-semibold tracking-wider transition-colors ${
             reveal ? "bg-accent/10 text-accent" : "text-muted hover:bg-accent/[0.06] hover:text-accent"
           }`}
         >
           {label}
         </button>
       ) : (
-        <span className="px-1 text-[11px] font-semibold tracking-wider text-muted">{label}</span>
+        <span className="px-1 text-[0.55rem] font-semibold tracking-wider text-muted">{label}</span>
       )}
       <button
         type="button"
         onClick={() => onCopy(copyKey, value)}
         title={`${label} 복사`}
         aria-label={`${label} 복사`}
-        className={`group/copy flex min-w-0 items-center justify-between gap-2 rounded-md px-1.5 text-left text-[14.5px] transition-colors ${
+        className={`min-w-0 rounded-md px-1.5 text-left text-[0.725rem] transition-colors ${
           isCopied ? "bg-accent/10 text-accent" : "text-foreground hover:bg-accent/[0.06] hover:text-accent"
         }`}
       >
-        <span className={`truncate ${secret && !reveal ? "tracking-[0.15em] text-muted" : ""}`}>
-          {secret && !reveal ? "••••••••" : value}
+        {/* 복사 아이콘 없이, 복사되면 값 자리에 잠깐 "복사됨" */}
+        <span className={`block truncate ${secret && !reveal && !isCopied ? "tracking-[0.15em] text-muted" : ""}`}>
+          {isCopied ? "복사됨" : secret && !reveal ? "••••••••" : value}
         </span>
-        {isCopied ? (
-          <Check size={14} className="shrink-0" />
-        ) : (
-          <Copy size={13} className="shrink-0 text-muted opacity-0 transition-opacity group-hover/copy:opacity-70" />
-        )}
       </button>
     </div>
   );
@@ -798,6 +799,7 @@ function CredentialLine({
 /** 한 항목: 왼쪽 [이름 + 수정·삭제] / 주소, 오른쪽 ID·PW 두 줄, 아래 메모. */
 function SiteRow({
   item,
+  credentialChars,
   copied,
   onCopy,
   onEdit,
@@ -805,6 +807,8 @@ function SiteRow({
   dragHandle,
 }: {
   item: SiteItem;
+  /** 이 카드에서 가장 긴 아이디 글자 수 — ID·PW 칸 폭 계산용 */
+  credentialChars: number;
   copied: string | null;
   onCopy: (key: string, text: string) => void;
   onEdit: () => void;
@@ -812,14 +816,14 @@ function SiteRow({
   dragHandle?: DragHandleProps;
 }) {
   return (
-    <div className="group relative flex flex-col py-[11px] pl-1.5 pr-3 transition-colors duration-150 before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent before:opacity-0 before:transition-opacity hover:bg-accent/[0.04] hover:before:opacity-100">
-      <div className="flex items-start gap-2">
+    <div className="group relative flex flex-col py-[0.55rem] pl-1.5 pr-3 transition-colors duration-150 before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent before:opacity-0 before:transition-opacity hover:bg-accent/[0.04] hover:before:opacity-100">
+      <div className="flex items-center gap-2">
         {dragHandle ? (
           <button
             type="button"
             aria-label={`${item.name} 순서 변경`}
             title="끌어서 순서 변경"
-            className="mt-0.5 shrink-0 cursor-grab touch-none rounded p-0.5 text-muted opacity-40 hover:bg-bg hover:opacity-100 active:cursor-grabbing sm:opacity-0 sm:group-hover:opacity-60"
+            className="shrink-0 cursor-grab touch-none rounded p-0.5 text-muted opacity-40 hover:bg-bg hover:opacity-100 active:cursor-grabbing sm:opacity-0 sm:group-hover:opacity-60"
             {...dragHandle.attributes}
             {...dragHandle.listeners}
           >
@@ -833,7 +837,7 @@ function SiteRow({
               target="_blank"
               rel="noopener noreferrer"
               title={item.url}
-              className="truncate text-[15.9px] font-semibold leading-6 text-foreground hover:text-accent"
+              className="truncate text-[0.85rem] font-semibold leading-6 text-foreground hover:text-accent"
             >
               {item.name}
             </a>
@@ -865,13 +869,17 @@ function SiteRow({
             target="_blank"
             rel="noopener noreferrer"
             title={item.url}
-            className="mt-0.5 line-clamp-2 break-all text-[13px] leading-[1.35] text-muted opacity-70 hover:text-accent hover:opacity-100"
+            className="mt-0.5 line-clamp-2 break-all text-[0.65rem] leading-[1.35] tracking-[-0.01em] text-muted opacity-70 hover:text-accent hover:opacity-100"
           >
             {displayUrl(item.url)}
           </a>
         </div>
         {item.username || item.password ? (
-          <div className="ml-auto flex w-[40%] max-w-[15rem] shrink-0 flex-col">
+          <div
+            className="ml-auto flex max-w-[58%] shrink-0 flex-col text-[0.725rem]"
+            // 라벨(1.75rem) + 간격 + 값 글자 수(ch) + 좌우 안쪽 여백
+            style={{ width: `calc(1.75rem + 0.25rem + ${credentialChars + 1}ch + 0.75rem)` }}
+          >
             {item.username ? (
               <CredentialLine label="ID" value={item.username} copyKey={`${item.id}-id`} copied={copied} onCopy={onCopy} />
             ) : null}
@@ -882,7 +890,7 @@ function SiteRow({
         ) : null}
       </div>
       {item.memo ? (
-        <p className={`mt-2 whitespace-pre-line break-words border-l-2 border-border pl-2.5 text-[14.5px] leading-relaxed text-muted ${dragHandle ? "ml-6" : ""}`}>
+        <p className={`mt-2 whitespace-pre-line break-words border-l-2 border-border pl-2.5 text-[0.725rem] leading-relaxed text-muted ${dragHandle ? "ml-6" : ""}`}>
           {item.memo}
         </p>
       ) : null}

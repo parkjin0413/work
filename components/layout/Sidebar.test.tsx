@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { Sidebar } from "./Sidebar";
 
 const pushMock = vi.fn();
@@ -41,7 +41,7 @@ describe("Sidebar", () => {
 
   it("6개의 메뉴 링크를 업무관리·연간일정·어카운트·북마크·회사 · 직원·호스팅·제품정보 순서로 보여준다 (별도 홈 없음)", () => {
     renderSidebar();
-    const links = screen.getAllByRole("link");
+    const links = within(screen.getByRole("list")).getAllByRole("link");
     expect(links.map((link) => link.getAttribute("aria-label"))).toEqual([
       "업무관리",
       "연간일정",

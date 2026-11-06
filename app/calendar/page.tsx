@@ -63,9 +63,9 @@ export default async function CalendarPage({
   } catch (error) {
     console.error("[calendar] listSchedulesInRange 실패:", error);
     return (
-      <div className="flex min-h-screen flex-col bg-bg md:flex-row">
+      <div className="flex min-h-screen flex-col bg-bg">
         <Sidebar />
-        <main className="min-w-0 flex-1 p-4 sm:p-6">
+        <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] py-6">
           <h1 className="text-lg font-semibold text-foreground">연간일정</h1>
           <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
             <p className="text-sm text-muted">
@@ -89,9 +89,9 @@ export default async function CalendarPage({
     : [];
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg md:flex-row">
+    <div className="flex min-h-screen flex-col bg-bg">
       <Sidebar />
-      <main className="min-w-0 flex-1 p-4 sm:p-6">
+      <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] py-6">
         <h1 className="text-lg font-semibold text-foreground">연간일정</h1>
         <p className="mt-1 text-sm text-muted">
           날짜를 누르면 그날 일정을 보고 추가할 수 있습니다. 호스팅·도메인 계약일과 직원 생일은 자동으로

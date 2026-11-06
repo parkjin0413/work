@@ -40,9 +40,9 @@ export default function ProductsPage() {
   } catch (error) {
     console.error("[products] getAllProducts 실패:", error);
     return (
-      <div className="flex min-h-screen flex-col bg-bg md:flex-row">
+      <div className="flex min-h-screen flex-col bg-bg">
         <Sidebar />
-        <main className="min-w-0 flex-1 p-6">
+        <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] py-6">
           <h1 className="text-lg font-semibold text-foreground">제품정보</h1>
           <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
             <p className="text-sm text-muted">
@@ -66,9 +66,9 @@ export default function ProductsPage() {
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg md:flex-row">
+    <div className="flex min-h-screen flex-col bg-bg">
       <Sidebar />
-      <main className="min-w-0 flex-1 space-y-8 p-6">
+      <main className="min-w-0 flex-1 space-y-8 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] py-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-lg font-semibold text-foreground">제품정보</h1>

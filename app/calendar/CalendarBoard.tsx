@@ -176,7 +176,7 @@ export function CalendarBoard({
     // 넓은 화면(xl, 1280px~): [선택한 날짜 + 이달 일정 목록 | 달력] 2단.
     // 좁은 화면: 월 이동·필터 → 달력 → 선택한 날짜 (이달 일정 목록은 휴대폰에서 숨김).
     <div className="mt-5 grid items-start gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-      {/* 월 이동 + 분류 필터 */}
+      {/* 월 이동 (분류 필터는 달력 아래 오른쪽) */}
       <div className="flex min-w-0 flex-col gap-3 xl:col-span-2 xl:flex-row xl:flex-wrap xl:items-center xl:justify-between">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-1">
@@ -187,7 +187,7 @@ export function CalendarBoard({
             >
               <ChevronLeft size={20} />
             </Link>
-            <h2 className="min-w-[120px] text-center text-xl font-bold text-foreground">
+            <h2 className="min-w-[6rem] text-center text-xl font-bold text-foreground">
               {year}년 {month}월
             </h2>
             <Link
@@ -230,33 +230,12 @@ export function CalendarBoard({
             >
               오늘
             </button>
+            <span className="ml-2 whitespace-nowrap text-[0.825rem] text-muted">
+              이번 달 일정 <strong className="text-foreground">{schedules.length}</strong>건
+            </span>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 text-sm text-muted">
-            이번 달 일정 <strong className="text-foreground">{schedules.length}</strong>건
-          </span>
-          {filterOptions.map(({ key, label, colors }) => {
-            const off = hidden.has(key);
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => toggleFilter(key)}
-                aria-pressed={!off}
-                title={off ? `${label} 보이기` : `${label} 숨기기`}
-                className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-sm font-medium transition-opacity ${
-                  off ? "border-border bg-surface text-muted line-through opacity-50" : colors.chip
-                }`}
-              >
-                <span className={`h-2 w-2 rounded-full ${colors.dot}`} />
-                {label}
-                <span className="text-xs opacity-70">{counts.get(key) ?? 0}</span>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* 왼쪽: 선택한 날짜 + 이달 일정 목록 */}
@@ -264,7 +243,7 @@ export function CalendarBoard({
       <section
         ref={panelRef}
         aria-label="선택한 날짜 일정"
-        className="flex scroll-mt-4 flex-col gap-3 rounded-2xl border border-border bg-surface p-4"
+        className="flex scroll-mt-20 flex-col gap-3 rounded-2xl border border-border bg-surface p-4"
       >
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -377,7 +356,7 @@ export function CalendarBoard({
                           <span className="font-normal">· {formatPeriod(schedule.startDate, schedule.endDate)}</span>
                         ) : null}
                       </div>
-                      <p className="break-words text-[15px] font-semibold">{scheduleTitle(schedule)}</p>
+                      <p className="break-words text-[0.75rem] font-semibold">{scheduleTitle(schedule)}</p>
                     </div>
                     <div className="-mr-1 flex shrink-0 items-center">
                       <button
@@ -431,7 +410,7 @@ export function CalendarBoard({
 
         <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
           {cells.map((date, i) => {
-            if (!date) return <div key={`empty-${i}`} className="min-h-[64px] sm:min-h-[104px] lg:min-h-[124px]" />;
+            if (!date) return <div key={`empty-${i}`} className="min-h-[3.2rem] sm:min-h-[5.2rem] lg:min-h-[max(6.2rem,calc((100vh-25rem)/6))]" />;
 
             const day = Number(date.slice(8, 10));
             const weekday = weekdayOf(date);
@@ -449,7 +428,7 @@ export function CalendarBoard({
                 onClick={() => selectDate(date)}
                 aria-label={`${month}월 ${day}일${holidayNames.length ? ` ${holidayNames.join(", ")}` : ""}, 일정 ${items.length}건`}
                 aria-pressed={isSelected}
-                className={`flex min-h-[64px] min-w-0 flex-col items-stretch gap-1 rounded-lg border p-1 text-left transition-colors sm:min-h-[104px] sm:p-1.5 lg:min-h-[124px] ${
+                className={`flex min-h-[3.2rem] min-w-0 flex-col items-stretch gap-1 rounded-lg border p-1 text-left transition-colors sm:min-h-[5.2rem] sm:p-1.5 lg:min-h-[max(6.2rem,calc((100vh-25rem)/6))] ${
                   isSelected ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border hover:bg-surface-hover"
                 }`}
               >
@@ -462,7 +441,7 @@ export function CalendarBoard({
                     {day}
                   </span>
                   {holidayNames.length > 0 ? (
-                    <span className="hidden truncate text-xs text-red-500 sm:inline lg:text-[13px]">
+                    <span className="hidden truncate text-xs text-red-500 sm:inline lg:text-[0.65rem]">
                       {holidayNames.join(" · ")}
                     </span>
                   ) : null}
@@ -483,7 +462,7 @@ export function CalendarBoard({
                     <span
                       key={dayItemKey(item)}
                       title={itemTitle(item)}
-                      className={`flex min-w-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-medium lg:text-[13px] ${itemColors(item).chip}`}
+                      className={`flex min-w-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-medium lg:text-[0.65rem] ${itemColors(item).chip}`}
                     >
                       {item.type === "overlay" ? <OverlayIcon kind={item.overlay.kind} size={12} /> : null}
                       <span className="truncate">{itemTitle(item)}</span>
@@ -497,6 +476,28 @@ export function CalendarBoard({
             );
           })}
         </div>
+        {/* 분류 범례·필터: 달력 아래 오른쪽 */}
+          <div className="mt-6 flex flex-wrap items-center justify-end gap-1.5 border-t border-border pt-4">
+            {filterOptions.map(({ key, label, colors }) => {
+              const off = hidden.has(key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleFilter(key)}
+                  aria-pressed={!off}
+                  title={off ? `${label} 보이기` : `${label} 숨기기`}
+                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.825rem] font-medium transition-opacity ${
+                    off ? "border-border bg-surface text-muted line-through opacity-50" : colors.chip
+                  }`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${colors.dot}`} />
+                  {label}
+                  <span className="text-[0.7rem] opacity-70">{counts.get(key) ?? 0}</span>
+                </button>
+              );
+            })}
+          </div>
       </section>
     </div>
   );
@@ -532,7 +533,7 @@ function AgendaList({
       {dates.length === 0 ? (
         <p className="py-2 text-center text-sm text-muted">이번 달 일정이 없습니다.</p>
       ) : (
-        <ol className="flex max-h-[420px] flex-col gap-1 overflow-y-auto">
+        <ol className="flex max-h-[21rem] flex-col gap-1 overflow-y-auto">
           {dates.map((date) => {
             const weekday = weekdayOf(date);
             const isHoliday = (holidays[date] ?? []).length > 0;
@@ -549,7 +550,7 @@ function AgendaList({
                     isSelected ? "border-accent bg-accent/5" : "border-border hover:bg-surface-hover"
                   } ${date < today && !isSelected ? "opacity-55" : ""}`}
                 >
-                  <span className={`w-[64px] shrink-0 whitespace-nowrap font-semibold ${dateColor}`}>
+                  <span className={`w-[3.2rem] shrink-0 whitespace-nowrap font-semibold ${dateColor}`}>
                     {Number(date.slice(8, 10))}일 ({WEEKDAYS[weekday]})
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">

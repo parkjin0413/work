@@ -84,7 +84,7 @@ export function VehiclesCard({ vehicles }: { vehicles: CompanyVehicle[] }) {
                   type="button"
                   onClick={() => copy(vehicle)}
                   title="차량번호 복사"
-                  className="flex items-center gap-1.5 rounded px-1 text-left text-[15.9px] font-semibold text-foreground hover:bg-bg"
+                  className="flex items-center gap-1.5 rounded px-1 text-left text-[0.795rem] font-semibold text-foreground hover:bg-bg"
                 >
                   {vehicle.plateNumber}
                   {copiedId === vehicle.id ? (

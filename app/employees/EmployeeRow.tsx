@@ -334,8 +334,8 @@ export function EmployeeRow({
 function InfoLine({ icon: Icon, label, children }: { icon: LucideIcon; label: string; children: ReactNode }) {
   const empty = children === null || children === undefined || children === false;
   return (
-    <div className="flex min-w-0 items-start gap-1.5 text-[15px] leading-6">
-      <Icon size={15} aria-label={label} className="mt-[5px] shrink-0 text-muted opacity-70" />
+    <div className="flex min-w-0 items-start gap-1.5 text-[0.75rem] leading-6">
+      <Icon size={15} aria-label={label} className="mt-[0.25rem] shrink-0 text-muted opacity-70" />
       <div className="min-w-0 break-keep">{empty ? <span className="text-muted opacity-50">-</span> : children}</div>
     </div>
   );

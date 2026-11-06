@@ -26,32 +26,42 @@ export function Sidebar() {
     router.refresh();
   }
 
+  // 상단 가로 메뉴: 스크롤해도 위에 붙어 있다. 왼쪽 로고·제목을 누르면 업무관리로 간다.
   return (
     <nav
       aria-label="주요 메뉴"
-      className="flex shrink-0 flex-row items-center justify-between gap-1 border-b border-border bg-surface px-3 py-3 md:h-screen md:w-60 md:flex-col md:items-stretch md:justify-start md:gap-2 md:border-b-0 md:border-r md:px-4 md:py-6 md:sticky md:top-0"
+      className="sticky top-0 z-30 grid h-14 w-full shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-surface px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] shadow-[0_1px_2px_rgba(16,24,40,0.04)] lg:grid-cols-[1fr_auto_1fr] lg:gap-6"
     >
-      <div className="hidden items-center gap-2 md:flex">
-        <span className="text-base font-semibold text-foreground">강산이엔지 업무 대시보드</span>
-      </div>
+      <Link
+        href="/tasks"
+        aria-label="강산이엔지 업무 대시보드 (업무관리로 이동)"
+        className="flex shrink-0 items-center gap-2 justify-self-start rounded-lg pr-1 hover:opacity-80"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- 작은 고정 로고라 next/image 최적화가 필요 없다 */}
+        <img src="/logo.png" alt="" width={28} height={28} className="h-7 w-7 rounded-md" />
+        <span className="hidden whitespace-nowrap text-base font-semibold text-foreground xl:inline">
+          강산이엔지 업무 대시보드
+        </span>
+      </Link>
 
-      <ul className="flex flex-1 flex-row flex-nowrap items-center justify-center gap-x-0.5 md:mt-8 md:flex-1 md:flex-col md:items-stretch md:justify-start md:gap-1">
+      {/* 메뉴는 로고와 로그아웃 사이 정중앙 (좁은 화면에서는 가로 스크롤) */}
+      <ul className="flex min-w-0 items-center justify-center gap-0.5 overflow-x-auto md:gap-1">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive = pathname?.startsWith(href);
           return (
-            <li key={href}>
+            <li key={href} className="shrink-0">
               <Link
                 href={href}
                 aria-label={label}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center justify-center gap-3 rounded-lg px-1.5 py-2 text-sm font-medium md:justify-start md:px-3 ${
+                className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium transition-colors lg:px-3 ${
                   isActive
                     ? "bg-accent/10 text-accent"
                     : "text-muted hover:bg-surface-hover hover:text-foreground"
                 }`}
               >
-                <Icon className="h-5 w-5" aria-hidden="true" />
-                <span className="hidden md:inline">{label}</span>
+                <Icon className="h-[0.9rem] w-[0.9rem]" aria-hidden="true" />
+                <span className="hidden whitespace-nowrap lg:inline">{label}</span>
               </Link>
             </li>
           );
@@ -62,10 +72,10 @@ export function Sidebar() {
         type="button"
         onClick={handleLogout}
         aria-label="로그아웃"
-        className="flex shrink-0 items-center justify-center gap-2 rounded-lg border border-border px-2 py-2 text-sm font-medium text-foreground hover:bg-surface-hover md:px-3"
+        className="flex shrink-0 items-center gap-2 justify-self-end rounded-lg border border-border px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-surface-hover"
       >
         <LogOut className="h-4 w-4" aria-hidden="true" />
-        <span className="hidden md:inline">로그아웃</span>
+        <span className="hidden lg:inline">로그아웃</span>
       </button>
     </nav>
   );

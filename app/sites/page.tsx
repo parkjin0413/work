@@ -19,9 +19,9 @@ export default async function SitesPage() {
   } catch (error) {
     console.error("[sites] 조회 실패:", error);
     return (
-      <div className="flex min-h-screen flex-col bg-bg md:flex-row">
+      <div className="flex min-h-screen flex-col bg-bg">
         <Sidebar />
-        <main className="min-w-0 flex-1 p-6">
+        <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] py-6">
           <h1 className="text-lg font-semibold text-foreground">어카운트·북마크</h1>
           <p className="mt-6 text-sm text-muted">계정관리·즐겨찾기 데이터를 불러오지 못했습니다.</p>
         </main>
@@ -67,9 +67,9 @@ export default async function SitesPage() {
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg md:flex-row">
+    <div className="flex min-h-screen flex-col bg-bg">
       <Sidebar />
-      <main className="min-w-0 flex-1 p-4 sm:p-6">
+      <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] py-6">
         <h1 className="text-lg font-semibold text-foreground">어카운트·북마크</h1>
 
         <SitesPreview items={items} categories={categories} />

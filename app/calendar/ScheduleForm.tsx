@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { SCHEDULE_CATEGORIES, CATEGORY_COLORS, type ScheduleCategory } from "@/lib/schedule/categories";
-import type { ScheduleInput } from "@/lib/schedule/scheduleStore";
+import type { ScheduleInput, TeamMember } from "@/lib/schedule/scheduleStore";
 import { LEAVE_TYPE_LABELS, type LeaveType } from "@/lib/leave/annualLeave";
 
 const LEAVE_TYPES: LeaveType[] = ["full", "am", "pm"];
@@ -11,11 +11,13 @@ const INPUT_CLASS =
   "w-full rounded-lg border border-border bg-bg px-2.5 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50";
 
 export function ScheduleForm({
+  teamMembers,
   initial,
   submitLabel,
   onSubmit,
   onCancel,
 }: {
+  teamMembers: TeamMember[];
   initial: ScheduleInput;
   submitLabel: string;
   onSubmit: (input: ScheduleInput) => Promise<void>;
@@ -28,6 +30,11 @@ export function ScheduleForm({
   const [memo, setMemo] = useState(initial.memo ?? "");
   const [leaveType, setLeaveType] = useState<LeaveType>(initial.leaveType ?? "full");
   const isLeave = category === "연차";
+  const isTeam = category === "홍보부";
+  // 홍보부 직원이 한 명뿐이면 미리 골라둔다.
+  const [employeeId, setEmployeeId] = useState<string | null>(
+    initial.employeeId ?? (teamMembers.length === 1 ? teamMembers[0].id : null)
+  );
   const isHalfDay = isLeave && leaveType !== "full";
   // 연차는 내용을 비워도 되게 한다 (비우면 "연차"/"오전 반차" 등으로 저장).
   const canSubmit = isLeave || !!title.trim();
@@ -49,6 +56,7 @@ export function ScheduleForm({
         endDate: isHalfDay ? startDate : endDate || startDate,
         memo,
         leaveType: isLeave ? leaveType : null,
+        employeeId: isTeam ? employeeId : null,
       });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
@@ -102,10 +110,36 @@ export function ScheduleForm({
         </div>
       ) : null}
 
+      {isTeam ? (
+        teamMembers.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="담당 직원">
+            {teamMembers.map((member) => {
+              const active = employeeId === member.id;
+              return (
+                <button
+                  key={member.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setEmployeeId(active ? null : member.id)}
+                  className={`whitespace-nowrap rounded-lg border px-2.5 py-1 text-sm font-medium ${
+                    active ? "border-accent bg-accent/10 text-accent" : "border-border text-muted hover:bg-surface-hover"
+                  }`}
+                >
+                  {member.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-xs text-muted">직원명단에 홍보부 직원이 없어 담당자를 고를 수 없습니다.</p>
+        )
+      ) : null}
+
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder={isLeave ? "내용 (비워두면 '연차'로 저장)" : "일정 내용"}
+        placeholder={isLeave ? "내용 (비워두면 '연차'로 저장)" : isTeam ? "내용 (예: 촬영 - 파주 현장)" : "일정 내용"}
         aria-label="일정 내용"
         autoFocus
         className={INPUT_CLASS}

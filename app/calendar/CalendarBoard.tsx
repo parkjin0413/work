@@ -11,7 +11,7 @@ import {
   SCHEDULE_CATEGORIES,
   type ScheduleCategory,
 } from "@/lib/schedule/categories";
-import type { Schedule } from "@/lib/schedule/scheduleStore";
+import type { Schedule, TeamMember } from "@/lib/schedule/scheduleStore";
 import type { OverlayItem } from "@/lib/schedule/overlays";
 import { LEAVE_TYPE_LABELS, type LeaveSummary } from "@/lib/leave/annualLeave";
 import { ScheduleForm } from "./ScheduleForm";
@@ -28,8 +28,9 @@ function dayItemKey(item: DayItem): string {
   return item.type === "schedule" ? item.schedule.id : item.overlay.id;
 }
 
-/** 반차는 제목 앞에 "오전 반차"/"오후 반차"를 붙여 보여준다. */
+/** 홍보부는 담당자("김환진 대리"), 반차는 "오전 반차"/"오후 반차"를 제목 앞에 붙여 보여준다. */
 function scheduleTitle(schedule: Schedule): string {
+  if (schedule.employeeLabel) return `${schedule.employeeLabel} · ${schedule.title}`;
   const type = schedule.leaveType;
   if (!type || type === "full") return schedule.title;
   const label = LEAVE_TYPE_LABELS[type];
@@ -62,6 +63,7 @@ export function CalendarBoard({
   overlays,
   holidays,
   leaveSummary,
+  teamMembers,
 }: {
   ym: string;
   today: string;
@@ -70,6 +72,7 @@ export function CalendarBoard({
   overlays: OverlayItem[];
   holidays: Record<string, string[]>;
   leaveSummary: LeaveSummary | null;
+  teamMembers: TeamMember[];
 }) {
   const router = useRouter();
   const panelRef = useRef<HTMLElement>(null);
@@ -296,6 +299,7 @@ export function CalendarBoard({
 
         {isCreating ? (
           <ScheduleForm
+              teamMembers={teamMembers}
             key={`create-${selectedDate}`}
             initial={{ title: "", category: "미팅", startDate: selectedDate, endDate: selectedDate, memo: "" }}
             submitLabel="등록"
@@ -346,6 +350,7 @@ export function CalendarBoard({
                 return (
                   <li key={schedule.id}>
                     <ScheduleForm
+              teamMembers={teamMembers}
                       initial={schedule}
                       submitLabel="저장"
                       onSubmit={async (input) => {

@@ -5,7 +5,7 @@ import { withRetry } from "@/lib/supabase/withRetry";
 import { getKstTodayISO } from "@/lib/tasks/week";
 import { isValidISODate, isValidYm, monthRange } from "@/lib/schedule/calendar";
 import { getMonthHolidays } from "@/lib/schedule/holidays";
-import { listLeaveSchedules, listSchedulesInRange } from "@/lib/schedule/scheduleStore";
+import { listLeaveSchedules, listSchedulesInRange, listTeamMembers, type TeamMember } from "@/lib/schedule/scheduleStore";
 import { HIRE_DATE } from "@/lib/leave/config";
 import { leaveEventsInRange, summarizeLeave, type LeaveSummary } from "@/lib/leave/annualLeave";
 import { listBirthdayOverlays, listHostingOverlays, type OverlayItem } from "@/lib/schedule/overlays";
@@ -29,6 +29,16 @@ async function loadLeaveSummary(today: string): Promise<LeaveSummary | null> {
   } catch (error) {
     console.error("[calendar] 연차 계산 실패:", error);
     return null;
+  }
+}
+
+/** 홍보부 담당자 선택용 직원 목록. 실패하면 담당자 선택만 빠진다. */
+async function loadTeamMembers(): Promise<TeamMember[]> {
+  try {
+    return await withRetry(() => listTeamMembers(), "calendar/team");
+  } catch (error) {
+    console.error("[calendar] 홍보부 직원 조회 실패:", error);
+    return [];
   }
 }
 
@@ -68,10 +78,11 @@ export default async function CalendarPage({
     );
   }
 
-  const [hostingOverlays, birthdayOverlays, leaveSummary] = await Promise.all([
+  const [hostingOverlays, birthdayOverlays, leaveSummary, teamMembers] = await Promise.all([
     loadOverlay("calendar/hosting", () => listHostingOverlays(first, last)),
     loadOverlay("calendar/birthdays", () => listBirthdayOverlays(first, last)),
     loadLeaveSummary(today),
+    loadTeamMembers(),
   ]);
   const leaveOverlays: OverlayItem[] = leaveSummary
     ? leaveEventsInRange(leaveSummary, first, last).map((event) => ({ ...event, kind: "leave" as const }))
@@ -95,6 +106,7 @@ export default async function CalendarPage({
           schedules={schedules}
           overlays={[...leaveOverlays, ...hostingOverlays, ...birthdayOverlays]}
           leaveSummary={leaveSummary}
+          teamMembers={teamMembers}
           holidays={getMonthHolidays(ym)}
         />
       </main>

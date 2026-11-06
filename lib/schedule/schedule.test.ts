@@ -109,7 +109,12 @@ describe("일정 입력 검증", () => {
   const base = { title: "거래처 미팅", category: "미팅" as const, startDate: "2026-11-06", endDate: "", memo: " 14시 " };
 
   it("종료일이 비면 시작일로 채우고 메모를 다듬는다", () => {
-    expect(validateScheduleInput(base)).toEqual({ ...base, endDate: "2026-11-06", memo: "14시", leaveType: null });
+    expect(validateScheduleInput(base)).toEqual({ ...base, endDate: "2026-11-06", memo: "14시", leaveType: null, employeeId: null });
+  });
+
+  it("담당 직원은 홍보부 일정에만 저장한다", () => {
+    expect(validateScheduleInput({ ...base, category: "홍보부", employeeId: "e1" }).employeeId).toBe("e1");
+    expect(validateScheduleInput({ ...base, employeeId: "e1" }).employeeId).toBeNull();
   });
 
   it("연차 반차는 하루짜리로 맞춘다", () => {

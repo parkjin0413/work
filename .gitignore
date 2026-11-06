@@ -8,3 +8,6 @@ coverage
 *.tsbuildinfo
 .worktrees/
 .superpowers/
+
+# 회사 홈페이지 원본(제품 정보 대조용). 로컬에만 보관
+hp/

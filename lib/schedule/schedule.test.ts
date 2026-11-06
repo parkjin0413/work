@@ -90,6 +90,12 @@ describe("달력에 함께 띄우는 항목", () => {
     ]);
   });
 
+  it("호스팅·도메인 시작일도 표시한다", () => {
+    const rows = [{ id: "s1", site_name: "공식", hosting_start_date: "2026-11-02", domain_start_date: "2026-11-02", domain_end_date: null }];
+    const items = buildHostingOverlays(rows, "2026-11-01", "2026-11-30");
+    expect(items.map((i) => i.title)).toEqual(["호스팅 시작 · 공식", "도메인 시작 · 공식"]);
+  });
+
   it("호스팅 만료일 중 기간 안에 있는 것만 고른다", () => {
     const rows = [
       { id: "s1", site_name: "공식", hosting_end_date: "2026-11-20", domain_end_date: "2027-01-01", ssl_end_date: null },

@@ -83,7 +83,7 @@ export default async function CalendarPage({
       <main className="min-w-0 flex-1 p-4 sm:p-6">
         <h1 className="text-lg font-semibold text-foreground">연간일정</h1>
         <p className="mt-1 text-sm text-muted">
-          날짜를 누르면 그날 일정을 보고 추가할 수 있습니다. 호스팅 만료일과 직원 생일은 자동으로
+          날짜를 누르면 그날 일정을 보고 추가할 수 있습니다. 호스팅·도메인 계약일과 직원 생일은 자동으로
           표시됩니다.
         </p>
 

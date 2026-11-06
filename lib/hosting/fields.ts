@@ -42,7 +42,8 @@ export const HOSTING_SECTIONS: SectionDef[] = [
     fields: [
       { key: "primaryDomain", column: "primary_domain", label: "기본 도메인", type: "text", placeholder: "예: example.co.kr" },
       { key: "domainRegistrar", column: "domain_registrar", label: "도메인 등록업체", type: "text", placeholder: "예: 카페24" },
-      { key: "domainEndDate", column: "domain_end_date", label: "도메인 만료일", type: "date" },
+      { key: "domainStartDate", column: "domain_start_date", label: "도메인 시작일", type: "date" },
+      { key: "domainEndDate", column: "domain_end_date", label: "도메인 종료일", type: "date" },
       { key: "connectedDomains", column: "connected_domains", label: "추가 연결 도메인", type: "textarea", placeholder: "한 줄에 하나씩" },
       { key: "sslEnabled", column: "ssl_enabled", label: "SSL 적용", type: "ssl" },
       { key: "sslProvider", column: "ssl_provider", label: "인증서 발급처", type: "text", placeholder: "예: Let's Encrypt (무료)" },

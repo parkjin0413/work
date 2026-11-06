@@ -155,7 +155,7 @@ export function CalendarBoard({
     ...SCHEDULE_CATEGORIES.map((c) => ({ key: c as FilterKey, label: c, colors: CATEGORY_COLORS[c] })),
     { key: "leave", label: "연차 발생", colors: OVERLAY_COLORS.leave },
     { key: "birthday", label: "직원 생일", colors: OVERLAY_COLORS.birthday },
-    { key: "hosting", label: "호스팅 만료", colors: OVERLAY_COLORS.hosting },
+    { key: "hosting", label: "호스팅·도메인", colors: OVERLAY_COLORS.hosting },
   ];
 
   const agenda = (

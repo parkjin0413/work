@@ -1,4 +1,4 @@
-// 다른 메뉴의 데이터를 달력에 함께 띄우기 위한 항목 (호스팅 만료일, 직원 생일).
+// 다른 메뉴의 데이터를 달력에 함께 띄우기 위한 항목 (호스팅·도메인 계약일, 직원 생일).
 import { createSupabaseServiceClient } from "@/lib/supabase/serviceClient";
 import { enumerateDates, toLunar } from "./calendar";
 
@@ -10,8 +10,10 @@ export type OverlayItem = {
   detail: string;
 };
 
-const HOSTING_EXPIRY_COLUMNS = [
+const HOSTING_DATE_COLUMNS = [
+  { column: "hosting_start_date", label: "호스팅 시작" },
   { column: "hosting_end_date", label: "호스팅 만료" },
+  { column: "domain_start_date", label: "도메인 시작" },
   { column: "domain_end_date", label: "도메인 만료" },
   { column: "ssl_end_date", label: "SSL 만료" },
 ] as const;
@@ -22,10 +24,10 @@ export async function listHostingOverlays(first: string, last: string): Promise<
   const supabase = createSupabaseServiceClient();
   const { data, error } = await supabase
     .from("hosting_sites")
-    .select(["id", "site_name", ...HOSTING_EXPIRY_COLUMNS.map((c) => c.column)].join(", "));
+    .select(["id", "site_name", ...HOSTING_DATE_COLUMNS.map((c) => c.column)].join(", "));
 
   if (error) {
-    throw new Error(`호스팅 만료일 조회 실패: ${error.message}`);
+    throw new Error(`호스팅 계약일 조회 실패: ${error.message}`);
   }
 
   return buildHostingOverlays((data ?? []) as unknown as HostingRow[], first, last);
@@ -33,7 +35,7 @@ export async function listHostingOverlays(first: string, last: string): Promise<
 
 export function buildHostingOverlays(rows: HostingRow[], first: string, last: string): OverlayItem[] {
   return rows.flatMap((row) =>
-    HOSTING_EXPIRY_COLUMNS.flatMap(({ column, label }) => {
+    HOSTING_DATE_COLUMNS.flatMap(({ column, label }) => {
       const date = row[column];
       if (!date || date < first || date > last) return [];
       return [{ id: `hosting-${row.id}-${column}`, kind: "hosting" as const, date, title: `${label} · ${row.site_name}`, detail: label }];

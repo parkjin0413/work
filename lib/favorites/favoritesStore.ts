@@ -128,14 +128,19 @@ export async function reorderFavorites(orderedIds: string[]): Promise<void> {
 
 export async function renameFavorite(
   id: string,
-  input: { name: string; url: string }
+  input: { name: string; url: string; categoryId?: string }
 ): Promise<void> {
   assertValidUrl(input.url);
 
   const supabase = createSupabaseServiceClient();
   const { error } = await supabase
     .from("favorites")
-    .update({ name: input.name, url: input.url })
+    .update({
+      name: input.name,
+      url: input.url,
+      // 분류를 바꿀 때만 함께 저장한다
+      ...(input.categoryId ? { category_id: input.categoryId } : {}),
+    })
     .eq("id", id);
 
   if (error) {

@@ -4,7 +4,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { withRetry } from "@/lib/supabase/withRetry";
 import { listCategoriesWithAccounts } from "@/lib/accounts/accountsStore";
 import { listCategoriesWithFavorites } from "@/lib/favorites/favoritesStore";
-import type { SiteItem } from "@/lib/sites/merge";
+import type { SiteCategory, SiteItem } from "@/lib/sites/merge";
 import { SitesPreview } from "./SitesPreview";
 
 export default async function SitesPage() {
@@ -61,13 +61,18 @@ export default async function SitesPage() {
     ),
   ];
 
+  const categories: SiteCategory[] = [
+    ...accounts.map((c) => ({ id: c.id, name: c.name, source: "account" as const })),
+    ...favorites.map((c) => ({ id: c.id, name: c.name, source: "favorite" as const })),
+  ];
+
   return (
     <div className="flex min-h-screen flex-col bg-bg md:flex-row">
       <Sidebar />
       <main className="min-w-0 flex-1 p-4 sm:p-6">
         <h1 className="text-lg font-semibold text-foreground">어카운트·북마크</h1>
 
-        <SitesPreview items={items} />
+        <SitesPreview items={items} categories={categories} />
       </main>
     </div>
   );

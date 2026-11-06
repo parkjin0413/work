@@ -59,7 +59,7 @@ describe("createCategoryAction", () => {
     storeMock.createCategory.mockResolvedValue(undefined);
     await createCategoryAction("업무");
     expect(storeMock.createCategory).toHaveBeenCalledWith("업무");
-    expect(revalidatePathMock).toHaveBeenCalledWith("/accounts");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });
 
@@ -75,7 +75,7 @@ describe("renameCategoryAction", () => {
     storeMock.renameCategory.mockResolvedValue(undefined);
     await renameCategoryAction("cat-1", "새 이름");
     expect(storeMock.renameCategory).toHaveBeenCalledWith("cat-1", "새 이름");
-    expect(revalidatePathMock).toHaveBeenCalledWith("/accounts");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });
 
@@ -86,7 +86,7 @@ describe("deleteCategoryAction", () => {
     storeMock.deleteCategory.mockResolvedValue(undefined);
     await deleteCategoryAction("cat-1");
     expect(storeMock.deleteCategory).toHaveBeenCalledWith("cat-1");
-    expect(revalidatePathMock).toHaveBeenCalledWith("/accounts");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });
 
@@ -168,7 +168,7 @@ describe("createAccountAction", () => {
       password: "pw",
       memo: null,
     });
-    expect(revalidatePathMock).toHaveBeenCalledWith("/accounts");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });
 
@@ -194,7 +194,7 @@ describe("renameAccountAction", () => {
       password: "new-pw",
       memo: "메모",
     });
-    expect(revalidatePathMock).toHaveBeenCalledWith("/accounts");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });
 
@@ -205,7 +205,7 @@ describe("deleteAccountAction", () => {
     storeMock.deleteAccount.mockResolvedValue(undefined);
     await deleteAccountAction("acc-1");
     expect(storeMock.deleteAccount).toHaveBeenCalledWith("acc-1");
-    expect(revalidatePathMock).toHaveBeenCalledWith("/accounts");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });
 
@@ -222,6 +222,6 @@ describe("reorderAccountsAction", () => {
     storeMock.reorderAccounts.mockResolvedValue(undefined);
     await reorderAccountsAction(["acc-2", "acc-1"]);
     expect(storeMock.reorderAccounts).toHaveBeenCalledWith(["acc-2", "acc-1"]);
-    expect(revalidatePathMock).toHaveBeenCalledWith("/accounts");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });

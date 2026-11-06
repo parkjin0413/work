@@ -21,7 +21,7 @@ export async function createCategoryAction(name: string): Promise<void> {
   }
 
   await createCategory(name.trim());
-  revalidatePath("/favorites");
+  revalidatePath("/sites");
 }
 
 export async function renameCategoryAction(id: string, name: string): Promise<void> {
@@ -32,21 +32,21 @@ export async function renameCategoryAction(id: string, name: string): Promise<vo
   }
 
   await renameCategory(id, name.trim());
-  revalidatePath("/favorites");
+  revalidatePath("/sites");
 }
 
 export async function deleteCategoryAction(id: string): Promise<void> {
   await requireAdmin();
 
   await deleteCategory(id);
-  revalidatePath("/favorites");
+  revalidatePath("/sites");
 }
 
 export async function reorderCategoriesAction(orderedIds: string[]): Promise<void> {
   await requireAdmin();
 
   await reorderCategories(orderedIds);
-  revalidatePath("/favorites");
+  revalidatePath("/sites");
 }
 
 export async function createFavoriteAction(params: {
@@ -65,13 +65,14 @@ export async function createFavoriteAction(params: {
     name: params.name.trim(),
     url: params.url.trim(),
   });
-  revalidatePath("/favorites");
+  revalidatePath("/sites");
 }
 
 export async function renameFavoriteAction(params: {
   id: string;
   name: string;
   url: string;
+  categoryId?: string;
 }): Promise<void> {
   await requireAdmin();
 
@@ -79,20 +80,24 @@ export async function renameFavoriteAction(params: {
     throw new Error("이름을 입력해주세요.");
   }
 
-  await renameFavorite(params.id, { name: params.name.trim(), url: params.url.trim() });
-  revalidatePath("/favorites");
+  await renameFavorite(params.id, {
+    name: params.name.trim(),
+    url: params.url.trim(),
+    ...(params.categoryId ? { categoryId: params.categoryId } : {}),
+  });
+  revalidatePath("/sites");
 }
 
 export async function deleteFavoriteAction(id: string): Promise<void> {
   await requireAdmin();
 
   await deleteFavorite(id);
-  revalidatePath("/favorites");
+  revalidatePath("/sites");
 }
 
 export async function reorderFavoritesAction(orderedIds: string[]): Promise<void> {
   await requireAdmin();
 
   await reorderFavorites(orderedIds);
-  revalidatePath("/favorites");
+  revalidatePath("/sites");
 }

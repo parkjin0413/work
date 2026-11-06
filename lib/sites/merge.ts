@@ -18,16 +18,6 @@ export type SiteItem = {
 export type SiteGroup = { name: string; categoryId: string | null; items: SiteItem[] };
 
 
-/** 기존 분류 그대로 묶는다 (들어온 순서 = 분류 정렬 순서). */
-export function groupByOriginal(items: SiteItem[]): SiteGroup[] {
-  const groups = new Map<string, SiteItem[]>();
-  for (const item of items) {
-    if (!groups.has(item.originalCategory)) groups.set(item.originalCategory, []);
-    groups.get(item.originalCategory)!.push(item);
-  }
-  return Array.from(groups, ([name, groupItems]) => ({ name, categoryId: groupItems[0]?.categoryId ?? null, items: groupItems }));
-}
-
 export function matchesQuery(item: SiteItem, query: string): boolean {
   const q = query.trim().toLowerCase();
   if (!q) return true;
@@ -50,4 +40,16 @@ export function displayUrl(url: string): string {
   } catch {
     return url.replace(/^https?:\/\//, "").replace(/^www\./, "");
   }
+}
+
+export type SiteCategory = { id: string; name: string; source: SiteItem["source"] };
+
+/**
+ * 분류 목록(정렬 순서 그대로)에 항목을 나눠 담는다.
+ * includeEmpty=false 면 항목이 없는 분류는 뺀다 (검색 중일 때).
+ */
+export function buildGroups(categories: SiteCategory[], items: SiteItem[], includeEmpty: boolean): SiteGroup[] {
+  return categories
+    .map((c) => ({ name: c.name, categoryId: c.id, items: items.filter((i) => i.categoryId === c.id) }))
+    .filter((g) => includeEmpty || g.items.length > 0);
 }

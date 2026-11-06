@@ -24,12 +24,22 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useRouter } from "next/navigation";
 import { Check, Copy, Eye, EyeOff, GripVertical, KeyRound, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
-import { displayUrl, groupByOriginal, matchesQuery, type SiteGroup, type SiteItem } from "@/lib/sites/merge";
+import {
+  buildGroups,
+  displayUrl,
+  matchesQuery,
+  type SiteCategory,
+  type SiteGroup,
+  type SiteItem,
+} from "@/lib/sites/merge";
 import {
   createAccountAction,
   deleteAccountAction,
   renameAccountAction,
   reorderAccountsAction,
+  createCategoryAction as createAccountCategoryAction,
+  renameCategoryAction as renameAccountCategoryAction,
+  deleteCategoryAction as deleteAccountCategoryAction,
   reorderCategoriesAction as reorderAccountCategoriesAction,
 } from "@/app/accounts/actions";
 import {
@@ -37,8 +47,25 @@ import {
   deleteFavoriteAction,
   renameFavoriteAction,
   reorderFavoritesAction,
+  createCategoryAction as createFavoriteCategoryAction,
+  renameCategoryAction as renameFavoriteCategoryAction,
+  deleteCategoryAction as deleteFavoriteCategoryAction,
   reorderCategoriesAction as reorderFavoriteCategoriesAction,
 } from "@/app/favorites/actions";
+
+/** 영역별 분류 저장 기능 (계정 = 계정관리, 즐겨찾기 = 즐겨찾기 테이블) */
+const CATEGORY_ACTIONS = {
+  account: {
+    create: createAccountCategoryAction,
+    rename: renameAccountCategoryAction,
+    remove: deleteAccountCategoryAction,
+  },
+  favorite: {
+    create: createFavoriteCategoryAction,
+    rename: renameFavoriteCategoryAction,
+    remove: deleteFavoriteCategoryAction,
+  },
+} as const;
 
 type DragHandleProps = { attributes: DraggableAttributes; listeners: SyntheticListenerMap | undefined };
 
@@ -83,19 +110,24 @@ function useCopy() {
   return { copied, copy };
 }
 
-export function SitesPreview({ items }: { items: SiteItem[] }) {
+export function SitesPreview({ items, categories }: { items: SiteItem[]; categories: SiteCategory[] }) {
   const [query, setQuery] = useState("");
   const { copied, copy } = useCopy();
+  const searching = !!query.trim();
 
-  // 계정과 즐겨찾기는 영역을 나누고, 각 영역 안에서 기존 분류대로 묶는다.
+  // 계정과 즐겨찾기는 영역을 나누고, 각 영역 안에서 분류 순서대로 묶는다. 검색 중이 아니면 빈 분류도 보여준다.
   const zones = useMemo(() => {
     const filtered = items.filter((item) => matchesQuery(item, query));
-    return ZONES.map((zone) => ({
-      ...zone,
-      total: items.filter((i) => i.source === zone.source).length,
-      groups: groupByOriginal(filtered.filter((i) => i.source === zone.source)),
-    }));
-  }, [items, query]);
+    return ZONES.map((zone) => {
+      const zoneCategories = categories.filter((c) => c.source === zone.source);
+      return {
+        ...zone,
+        categories: zoneCategories,
+        total: items.filter((i) => i.source === zone.source).length,
+        groups: buildGroups(zoneCategories, filtered, !query.trim()),
+      };
+    });
+  }, [items, categories, query]);
 
   const resultCount = zones.reduce((n, z) => n + z.groups.reduce((m, g) => m + g.items.length, 0), 0);
 
@@ -115,19 +147,23 @@ export function SitesPreview({ items }: { items: SiteItem[] }) {
       {resultCount === 0 ? <p className="py-8 text-center text-[15px] text-muted">검색 결과가 없습니다.</p> : null}
 
       {zones.map((zone) =>
-        zone.groups.length === 0 ? null : (
+        searching && zone.groups.length === 0 ? null : (
           <section key={zone.source} aria-label={zone.label} className="flex flex-col gap-2.5">
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-              <zone.Icon size={18} className={zone.iconClass} />
-              {zone.label}
-              <span className="text-[15px] font-normal text-muted">{zone.total}</span>
-            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                <zone.Icon size={18} className={zone.iconClass} />
+                {zone.label}
+                <span className="text-[15px] font-normal text-muted">{zone.total}</span>
+              </h2>
+              <AddCategoryButton source={zone.source} />
+            </div>
 
             {/* 분류 카드를 큰 화면에서 가로 4열로 흘려 담는다. 화면이 좁아지면 카드 폭이 약 300px 아래로 줄지 않게 열 수를 줄인다. */}
             <ZoneGroups
               groups={zone.groups}
+              categories={zone.categories}
               source={zone.source}
-              canReorder={!query.trim()}
+              canReorder={!searching}
               copied={copied}
               onCopy={copy}
             />
@@ -146,12 +182,14 @@ const noShiftStrategy = () => null;
 /** 한 영역(계정/즐겨찾기)의 분류 카드들. 분류 제목의 손잡이로 카드 순서를 바꾼다. */
 function ZoneGroups({
   groups,
+  categories,
   source,
   canReorder,
   copied,
   onCopy,
 }: {
   groups: SiteGroup[];
+  categories: SiteCategory[];
   source: Source;
   canReorder: boolean;
   copied: string | null;
@@ -197,6 +235,7 @@ function ZoneGroups({
   const cards = order.map((g) => {
     const props = {
       group: g,
+      categories,
       source,
       tone: toneOf(g.name),
       canReorder,
@@ -204,9 +243,9 @@ function ZoneGroups({
       onCopy,
     };
     return canReorder && g.categoryId ? (
-      <SortableGroupCard key={g.name} id={idOf(g)} {...props} />
+      <SortableGroupCard key={idOf(g)} id={idOf(g)} {...props} />
     ) : (
-      <GroupCard key={g.name} {...props} />
+      <GroupCard key={idOf(g)} {...props} />
     );
   });
 
@@ -251,6 +290,7 @@ function SortableGroupCard({ id, ...props }: { id: string } & Omit<Parameters<ty
 /** 분류 카드: 제목 옆 + 로 추가, 항목마다 수정·삭제. 저장은 기존 계정관리·즐겨찾기 기능을 그대로 쓴다. */
 function GroupCard({
   group,
+  categories,
   source,
   tone,
   canReorder,
@@ -260,6 +300,7 @@ function GroupCard({
   dragState,
 }: {
   group: SiteGroup;
+  categories: SiteCategory[];
   source: Source;
   tone: string;
   /** 검색 중에는 일부만 보이므로 순서 변경을 막는다 */
@@ -303,11 +344,48 @@ function GroupCard({
     }
   }
 
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
+
+  async function handleRenameCategory(name: string) {
+    if (!group.categoryId) return;
+    setCategoryError(null);
+    try {
+      await CATEGORY_ACTIONS[source].rename(group.categoryId, name);
+      setIsRenaming(false);
+      router.refresh();
+    } catch (e) {
+      setCategoryError(e instanceof Error ? e.message : "분류 이름 변경에 실패했습니다.");
+    }
+  }
+
+  async function handleDeleteCategory() {
+    if (!group.categoryId) return;
+    const count = group.items.length;
+    const message =
+      count > 0
+        ? `"${group.name}" 분류를 삭제할까요?\n안에 있는 ${count}개 항목도 함께 삭제되고 되돌릴 수 없습니다.`
+        : `"${group.name}" 분류를 삭제할까요?`;
+    if (!window.confirm(message)) return;
+    setCategoryError(null);
+    try {
+      await CATEGORY_ACTIONS[source].remove(group.categoryId);
+      router.refresh();
+    } catch (e) {
+      setCategoryError(e instanceof Error ? e.message : "분류 삭제에 실패했습니다.");
+    }
+  }
+
   async function handleDelete(item: SiteItem) {
     if (!window.confirm(`"${item.name}"을(를) 삭제할까요?`)) return;
-    if (item.source === "account") await deleteAccountAction(item.rawId);
-    else await deleteFavoriteAction(item.rawId);
-    router.refresh();
+    setCategoryError(null);
+    try {
+      if (item.source === "account") await deleteAccountAction(item.rawId);
+      else await deleteFavoriteAction(item.rawId);
+      router.refresh();
+    } catch {
+      setCategoryError(`"${item.name}" 삭제에 실패했습니다.`);
+    }
   }
 
   return (
@@ -318,7 +396,18 @@ function GroupCard({
     >
       {/* 분류 제목: 옅은 배경 띠로 카드 안 항목들과 구분 */}
       <div className={`group/header flex items-center justify-between gap-2 border-b px-3 py-2.5 ${tone}`}>
-        <h3 className="flex items-center gap-1 text-base font-bold">
+        {isRenaming ? (
+          <NameInput
+            initial={group.name}
+            label="분류 이름"
+            onSubmit={handleRenameCategory}
+            onCancel={() => {
+              setIsRenaming(false);
+              setCategoryError(null);
+            }}
+          />
+        ) : (
+        <h3 className="flex min-w-0 items-center gap-1 text-base font-bold">
           {headerHandle ? (
             <button
               type="button"
@@ -331,23 +420,56 @@ function GroupCard({
               <GripVertical size={16} />
             </button>
           ) : null}
-          {group.name} <span className="ml-0.5 text-sm font-medium opacity-60">{group.items.length}</span>
+          <span className="truncate">{group.name}</span>
+          <span className="ml-0.5 text-sm font-medium opacity-60">{group.items.length}</span>
         </h3>
-        {group.categoryId ? (
-          <button
-            type="button"
-            onClick={() => {
-              setIsAdding(true);
-              setEditingId(null);
-            }}
-            aria-label={`${group.name}에 추가`}
-            title="추가"
-            className="rounded-md p-1 opacity-60 hover:bg-white/70 hover:opacity-100 dark:hover:bg-white/10"
-          >
-            <Plus size={18} />
-          </button>
+        )}
+        {group.categoryId && !isRenaming ? (
+          <div className="flex shrink-0 items-center">
+            {/* 분류 이름 변경·삭제: PC에서는 제목 줄에 마우스를 올릴 때만 */}
+            <span className="flex items-center sm:opacity-0 sm:group-focus-within/header:opacity-100 sm:group-hover/header:opacity-100">
+              <button
+                type="button"
+                onClick={() => setIsRenaming(true)}
+                aria-label={`${group.name} 분류 이름 변경`}
+                title="분류 이름 변경"
+                className="rounded-md p-1 opacity-60 hover:bg-white/70 hover:opacity-100 dark:hover:bg-white/10"
+              >
+                <Pencil size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteCategory}
+                aria-label={`${group.name} 분류 삭제`}
+                title="분류 삭제"
+                className="rounded-md p-1 text-danger opacity-70 hover:bg-white/70 hover:opacity-100 dark:hover:bg-white/10"
+              >
+                <Trash2 size={14} />
+              </button>
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setIsAdding(true);
+                setEditingId(null);
+              }}
+              aria-label={`${group.name}에 추가`}
+              title="항목 추가"
+              className="rounded-md p-1 opacity-60 hover:bg-white/70 hover:opacity-100 dark:hover:bg-white/10"
+            >
+              <Plus size={18} />
+            </button>
+          </div>
         ) : null}
       </div>
+      {categoryError ? (
+        <p role="alert" className="px-3 pt-1 text-xs text-danger">
+          {categoryError}
+        </p>
+      ) : null}
+      {group.items.length === 0 && !isAdding ? (
+        <p className="px-3 py-3 text-sm text-muted">항목이 없습니다. + 로 추가하세요.</p>
+      ) : null}
       {reorderError ? (
         <p role="alert" className="px-3 pt-1 text-xs text-danger">
           {reorderError}
@@ -361,14 +483,16 @@ function GroupCard({
             <li key={item.id}>
               <ItemForm
                 source={source}
+                categories={categories}
                 initial={item}
+                defaultCategoryId={item.categoryId}
                 submitLabel="저장"
                 onCancel={() => setEditingId(null)}
                 onSubmit={async (v) => {
                   if (source === "account") {
-                    await renameAccountAction({ id: item.rawId, categoryId: item.categoryId, ...v });
+                    await renameAccountAction({ id: item.rawId, ...v });
                   } else {
-                    await renameFavoriteAction({ id: item.rawId, name: v.name, url: v.url });
+                    await renameFavoriteAction({ id: item.rawId, name: v.name, url: v.url, categoryId: v.categoryId });
                   }
                   setEditingId(null);
                   router.refresh();
@@ -403,13 +527,14 @@ function GroupCard({
       {isAdding && group.categoryId ? (
         <ItemForm
           source={source}
+          categories={categories}
           initial={null}
+          defaultCategoryId={group.categoryId}
           submitLabel="추가"
           onCancel={() => setIsAdding(false)}
           onSubmit={async (v) => {
-            const categoryId = group.categoryId!;
-            if (source === "account") await createAccountAction({ categoryId, ...v });
-            else await createFavoriteAction({ categoryId, name: v.name, url: v.url });
+            if (source === "account") await createAccountAction(v);
+            else await createFavoriteAction({ categoryId: v.categoryId, name: v.name, url: v.url });
             setIsAdding(false);
             router.refresh();
           }}
@@ -419,25 +544,37 @@ function GroupCard({
   );
 }
 
-type FormValues = { name: string; url: string; username: string; password: string; memo: string };
+type FormValues = {
+  categoryId: string;
+  name: string;
+  url: string;
+  username: string;
+  password: string;
+  memo: string;
+};
 
 const INPUT_CLASS =
   "w-full rounded-md border border-border bg-bg px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent";
 
 function ItemForm({
   source,
+  categories,
   initial,
+  defaultCategoryId,
   submitLabel,
   onSubmit,
   onCancel,
 }: {
   source: Source;
+  categories: SiteCategory[];
   initial: SiteItem | null;
+  defaultCategoryId: string;
   submitLabel: string;
   onSubmit: (values: FormValues) => Promise<void>;
   onCancel: () => void;
 }) {
   const [v, setV] = useState<FormValues>({
+    categoryId: defaultCategoryId,
     name: initial?.name ?? "",
     url: initial?.url ?? "https://",
     username: initial?.username ?? "",
@@ -464,6 +601,16 @@ function ItemForm({
 
   return (
     <form onSubmit={handleSubmit} className="m-2 flex flex-col gap-1.5 rounded-lg border border-accent bg-surface p-2">
+      <label className="flex items-center gap-2 text-xs text-muted">
+        <span className="shrink-0">분류</span>
+        <select value={v.categoryId} onChange={set("categoryId")} aria-label="분류" className={INPUT_CLASS}>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+      </label>
       <input value={v.name} onChange={set("name")} placeholder="이름" aria-label="이름" autoFocus className={INPUT_CLASS} />
       <input value={v.url} onChange={set("url")} placeholder="https://" aria-label="주소" className={INPUT_CLASS} />
       {isAccount ? (
@@ -507,6 +654,106 @@ function ItemForm({
         </p>
       ) : null}
     </form>
+  );
+}
+
+/** 분류 이름 한 줄 입력 (추가·이름 변경 공용). Enter 저장, Esc 취소. */
+function NameInput({
+  initial,
+  label,
+  onSubmit,
+  onCancel,
+}: {
+  initial: string;
+  label: string;
+  onSubmit: (name: string) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState(initial);
+  const [isSaving, setIsSaving] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!name.trim()) return;
+    setIsSaving(true);
+    try {
+      await onSubmit(name.trim());
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex min-w-0 flex-1 items-center gap-1.5">
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onCancel();
+        }}
+        placeholder={label}
+        aria-label={label}
+        autoFocus
+        className="min-w-0 flex-1 rounded-md border border-border bg-surface px-2 py-1 text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+      />
+      <button
+        type="submit"
+        disabled={isSaving || !name.trim()}
+        className="shrink-0 rounded-md bg-accent px-2 py-1 text-xs font-medium text-accent-foreground disabled:opacity-50"
+      >
+        {isSaving ? "저장 중" : "저장"}
+      </button>
+      <button type="button" onClick={onCancel} className="shrink-0 rounded-md border border-border bg-surface px-2 py-1 text-xs text-muted">
+        취소
+      </button>
+    </form>
+  );
+}
+
+/** 영역 제목 옆 "+ 분류 추가" */
+function AddCategoryButton({ source }: { source: Source }) {
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isOpen) {
+    return (
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className="rounded-lg border border-dashed border-border px-2.5 py-1 text-sm text-muted hover:border-accent hover:text-accent"
+      >
+        + 분류 추가
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex min-w-[260px] flex-col gap-1">
+      <NameInput
+        initial=""
+        label="새 분류 이름"
+        onSubmit={async (name) => {
+          setError(null);
+          try {
+            await CATEGORY_ACTIONS[source].create(name);
+            setIsOpen(false);
+            router.refresh();
+          } catch (e) {
+            setError(e instanceof Error ? e.message : "분류 추가에 실패했습니다.");
+          }
+        }}
+        onCancel={() => {
+          setIsOpen(false);
+          setError(null);
+        }}
+      />
+      {error ? (
+        <p role="alert" className="text-xs text-danger">
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }
 

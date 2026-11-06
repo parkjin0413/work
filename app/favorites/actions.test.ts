@@ -67,7 +67,7 @@ describe("createCategoryAction", () => {
     storeMock.createCategory.mockResolvedValue(undefined);
     await createCategoryAction("업무");
     expect(storeMock.createCategory).toHaveBeenCalledWith("업무");
-    expect(revalidatePathMock).toHaveBeenCalledWith("/favorites");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });
 
@@ -95,7 +95,7 @@ describe("renameCategoryAction", () => {
     storeMock.renameCategory.mockResolvedValue(undefined);
     await renameCategoryAction("cat-1", "새 이름");
     expect(storeMock.renameCategory).toHaveBeenCalledWith("cat-1", "새 이름");
-    expect(revalidatePathMock).toHaveBeenCalledWith("/favorites");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });
 
@@ -118,7 +118,7 @@ describe("deleteCategoryAction", () => {
     storeMock.deleteCategory.mockResolvedValue(undefined);
     await deleteCategoryAction("cat-1");
     expect(storeMock.deleteCategory).toHaveBeenCalledWith("cat-1");
-    expect(revalidatePathMock).toHaveBeenCalledWith("/favorites");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });
 
@@ -141,7 +141,7 @@ describe("reorderCategoriesAction", () => {
     storeMock.reorderCategories.mockResolvedValue(undefined);
     await reorderCategoriesAction(["cat-2", "cat-1"]);
     expect(storeMock.reorderCategories).toHaveBeenCalledWith(["cat-2", "cat-1"]);
-    expect(revalidatePathMock).toHaveBeenCalledWith("/favorites");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });
 
@@ -177,7 +177,7 @@ describe("createFavoriteAction", () => {
       name: "위키",
       url: "https://wiki.example.com",
     });
-    expect(revalidatePathMock).toHaveBeenCalledWith("/favorites");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });
 
@@ -212,7 +212,7 @@ describe("renameFavoriteAction", () => {
       name: "새 이름",
       url: "https://new.example.com",
     });
-    expect(revalidatePathMock).toHaveBeenCalledWith("/favorites");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });
 
@@ -235,7 +235,7 @@ describe("deleteFavoriteAction", () => {
     storeMock.deleteFavorite.mockResolvedValue(undefined);
     await deleteFavoriteAction("fav-1");
     expect(storeMock.deleteFavorite).toHaveBeenCalledWith("fav-1");
-    expect(revalidatePathMock).toHaveBeenCalledWith("/favorites");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });
 
@@ -258,6 +258,6 @@ describe("reorderFavoritesAction", () => {
     storeMock.reorderFavorites.mockResolvedValue(undefined);
     await reorderFavoritesAction(["fav-2", "fav-1"]);
     expect(storeMock.reorderFavorites).toHaveBeenCalledWith(["fav-2", "fav-1"]);
-    expect(revalidatePathMock).toHaveBeenCalledWith("/favorites");
+    expect(revalidatePathMock).toHaveBeenCalledWith("/sites");
   });
 });

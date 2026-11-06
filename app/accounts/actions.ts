@@ -21,7 +21,7 @@ export async function createCategoryAction(name: string): Promise<void> {
   }
 
   await createCategory(name.trim());
-  revalidatePath("/accounts");
+  revalidatePath("/sites");
 }
 
 export async function renameCategoryAction(id: string, name: string): Promise<void> {
@@ -32,14 +32,14 @@ export async function renameCategoryAction(id: string, name: string): Promise<vo
   }
 
   await renameCategory(id, name.trim());
-  revalidatePath("/accounts");
+  revalidatePath("/sites");
 }
 
 export async function deleteCategoryAction(id: string): Promise<void> {
   await requireAdmin();
 
   await deleteCategory(id);
-  revalidatePath("/accounts");
+  revalidatePath("/sites");
 }
 
 export async function createAccountAction(params: {
@@ -70,7 +70,7 @@ export async function createAccountAction(params: {
     password: params.password,
     memo: params.memo.trim() || null,
   });
-  revalidatePath("/accounts");
+  revalidatePath("/sites");
 }
 
 export async function renameAccountAction(params: {
@@ -102,26 +102,26 @@ export async function renameAccountAction(params: {
     password: params.password,
     memo: params.memo.trim() || null,
   });
-  revalidatePath("/accounts");
+  revalidatePath("/sites");
 }
 
 export async function deleteAccountAction(id: string): Promise<void> {
   await requireAdmin();
 
   await deleteAccount(id);
-  revalidatePath("/accounts");
+  revalidatePath("/sites");
 }
 
 export async function reorderAccountsAction(orderedIds: string[]): Promise<void> {
   await requireAdmin();
 
   await reorderAccounts(orderedIds);
-  revalidatePath("/accounts");
+  revalidatePath("/sites");
 }
 
 export async function reorderCategoriesAction(orderedIds: string[]): Promise<void> {
   await requireAdmin();
 
   await reorderCategories(orderedIds);
-  revalidatePath("/accounts");
+  revalidatePath("/sites");
 }

@@ -1,47 +1,6 @@
-export const dynamic = "force-dynamic";
+import { redirect } from "next/navigation";
 
-import { Sidebar } from "@/components/layout/Sidebar";
-import { listCategoriesWithFavorites, type CategoryWithFavorites } from "@/lib/favorites/favoritesStore";
-import { CreateCategoryForm } from "./CreateCategoryForm";
-import { FavoritesBoard } from "./FavoritesBoard";
-
-export default async function FavoritesPage() {
-  let categories: CategoryWithFavorites[];
-
-  try {
-    categories = await listCategoriesWithFavorites();
-  } catch (error) {
-    console.error("[favorites] listCategoriesWithFavorites 실패:", error);
-    return (
-      <div className="flex min-h-screen flex-col bg-bg md:flex-row">
-        <Sidebar />
-        <main className="min-w-0 flex-1 p-6">
-          <h1 className="text-lg font-semibold text-foreground">즐겨찾기</h1>
-          <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
-            <p className="text-sm text-muted">
-              즐겨찾기를 불러오지 못했습니다. Supabase 연결 상태와
-              0002_favorites.sql 마이그레이션 실행 여부를 확인해주세요.
-            </p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex min-h-screen flex-col bg-bg md:flex-row">
-      <Sidebar />
-      <main className="min-w-0 flex-1 p-6">
-        <h1 className="text-lg font-semibold text-foreground">즐겨찾기</h1>
-
-        <CreateCategoryForm />
-
-        {categories.length === 0 ? (
-          <p className="mt-6 text-sm text-muted">카테고리를 먼저 만들어주세요.</p>
-        ) : (
-          <FavoritesBoard categories={categories} />
-        )}
-      </main>
-    </div>
-  );
+// 계정관리·즐겨찾기는 "어카운트·북마크"(/sites) 한 화면으로 합쳤다. 옛 주소로 들어오면 그쪽으로 보낸다.
+export default function LegacyPage() {
+  redirect("/sites");
 }

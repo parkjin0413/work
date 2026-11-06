@@ -39,14 +39,13 @@ describe("Sidebar", () => {
     expect(screen.getByText("강산이엔지 업무 대시보드")).toBeInTheDocument();
   });
 
-  it("8개의 메뉴 링크를 업무관리·연간일정·계정관리·즐겨찾기·제품정보·회사정보·직원명단·호스팅 순서로 보여준다 (별도 홈 없음)", () => {
+  it("7개의 메뉴 링크를 업무관리·연간일정·어카운트·북마크·제품정보·회사정보·직원명단·호스팅 순서로 보여준다 (별도 홈 없음)", () => {
     renderSidebar();
     const links = screen.getAllByRole("link");
     expect(links.map((link) => link.getAttribute("aria-label"))).toEqual([
       "업무관리",
       "연간일정",
-      "계정관리",
-      "즐겨찾기",
+      "어카운트·북마크",
       "제품정보",
       "회사정보",
       "직원명단",
@@ -55,8 +54,9 @@ describe("Sidebar", () => {
     expect(screen.getByRole("link", { name: "호스팅" })).toHaveAttribute("href", "/hosting");
     expect(screen.getByRole("link", { name: "연간일정" })).toHaveAttribute("href", "/calendar");
     expect(screen.getByRole("link", { name: "업무관리" })).toHaveAttribute("href", "/tasks");
-    expect(screen.getByRole("link", { name: "계정관리" })).toHaveAttribute("href", "/accounts");
-    expect(screen.getByRole("link", { name: "즐겨찾기" })).toHaveAttribute("href", "/favorites");
+    expect(screen.getByRole("link", { name: "어카운트·북마크" })).toHaveAttribute("href", "/sites");
+    expect(screen.queryByRole("link", { name: "계정관리" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "즐겨찾기" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "제품정보" })).toHaveAttribute("href", "/products");
     expect(screen.getByRole("link", { name: "회사정보" })).toHaveAttribute("href", "/partners");
     expect(screen.getByRole("link", { name: "직원명단" })).toHaveAttribute("href", "/employees");
@@ -68,7 +68,7 @@ describe("Sidebar", () => {
     renderSidebar();
 
     expect(screen.getByRole("link", { name: "업무관리" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "계정관리" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "어카운트·북마크" })).not.toHaveAttribute("aria-current");
   });
 
   it("로그아웃 버튼을 누르면 로그아웃 후 로그인 화면으로 이동한다", async () => {

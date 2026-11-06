@@ -165,3 +165,18 @@ export async function reorderAccounts(orderedIds: string[]): Promise<void> {
     throw new Error(`계정 순서 변경 실패: ${failed.error.message}`);
   }
 }
+
+export async function reorderCategories(orderedIds: string[]): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+
+  const results = await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase.from("account_categories").update({ sort_order: index }).eq("id", id)
+    )
+  );
+
+  const failed = results.find((result) => result.error);
+  if (failed?.error) {
+    throw new Error(`카테고리 순서 변경 실패: ${failed.error.message}`);
+  }
+}

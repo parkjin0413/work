@@ -178,7 +178,7 @@ export function HostingCard({
           return (
             <section
               key={section.title}
-              className={`rounded-xl border border-border bg-bg/50 p-3 ${wide ? "sm:col-span-2" : ""}`}
+              className={`rounded-xl border border-border bg-bg p-3 ${wide ? "sm:col-span-2" : ""}`}
             >
               <h3 className="mb-1.5 text-xs font-semibold text-accent">{section.title}</h3>
               <dl className="flex flex-col gap-1">

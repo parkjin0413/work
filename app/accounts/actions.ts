@@ -10,6 +10,7 @@ import {
   renameAccount,
   deleteAccount,
   reorderAccounts,
+  reorderCategories,
 } from "@/lib/accounts/accountsStore";
 
 export async function createCategoryAction(name: string): Promise<void> {
@@ -115,5 +116,12 @@ export async function reorderAccountsAction(orderedIds: string[]): Promise<void>
   await requireAdmin();
 
   await reorderAccounts(orderedIds);
+  revalidatePath("/accounts");
+}
+
+export async function reorderCategoriesAction(orderedIds: string[]): Promise<void> {
+  await requireAdmin();
+
+  await reorderCategories(orderedIds);
   revalidatePath("/accounts");
 }

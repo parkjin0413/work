@@ -159,11 +159,80 @@ export async function moveWorkItems(ids: string[], date: string): Promise<void> 
   }
 }
 
+/**
+ * 끌어서 놓은 뒤 순서 저장: ids 순서대로 sort_order 를 0,1,2… 로 매긴다.
+ * date 를 주면 그 날짜로도 옮긴다 (undefined 면 날짜는 그대로 — 프로젝트 단계 순서용).
+ */
+export async function reorderWorkItems(ids: string[], date?: string): Promise<void> {
+  if (ids.length === 0) return;
+  const supabase = createSupabaseServiceClient();
+  const results = await Promise.all(
+    ids.map((id, index) =>
+      supabase
+        .from("task_notes")
+        .update(date === undefined ? { sort_order: index } : { sort_order: index, work_date: date })
+        .eq("id", id)
+    )
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) {
+    throw new Error(`순서 저장 실패: ${failed.error.message}`);
+  }
+}
+
 export async function deleteWorkItem(id: string): Promise<void> {
   const supabase = createSupabaseServiceClient();
   const { error } = await supabase.from("task_notes").delete().eq("id", id);
 
   if (error) {
     throw new Error(`업무 항목 삭제 실패: ${error.message}`);
+  }
+}
+
+/** ilike 패턴에서 % _ \ 를 글자 그대로 찾게 한다. */
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (ch) => "\\" + ch);
+}
+
+/** 날짜가 있는 기록을 내용으로 찾는다 (최근 날짜 먼저, 최대 limit 건). */
+export async function searchWorkItems(query: string, limit = 100): Promise<WorkItem[]> {
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("task_notes")
+    .select(SELECT_COLUMNS)
+    .not("work_date", "is", null)
+    .ilike("body", `%${escapeLike(query)}%`)
+    .order("work_date", { ascending: false })
+    .order("sort_order", { ascending: true })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`기록 검색 실패: ${error.message}`);
+  }
+  return ((data ?? []) as unknown as Row[]).map(toWorkItem);
+}
+
+/** 날짜가 있는 기록 전부 (오래된 날짜부터). 1000건씩 나눠 읽는다. */
+export async function listAllDatedWorkItems(): Promise<WorkItem[]> {
+  const supabase = createSupabaseServiceClient();
+  const PAGE = 1000;
+  const all: WorkItem[] = [];
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("task_notes")
+      .select(SELECT_COLUMNS)
+      .not("work_date", "is", null)
+      .order("work_date", { ascending: true })
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + PAGE - 1);
+
+    if (error) {
+      throw new Error(`전체 기록 조회 실패: ${error.message}`);
+    }
+    const rows = (data ?? []) as unknown as Row[];
+    all.push(...rows.map(toWorkItem));
+    if (rows.length < PAGE) return all;
   }
 }

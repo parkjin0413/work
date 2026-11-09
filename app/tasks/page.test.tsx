@@ -35,12 +35,15 @@ vi.mock("./projectActions", () => ({
   setProjectCompletedAction: vi.fn(),
   deleteProjectAction: vi.fn(),
   addProjectStepAction: vi.fn(),
+  addProjectStepsAction: vi.fn(),
 }));
 vi.mock("./workItemActions", () => ({
   createWorkItemAction: vi.fn(),
   updateWorkItemAction: vi.fn(),
   moveWorkItemsAction: vi.fn(),
   deleteWorkItemAction: vi.fn(),
+  searchWorkItemsAction: vi.fn(),
+  reorderWorkItemsAction: vi.fn(),
 }));
 
 function item(partial: Partial<WorkItem> & Pick<WorkItem, "id" | "date" | "body">): WorkItem {

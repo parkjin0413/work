@@ -11,6 +11,7 @@ import { listOverduePlanned, listWorkItemsInRange } from "@/lib/tasks/workItems"
 import { ProjectBoard } from "./ProjectBoard";
 import { SectionHeader } from "./SectionHeader";
 import { WeekPlanner } from "./WeekPlanner";
+import { WorkSearch } from "./WorkSearch";
 
 const MAIN_CLASS = "min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] py-6";
 
@@ -62,7 +63,10 @@ export default async function TasksPage({ searchParams }: { searchParams: { week
     <div className="flex min-h-screen flex-col bg-bg">
       <Sidebar />
       <main className={MAIN_CLASS}>
-        <h1 className="text-lg font-semibold text-foreground">업무관리</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-lg font-semibold text-foreground">업무관리</h1>
+          <WorkSearch todayISO={todayISO} />
+        </div>
 
         <div className="mt-6 space-y-10">
           {itemsResult.status === "fulfilled" ? (

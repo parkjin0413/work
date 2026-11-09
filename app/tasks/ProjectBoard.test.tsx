@@ -10,8 +10,10 @@ const actions = vi.hoisted(() => ({
   setProjectCompletedAction: vi.fn(),
   deleteProjectAction: vi.fn(),
   addProjectStepAction: vi.fn(),
+  addProjectStepsAction: vi.fn(),
   updateWorkItemAction: vi.fn(),
   deleteWorkItemAction: vi.fn(),
+  reorderWorkItemsAction: vi.fn(),
 }));
 vi.mock("./projectActions", () => actions);
 vi.mock("./workItemActions", () => actions);
@@ -89,6 +91,19 @@ describe("ProjectBoard", () => {
 
     await waitFor(() => expect(actions.addProjectStepAction).toHaveBeenCalledWith("p1", "와이어프레임 작성"));
     expect(screen.getByText("와이어프레임 작성")).toBeInTheDocument();
+  });
+
+  it("여러 줄을 붙여넣으면 한 줄씩 단계로 추가한다", async () => {
+    render(<ProjectBoard projects={[homepage]} todayISO="2026-11-09" />);
+
+    fireEvent.paste(screen.getByLabelText("단계 추가"), {
+      clipboardData: { getData: () => '"1. 사이트맵 확정\n2. 게시판 설계"' },
+    });
+
+    await waitFor(() =>
+      expect(actions.addProjectStepsAction).toHaveBeenCalledWith("p1", ["사이트맵 확정", "게시판 설계"])
+    );
+    expect(screen.getByText("사이트맵 확정")).toBeInTheDocument();
   });
 
   it("종류를 상시 업무로 바꿀 수 있다", async () => {

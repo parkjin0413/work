@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import {
   addProjectStep,
+  addProjectSteps,
   createProject,
   deleteProject,
   setProjectCompleted,
@@ -72,4 +73,17 @@ export async function addProjectStepAction(projectId: string, body: string): Pro
   const step = await addProjectStep(projectId, trimmed);
   revalidatePath("/tasks");
   return step;
+}
+
+/** 엑셀 등에서 여러 줄을 붙여넣었을 때 한 줄씩 단계로 추가한다. */
+export async function addProjectStepsAction(projectId: string, bodies: string[]): Promise<ProjectStep[]> {
+  await requireAdmin();
+
+  const cleaned = bodies.map((b) => b.trim()).filter(Boolean);
+  if (cleaned.length === 0) throw new Error("내용을 입력해주세요.");
+  if (cleaned.length > 50) throw new Error("한 번에 50개까지 추가할 수 있습니다.");
+
+  const steps = await addProjectSteps(projectId, cleaned);
+  revalidatePath("/tasks");
+  return steps;
 }

@@ -14,10 +14,28 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
+import {
+  DndContext,
+  DragOverlay,
+  MouseSensor,
+  pointerWithin,
+  rectIntersection,
+  TouchSensor,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type CollisionDetection,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { CopyButton } from "@/components/CopyButton";
 import { CATEGORY_COLORS } from "@/lib/schedule/categories";
 import type { Schedule } from "@/lib/schedule/scheduleStore";
 import { addDaysISO, formatMonthDayWeekday, getWeekdayIndex, WEEKDAY_LABELS } from "@/lib/tasks/week";
+import { planDrop } from "@/lib/tasks/reorder";
 import { buildWeeklyReport, spreadAcrossWeek, toExcelText } from "@/lib/tasks/weeklyReport";
 import { compareWorkItems, type ProjectOption, type WorkItem, type WorkItemStatus } from "@/lib/tasks/workItems";
 import { SectionHeader } from "./SectionHeader";
@@ -25,6 +43,7 @@ import {
   createWorkItemAction,
   deleteWorkItemAction,
   moveWorkItemsAction,
+  reorderWorkItemsAction,
   updateWorkItemAction,
 } from "./workItemActions";
 
@@ -41,7 +60,13 @@ type Props = {
   projects: ProjectOption[];
 };
 
-type NewItem = { date: string; body: string; status: WorkItemStatus; projectId: string | null; scheduleId?: string | null };
+type NewItem = {
+  date: string;
+  body: string;
+  status: WorkItemStatus;
+  projectId: string | null;
+  scheduleId?: string | null;
+};
 
 let tempSeq = 0;
 
@@ -78,6 +103,8 @@ export function WeekPlanner({
       router.refresh();
     } catch (e) {
       rollback();
+      // 일부만 저장됐을 수 있으니 서버 상태로 다시 맞춘다.
+      router.refresh();
       setError(e instanceof Error && e.message ? e.message : message);
     }
   }
@@ -127,7 +154,7 @@ export function WeekPlanner({
         setItems(before.items);
         setOverdue(before.overdue);
       },
-      "상태 변경에 실패했습니다."
+      "상태 변경에 실패했습니다.",
     );
   }
 
@@ -137,7 +164,11 @@ export function WeekPlanner({
       ...patch,
       projectName: patch.projectId ? (projectNameById.get(patch.projectId) ?? item.projectName) : null,
     });
-    void run(() => updateWorkItemAction(item.id, patch), () => setItems(before), "수정에 실패했습니다.");
+    void run(
+      () => updateWorkItemAction(item.id, patch),
+      () => setItems(before),
+      "수정에 실패했습니다.",
+    );
   }
 
   function deleteItem(item: WorkItem) {
@@ -151,7 +182,7 @@ export function WeekPlanner({
         setItems(before.items);
         setOverdue(before.overdue);
       },
-      "삭제에 실패했습니다."
+      "삭제에 실패했습니다.",
     );
   }
 
@@ -176,12 +207,61 @@ export function WeekPlanner({
     });
     void run(
       () =>
-        Promise.all(groups.map((g) => moveWorkItemsAction(g.items.map((t) => t.id), g.date))).then(() => undefined),
+        Promise.all(
+          groups.map((g) =>
+            moveWorkItemsAction(
+              g.items.map((t) => t.id),
+              g.date,
+            ),
+          ),
+        ).then(() => undefined),
       () => {
         setItems(before.items);
         setOverdue(before.overdue);
       },
-      "옮기기에 실패했습니다."
+      "옮기기에 실패했습니다.",
+    );
+  }
+
+  // ── 끌어서 옮기기 ──
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    // 휴대폰은 길게 눌러야 끌기 시작 (그냥 스크롤과 구분)
+    useSensor(TouchSensor, { activationConstraint: { delay: 300, tolerance: 8 } }),
+  );
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overDate, setOverDate] = useState<string | null>(null);
+  const dragItem = dragId ? (sortedItems.find((i) => i.id === dragId) ?? null) : null;
+
+  function dropTargetOf(over: DragOverEvent["over"]): { date: string; overId: string | null } | null {
+    const data = over?.data.current as { date?: string; type?: string } | undefined;
+    if (!over || !data?.date) return null;
+    return { date: data.date, overId: data.type === "item" ? String(over.id) : null };
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    setDragId(String(event.active.id));
+  }
+
+  function handleDragOver(event: DragOverEvent) {
+    setOverDate(dropTargetOf(event.over)?.date ?? null);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setDragId(null);
+    setOverDate(null);
+    const target = dropTargetOf(event.over);
+    if (!target) return;
+    const plan = planDrop(sortedItems, String(event.active.id), target.date, target.overId);
+    if (!plan || !plan.date) return;
+    const date = plan.date;
+    const order = new Map(plan.orderedIds.map((id, index) => [id, index]));
+    const before = items;
+    setItems((prev) => prev.map((i) => (order.has(i.id) ? { ...i, date, sortOrder: order.get(i.id)! } : i)));
+    void run(
+      () => reorderWorkItemsAction(plan.orderedIds, date),
+      () => setItems(before),
+      "옮기기에 실패했습니다.",
     );
   }
 
@@ -193,6 +273,7 @@ export function WeekPlanner({
     onSave: saveItem,
     onDelete: deleteItem,
     onMoveToToday: (item) => moveItems([item], todayISO),
+    overDate,
   };
 
   return (
@@ -247,7 +328,11 @@ export function WeekPlanner({
       ) : null}
 
       {isCurrentWeek && overdue.length > 0 ? (
-        <OverdueBar items={overdue} onMoveAll={() => moveItems(overdue, todayISO)} onMoveOne={(i) => moveItems([i], todayISO)} />
+        <OverdueBar
+          items={overdue}
+          onMoveAll={() => moveItems(overdue, todayISO)}
+          onMoveOne={(i) => moveItems([i], todayISO)}
+        />
       ) : null}
 
       {showReport ? (
@@ -257,25 +342,45 @@ export function WeekPlanner({
         />
       ) : null}
 
-      <WeekGrid
-        label="이번 주"
-        weekStart={weekStart}
-        items={sortedItems}
-        schedules={schedules}
-        holidays={holidays}
-        handlers={handlers}
-      />
-      <div className="mt-5">
+      <DndContext
+        id="week-planner-dnd"
+        sensors={sensors}
+        collisionDetection={itemFirstCollision}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={() => {
+          setDragId(null);
+          setOverDate(null);
+        }}
+      >
         <WeekGrid
-          label="다음 주 계획"
-          weekStart={nextWeekStart}
+          label="이번 주"
+          weekStart={weekStart}
           items={sortedItems}
           schedules={schedules}
           holidays={holidays}
           handlers={handlers}
-          compact
         />
-      </div>
+        <div className="mt-5">
+          <WeekGrid
+            label="다음 주 계획"
+            weekStart={nextWeekStart}
+            items={sortedItems}
+            schedules={schedules}
+            holidays={holidays}
+            handlers={handlers}
+            compact
+          />
+        </div>
+        <DragOverlay>
+          {dragItem ? (
+            <div className="max-w-[16rem] rounded-md border border-accent bg-surface px-2 py-1 text-[0.8rem] text-foreground shadow-lg">
+              {dragItem.body}
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </section>
   );
 }
@@ -288,6 +393,16 @@ type DayHandlers = {
   onSave: (item: WorkItem, patch: { body: string; date: string; projectId: string | null }) => void;
   onDelete: (item: WorkItem) => void;
   onMoveToToday: (item: WorkItem) => void;
+  /** 끌고 있는 항목이 올라가 있는 날짜 (칸 강조용) */
+  overDate: string | null;
+};
+
+/** 항목 위에 있으면 항목을, 아니면 날짜 칸을 놓을 곳으로 본다. */
+const itemFirstCollision: CollisionDetection = (args) => {
+  const hits = pointerWithin(args);
+  const found = hits.length > 0 ? hits : rectIntersection(args);
+  const items = found.filter((c) => !String(c.id).startsWith("day:"));
+  return items.length > 0 ? items : found;
 };
 
 const GRID_COLS: Record<number, string> = {
@@ -317,11 +432,17 @@ function WeekGrid({
   const schedulesOn = (date: string) => schedules.filter((s) => s.startDate <= date && s.endDate >= date);
   const itemsOn = (date: string) => items.filter((i) => i.date === date);
   // 평일 5칸은 항상, 주말은 항목이나 일정이 있을 때만 칸을 만든다.
-  const visible = dates.filter(
-    (date, index) => index < 5 || itemsOn(date).length > 0 || schedulesOn(date).length > 0
-  );
+  const visible = dates.filter((date, index) => index < 5 || itemsOn(date).length > 0 || schedulesOn(date).length > 0);
   const doneCount = items.filter((i) => i.status === "done" && dates.includes(i.date)).length;
   const plannedCount = items.filter((i) => i.status === "planned" && dates.includes(i.date)).length;
+  // 휴대폰에서는 한 번에 하루만 보여준다 (기본: 오늘, 없으면 첫날).
+  const [mobileDate, setMobileDate] = useState<string | null>(null);
+  const shownDate =
+    mobileDate && visible.includes(mobileDate)
+      ? mobileDate
+      : visible.includes(handlers.todayISO)
+        ? handlers.todayISO
+        : visible[0];
 
   return (
     <div>
@@ -331,10 +452,39 @@ function WeekGrid({
           완료 {doneCount} · 계획 {plannedCount}
         </span>
       </div>
+      <div role="tablist" aria-label={`${label} 요일`} className="mb-2 flex gap-1 overflow-x-auto sm:hidden">
+        {visible.map((date) => {
+          const isShown = date === shownDate;
+          const count = itemsOn(date).length;
+          return (
+            <button
+              key={date}
+              type="button"
+              role="tab"
+              aria-selected={isShown}
+              onClick={() => setMobileDate(date)}
+              className={`flex min-w-[3rem] flex-1 flex-col items-center rounded-lg border py-1 leading-tight ${
+                isShown
+                  ? "border-accent bg-accent text-white"
+                  : date === handlers.todayISO
+                    ? "border-accent text-accent"
+                    : "border-border text-foreground"
+              }`}
+            >
+              <span className="text-[0.75rem] font-semibold">{WEEKDAY_LABELS[getWeekdayIndex(date)]}</span>
+              <span className="text-[0.62rem] opacity-80">
+                {Number(date.slice(8, 10))}
+                {count > 0 ? ` · ${count}` : ""}
+              </span>
+            </button>
+          );
+        })}
+      </div>
       <div className={`grid gap-3 sm:grid-cols-2 ${GRID_COLS[visible.length]}`}>
         {visible.map((date) => (
           <DayColumn
             key={date}
+            hiddenOnMobile={date !== shownDate}
             date={date}
             items={itemsOn(date)}
             schedules={schedulesOn(date)}
@@ -355,7 +505,9 @@ function DayColumn({
   holidayNames,
   handlers,
   compact,
+  hiddenOnMobile = false,
 }: {
+  hiddenOnMobile?: boolean;
   date: string;
   items: WorkItem[];
   schedules: Schedule[];
@@ -368,11 +520,18 @@ function DayColumn({
   const isPast = date < handlers.todayISO;
   const isRedDay = holidayNames.length > 0 || weekday === 6;
   const dateColor = isRedDay ? "text-red-500" : weekday === 5 ? "text-blue-500" : "text-foreground";
+  const { setNodeRef } = useDroppable({ id: `day:${date}`, data: { date, type: "day" } });
+  const isDropTarget = handlers.overDate === date;
 
   return (
     <div
-      className={`flex min-w-0 flex-col rounded-2xl border bg-surface p-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${
-        isToday ? "border-accent ring-1 ring-accent/30" : "border-border"
+      ref={setNodeRef}
+      className={`${hiddenOnMobile ? "hidden sm:flex" : "flex"} min-w-0 flex-col rounded-2xl border bg-surface p-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)] ${
+        isDropTarget
+          ? "border-accent bg-accent/[0.04] ring-2 ring-accent/40"
+          : isToday
+            ? "border-accent ring-1 ring-accent/30"
+            : "border-border"
       } ${compact ? "min-h-[7rem]" : "min-h-[12rem]"}`}
     >
       <div className="flex items-baseline gap-1.5">
@@ -409,13 +568,15 @@ function DayColumn({
         </ul>
       ) : null}
 
-      {items.length > 0 ? (
-        <ul className="mt-2 flex flex-col">
-          {items.map((item) => (
-            <ItemRow key={item.id} item={item} isOverdue={isPast && item.status === "planned"} handlers={handlers} />
-          ))}
-        </ul>
-      ) : null}
+      <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+        {items.length > 0 ? (
+          <ul className="mt-2 flex flex-col">
+            {items.map((item) => (
+              <ItemRow key={item.id} item={item} isOverdue={isPast && item.status === "planned"} handlers={handlers} />
+            ))}
+          </ul>
+        ) : null}
+      </SortableContext>
 
       <AddItemInput date={date} handlers={handlers} />
     </div>
@@ -468,10 +629,16 @@ function ItemRow({ item, isOverdue, handlers }: { item: WorkItem; isOverdue: boo
   const [isEditing, setIsEditing] = useState(false);
   const isTemp = item.id.startsWith("tmp-");
   const isDone = item.status === "done";
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+    data: { date: item.date, type: "item" },
+    disabled: isTemp || isEditing,
+  });
+  const dragStyle = { transform: CSS.Translate.toString(transform), transition };
 
   if (isEditing) {
     return (
-      <li className="py-1">
+      <li ref={setNodeRef} className="py-1">
         <ItemEditor
           item={item}
           projects={handlers.projects}
@@ -487,7 +654,17 @@ function ItemRow({ item, isOverdue, handlers }: { item: WorkItem; isOverdue: boo
   }
 
   return (
-    <li className="group/item -mx-1 flex items-start gap-1.5 rounded-md px-1 py-[0.3rem] hover:bg-bg">
+    <li
+      ref={setNodeRef}
+      style={dragStyle}
+      {...attributes}
+      {...listeners}
+      role={undefined}
+      tabIndex={-1}
+      className={`group/item -mx-1 flex cursor-grab items-start gap-1.5 rounded-md px-1 py-[0.3rem] hover:bg-bg active:cursor-grabbing ${
+        isDragging ? "opacity-40" : ""
+      }`}
+    >
       <button
         type="button"
         onClick={() => handlers.onToggle(item)}
@@ -495,7 +672,11 @@ function ItemRow({ item, isOverdue, handlers }: { item: WorkItem; isOverdue: boo
         aria-label={`${item.body} ${isDone ? "완료 취소" : "완료"}`}
         aria-pressed={isDone}
         className={`mt-[0.2rem] flex h-[0.85rem] w-[0.85rem] shrink-0 items-center justify-center rounded border ${
-          isDone ? "border-accent bg-accent text-accent-foreground" : isOverdue ? "border-amber-400" : "border-slate-300 dark:border-slate-500"
+          isDone
+            ? "border-accent bg-accent text-accent-foreground"
+            : isOverdue
+              ? "border-amber-400"
+              : "border-slate-300 dark:border-slate-500"
         }`}
       >
         {isDone ? <Check className="h-[0.65rem] w-[0.65rem]" strokeWidth={3} aria-hidden="true" /> : null}
@@ -525,7 +706,7 @@ function ItemRow({ item, isOverdue, handlers }: { item: WorkItem; isOverdue: boo
           type="button"
           onClick={() => setIsEditing(true)}
           aria-label={`${item.body} 수정`}
-          className="mt-px shrink-0 rounded p-0.5 text-muted opacity-0 hover:text-foreground focus:opacity-100 group-hover/item:opacity-100"
+          className="mt-px shrink-0 rounded p-0.5 text-muted opacity-0 hover:text-foreground focus:opacity-100 [@media(hover:none)]:opacity-100 group-hover/item:opacity-100"
         >
           <Pencil className="h-3 w-3" aria-hidden="true" />
         </button>
@@ -589,7 +770,11 @@ function ItemEditor({
         >
           저장
         </button>
-        <button type="button" onClick={onCancel} className="rounded-md border border-border px-2.5 py-1 text-[0.7rem] text-muted">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md border border-border px-2.5 py-1 text-[0.7rem] text-muted"
+        >
           취소
         </button>
         <button
@@ -642,7 +827,12 @@ function AddItemInput({ date, handlers }: { date: string; handlers: DayHandlers 
   function submit() {
     const text = body.trim();
     if (!text) return;
-    handlers.onAdd({ date, body: text, status: isFuture ? "planned" : "done", projectId: projectId || null });
+    handlers.onAdd({
+      date,
+      body: text,
+      status: isFuture ? "planned" : "done",
+      projectId: projectId || null,
+    });
     setBody("");
   }
 
@@ -789,10 +979,14 @@ function ReportPanel({
                 <tr key={a.date} className="align-top">
                   <td className={`border border-border px-1 py-1 text-center ${color}`}>{a.day}</td>
                   <td className={`border border-border px-1 py-1 text-center ${color}`}>{a.weekday}</td>
-                  <td className="whitespace-pre-wrap border border-border px-2 py-1 text-foreground">{a.lines.join("\n")}</td>
+                  <td className="whitespace-pre-wrap border border-border px-2 py-1 text-foreground">
+                    {a.lines.join("\n")}
+                  </td>
                   <td className={`border border-border px-1 py-1 text-center ${color}`}>{b.day}</td>
                   <td className={`border border-border px-1 py-1 text-center ${color}`}>{b.weekday}</td>
-                  <td className="whitespace-pre-wrap border border-border px-2 py-1 text-foreground">{b.lines.join("\n")}</td>
+                  <td className="whitespace-pre-wrap border border-border px-2 py-1 text-foreground">
+                    {b.lines.join("\n")}
+                  </td>
                 </tr>
               );
             })}

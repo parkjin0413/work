@@ -1,21 +1,37 @@
 "use client";
 
-import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import {
+  closestCenter,
+  DndContext,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { CalendarPlus, Check, ChevronDown, FolderKanban, Pencil, Trash2, Undo2 } from "lucide-react";
 import type { Project, ProjectKind, ProjectStep } from "@/lib/tasks/projects";
 import { addDaysISO, formatShortDateWeekday, getMondayOfISO, getWeekdayIndex, WEEKDAY_LABELS } from "@/lib/tasks/week";
+import { splitPastedLines } from "@/lib/tasks/pasteLines";
 import { SectionHeader } from "./SectionHeader";
 import {
   addProjectStepAction,
+  addProjectStepsAction,
   createProjectAction,
   deleteProjectAction,
   setProjectCompletedAction,
   updateProjectAction,
 } from "./projectActions";
-import { deleteWorkItemAction, updateWorkItemAction } from "./workItemActions";
+import { deleteWorkItemAction, reorderWorkItemsAction, updateWorkItemAction } from "./workItemActions";
 
-const KIND_LABELS: Record<ProjectKind, string> = { project: "프로젝트", ongoing: "상시 업무" };
+const KIND_LABELS: Record<ProjectKind, string> = {
+  project: "프로젝트",
+  ongoing: "상시 업무",
+};
 const DONE_PREVIEW = 15;
 
 /** 한글 조합 중 Enter(글자 확정)는 무시한다. */
@@ -30,12 +46,25 @@ export function ProjectBoard({ projects: serverProjects, todayISO }: { projects:
   const [projects, setProjects] = useState(serverProjects);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
+
+  /** 좁은 화면(목록 아래에 상세가 붙는 배치)에서는 고른 프로젝트 상세로 내려간다. */
+  function selectProject(id: string) {
+    setSelectedId(id);
+    if (window.matchMedia?.("(max-width: 1023px)").matches) {
+      requestAnimationFrame(() =>
+        detailRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        }),
+      );
+    }
+  }
 
   useEffect(() => setProjects(serverProjects), [serverProjects]);
 
   const active = projects.filter((p) => !p.isCompleted);
-  const selected =
-    projects.find((p) => p.id === selectedId) ?? active[0] ?? projects[0] ?? null;
+  const selected = projects.find((p) => p.id === selectedId) ?? active[0] ?? projects[0] ?? null;
 
   async function run(task: () => Promise<unknown>, rollback?: () => void) {
     setError(null);
@@ -44,6 +73,8 @@ export function ProjectBoard({ projects: serverProjects, todayISO }: { projects:
       router.refresh();
     } catch (e) {
       rollback?.();
+      // 일부만 저장됐을 수 있으니 서버 상태로 다시 맞춘다.
+      router.refresh();
       setError(e instanceof Error && e.message ? e.message : "저장에 실패했습니다.");
     }
   }
@@ -71,25 +102,31 @@ export function ProjectBoard({ projects: serverProjects, todayISO }: { projects:
         <ProjectList
           projects={projects}
           selectedId={selected?.id ?? null}
-          onSelect={setSelectedId}
+          onSelect={selectProject}
           onCreate={createProject}
         />
-        {selected ? (
-          <ProjectDetail
-            key={selected.id}
-            project={selected}
-            todayISO={todayISO}
-            run={run}
-            patch={(updater) => patchProject(selected.id, updater)}
-            snapshot={() => projects}
-            restore={setProjects}
-            onDeleted={() => setSelectedId(null)}
-          />
-        ) : (
-          <div className="rounded-2xl border border-dashed border-border p-6 text-[0.8rem] text-muted">
-            왼쪽에서 프로젝트를 추가하세요.
-          </div>
-        )}
+        <div ref={detailRef} className="min-w-0 scroll-mt-20">
+          {selected ? (
+            <ProjectDetail
+              key={selected.id}
+              project={selected}
+              todayISO={todayISO}
+              run={run}
+              patch={(updater) => patchProject(selected.id, updater)}
+              snapshot={() => projects}
+              restore={setProjects}
+              onDeleted={() => {
+                const deletedId = selected.id;
+                setProjects((prev) => prev.filter((p) => p.id !== deletedId));
+                setSelectedId(null);
+              }}
+            />
+          ) : (
+            <div className="rounded-2xl border border-dashed border-border p-6 text-[0.8rem] text-muted">
+              왼쪽에서 프로젝트를 추가하세요.
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -148,7 +185,10 @@ function ProjectList({
             aria-expanded={showCompleted}
             className="flex items-center gap-1 px-2 py-1 text-[0.72rem] font-medium text-muted hover:text-foreground"
           >
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showCompleted ? "" : "-rotate-90"}`} aria-hidden="true" />
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform ${showCompleted ? "" : "-rotate-90"}`}
+              aria-hidden="true"
+            />
             완료 {completed.length}
           </button>
           {showCompleted ? (
@@ -195,7 +235,9 @@ function ProjectRow({
           isSelected ? "bg-accent/10 text-accent" : "text-foreground hover:bg-bg"
         }`}
       >
-        {isSelected ? <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-accent" aria-hidden="true" /> : null}
+        {isSelected ? (
+          <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-accent" aria-hidden="true" />
+        ) : null}
         <span
           className={`h-1.5 w-1.5 shrink-0 rounded-full ${
             project.isCompleted ? "bg-slate-300" : project.kind === "ongoing" ? "bg-slate-400" : "bg-accent"
@@ -263,46 +305,111 @@ function ProjectDetail({
     const next = name.trim();
     setIsRenaming(false);
     if (!next || next === project.name) return setName(project.name);
-    optimistic((p) => ({ ...p, name: next }), () => updateProjectAction(project.id, { name: next }));
+    optimistic(
+      (p) => ({ ...p, name: next }),
+      () => updateProjectAction(project.id, { name: next }),
+    );
   }
 
   function saveMemo() {
     setIsEditingMemo(false);
     const next = memo.trim();
     if (next === (project.memo ?? "")) return;
-    optimistic((p) => ({ ...p, memo: next || null }), () => updateProjectAction(project.id, { memo: next }));
+    optimistic(
+      (p) => ({ ...p, memo: next || null }),
+      () => updateProjectAction(project.id, { memo: next }),
+    );
   }
 
   function setKind(kind: ProjectKind) {
     if (kind === project.kind) return;
-    optimistic((p) => ({ ...p, kind }), () => updateProjectAction(project.id, { kind }));
+    optimistic(
+      (p) => ({ ...p, kind }),
+      () => updateProjectAction(project.id, { kind }),
+    );
   }
 
   function toggleCompleted() {
     const next = !project.isCompleted;
     optimistic(
-      (p) => ({ ...p, isCompleted: next, completedAt: next ? new Date().toISOString() : null }),
-      () => setProjectCompletedAction(project.id, next)
+      (p) => ({
+        ...p,
+        isCompleted: next,
+        completedAt: next ? new Date().toISOString() : null,
+      }),
+      () => setProjectCompletedAction(project.id, next),
     );
   }
 
   function removeProject() {
-    if (
-      !window.confirm(
-        `"${project.name}" 프로젝트를 삭제할까요?\n날짜가 정해진 기록은 주간 업무에 그대로 남고, 남은 단계만 지워집니다.`
-      )
-    )
-      return;
+    const total = project.steps.length + project.scheduled.length + project.done.length;
+    const message =
+      total > 0
+        ? `"${project.name}" 프로젝트를 삭제할까요?\n\n` +
+          `남은 단계 ${project.steps.length}건, 예정 ${project.scheduled.length}건, 한 일 ${project.done.length}건이 ` +
+          `주간 업무·검색·CSV에서도 함께 지워지고 되돌릴 수 없습니다.\n\n` +
+          `끝난 프로젝트라면 삭제 대신 "완료"를 누르면 기록이 남습니다.`
+        : `"${project.name}" 프로젝트를 삭제할까요?`;
+    if (!window.confirm(message)) return;
+    const before = snapshot();
     onDeleted();
-    void run(() => deleteProjectAction(project.id));
+    void run(
+      () => deleteProjectAction(project.id),
+      () => restore(before),
+    );
+  }
+
+  const stepSensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 300, tolerance: 8 } }),
+  );
+
+  /** 남은 단계를 끌어서 순서 바꾸기 */
+  function reorderSteps(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const from = project.steps.findIndex((s) => s.id === active.id);
+    const to = project.steps.findIndex((s) => s.id === over.id);
+    if (from < 0 || to < 0) return;
+    const next = arrayMove(project.steps, from, to).map((s, index) => ({ ...s, sortOrder: index }));
+    optimistic(
+      (p) => ({ ...p, steps: next }),
+      () => reorderWorkItemsAction(next.map((s) => s.id)),
+    );
   }
 
   function addStep() {
     const body = stepDraft.trim();
     if (!body) return;
     setStepDraft("");
-    const temp: ProjectStep = { id: `tmp-${++tempSeq}`, body, sortOrder: Number.MAX_SAFE_INTEGER, createdAt: new Date().toISOString() };
-    optimistic((p) => ({ ...p, steps: [...p.steps, temp] }), () => addProjectStepAction(project.id, body));
+    const temp: ProjectStep = {
+      id: `tmp-${++tempSeq}`,
+      body,
+      sortOrder: Number.MAX_SAFE_INTEGER,
+      createdAt: new Date().toISOString(),
+    };
+    optimistic(
+      (p) => ({ ...p, steps: [...p.steps, temp] }),
+      () => addProjectStepAction(project.id, body),
+    );
+  }
+
+  /** 여러 줄을 붙여넣으면(엑셀 "1. … 2. …" 칸 등) 한 줄씩 단계로 넣는다. 한 줄이면 평소처럼 붙여넣기. */
+  function pasteSteps(text: string): boolean {
+    const bodies = splitPastedLines(text);
+    if (bodies.length < 2) return false;
+    const now = new Date().toISOString();
+    const temps: ProjectStep[] = bodies.map((body) => ({
+      id: `tmp-${++tempSeq}`,
+      body,
+      sortOrder: Number.MAX_SAFE_INTEGER,
+      createdAt: now,
+    }));
+    optimistic(
+      (p) => ({ ...p, steps: [...p.steps, ...temps] }),
+      () => addProjectStepsAction(project.id, bodies),
+    );
+    return true;
   }
 
   function scheduleStep(step: ProjectStep, date: string) {
@@ -311,10 +418,10 @@ function ProjectDetail({
         ...p,
         steps: p.steps.filter((s) => s.id !== step.id),
         scheduled: [...p.scheduled, { id: step.id, date, body: step.body, status: "planned" as const }].sort((a, b) =>
-          a.date.localeCompare(b.date)
+          a.date.localeCompare(b.date),
         ),
       }),
-      () => updateWorkItemAction(step.id, { date })
+      () => updateWorkItemAction(step.id, { date }),
     );
   }
 
@@ -323,22 +430,36 @@ function ProjectDetail({
       (p) => ({
         ...p,
         steps: p.steps.filter((s) => s.id !== step.id),
-        done: [{ id: step.id, date: todayISO, body: step.body, status: "done" as const }, ...p.done],
+        done: [
+          {
+            id: step.id,
+            date: todayISO,
+            body: step.body,
+            status: "done" as const,
+          },
+          ...p.done,
+        ],
         lastDoneDate: todayISO,
       }),
-      () => updateWorkItemAction(step.id, { date: todayISO, status: "done" })
+      () => updateWorkItemAction(step.id, { date: todayISO, status: "done" }),
     );
   }
 
   function renameStep(step: ProjectStep, body: string) {
     optimistic(
-      (p) => ({ ...p, steps: p.steps.map((s) => (s.id === step.id ? { ...s, body } : s)) }),
-      () => updateWorkItemAction(step.id, { body })
+      (p) => ({
+        ...p,
+        steps: p.steps.map((s) => (s.id === step.id ? { ...s, body } : s)),
+      }),
+      () => updateWorkItemAction(step.id, { body }),
     );
   }
 
   function deleteStep(step: ProjectStep) {
-    optimistic((p) => ({ ...p, steps: p.steps.filter((s) => s.id !== step.id) }), () => deleteWorkItemAction(step.id));
+    optimistic(
+      (p) => ({ ...p, steps: p.steps.filter((s) => s.id !== step.id) }),
+      () => deleteWorkItemAction(step.id),
+    );
   }
 
   function unschedule(entryId: string) {
@@ -348,9 +469,17 @@ function ProjectDetail({
       (p) => ({
         ...p,
         scheduled: p.scheduled.filter((e) => e.id !== entryId),
-        steps: [...p.steps, { id: entry.id, body: entry.body, sortOrder: Number.MAX_SAFE_INTEGER, createdAt: new Date().toISOString() }],
+        steps: [
+          ...p.steps,
+          {
+            id: entry.id,
+            body: entry.body,
+            sortOrder: Number.MAX_SAFE_INTEGER,
+            createdAt: new Date().toISOString(),
+          },
+        ],
       }),
-      () => updateWorkItemAction(entryId, { date: null })
+      () => updateWorkItemAction(entryId, { date: null }),
     );
   }
 
@@ -383,7 +512,7 @@ function ProjectDetail({
               type="button"
               onClick={() => setIsRenaming(true)}
               aria-label="이름 수정"
-              className="rounded p-1 text-muted opacity-0 hover:text-foreground focus:opacity-100 group-hover/name:opacity-100"
+              className="rounded p-1 text-muted opacity-0 hover:text-foreground focus:opacity-100 [@media(hover:none)]:opacity-100 group-hover/name:opacity-100"
             >
               <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -468,20 +597,29 @@ function ProjectDetail({
         <div className="flex flex-col gap-6">
           {/* 남은 단계 */}
           <Block title="남은 단계" count={project.steps.length} hint="날짜를 정하면 주간 업무에 계획으로 들어갑니다">
-            <ul className="flex flex-col">
-              {project.steps.map((step) => (
-                <StepRow
-                  key={step.id}
-                  step={step}
-                  weekRows={weekRows}
-                  todayISO={todayISO}
-                  onComplete={() => completeStep(step)}
-                  onSchedule={(date) => scheduleStep(step, date)}
-                  onRename={(body) => renameStep(step, body)}
-                  onDelete={() => deleteStep(step)}
-                />
-              ))}
-            </ul>
+            <DndContext
+              id={`project-steps-${project.id}`}
+              sensors={stepSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={reorderSteps}
+            >
+              <SortableContext items={project.steps.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                <ul className="flex flex-col">
+                  {project.steps.map((step) => (
+                    <StepRow
+                      key={step.id}
+                      step={step}
+                      weekRows={weekRows}
+                      todayISO={todayISO}
+                      onComplete={() => completeStep(step)}
+                      onSchedule={(date) => scheduleStep(step, date)}
+                      onRename={(body) => renameStep(step, body)}
+                      onDelete={() => deleteStep(step)}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
             <input
               value={stepDraft}
               onChange={(e) => setStepDraft(e.target.value)}
@@ -491,7 +629,10 @@ function ProjectDetail({
                   addStep();
                 }
               }}
-              placeholder="+ 단계 추가 (Enter)"
+              onPaste={(e) => {
+                if (pasteSteps(e.clipboardData.getData("text/plain"))) e.preventDefault();
+              }}
+              placeholder="+ 단계 추가 (Enter · 여러 줄 붙여넣기 가능)"
               aria-label="단계 추가"
               className="mt-1 w-full rounded-md border border-transparent bg-transparent px-1.5 py-1 text-[0.75rem] text-foreground placeholder:text-muted hover:border-border focus:border-border focus:bg-bg focus:outline-none"
             />
@@ -514,7 +655,7 @@ function ProjectDetail({
                       onClick={() => unschedule(entry.id)}
                       title="날짜 빼고 남은 단계로"
                       aria-label={`${entry.body} 날짜 빼기`}
-                      className="shrink-0 rounded p-0.5 text-muted opacity-0 hover:text-foreground focus:opacity-100 group-hover/entry:opacity-100"
+                      className="shrink-0 rounded p-0.5 text-muted opacity-0 hover:text-foreground focus:opacity-100 [@media(hover:none)]:opacity-100 group-hover/entry:opacity-100"
                     >
                       <Undo2 className="h-3 w-3" aria-hidden="true" />
                     </button>
@@ -528,7 +669,9 @@ function ProjectDetail({
         {/* 지금까지 한 일 */}
         <Block title="지금까지 한 일" count={project.done.length}>
           {project.done.length === 0 ? (
-            <p className="px-1 text-[0.72rem] text-muted">아직 기록이 없습니다. 주간 업무에서 이 프로젝트를 골라 적으면 여기 쌓입니다.</p>
+            <p className="px-1 text-[0.72rem] text-muted">
+              아직 기록이 없습니다. 주간 업무에서 이 프로젝트를 골라 적으면 여기 쌓입니다.
+            </p>
           ) : (
             <ul className="flex flex-col">
               {doneShown.map((entry, index) => {
@@ -596,6 +739,10 @@ function StepRow({
   const [body, setBody] = useState(step.body);
   const [picked, setPicked] = useState("");
   const isTemp = step.id.startsWith("tmp-");
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: step.id,
+    disabled: isTemp || isEditing || isPicking,
+  });
 
   function closePicker() {
     setIsPicking(false);
@@ -616,7 +763,17 @@ function StepRow({
   }
 
   return (
-    <li className="group/step rounded-md px-1 py-[0.3rem] hover:bg-bg">
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+      {...attributes}
+      {...listeners}
+      role={undefined}
+      tabIndex={-1}
+      className={`group/step rounded-md px-1 py-[0.3rem] hover:bg-bg ${
+        isEditing || isPicking ? "" : "cursor-grab active:cursor-grabbing"
+      } ${isDragging ? "relative z-10 bg-surface opacity-60 shadow" : ""}`}
+    >
       <div className="flex items-start gap-1.5">
         <button
           type="button"
@@ -667,7 +824,7 @@ function StepRow({
               type="button"
               onClick={onDelete}
               aria-label={`${step.body} 삭제`}
-              className="rounded p-0.5 text-muted opacity-0 hover:text-danger focus:opacity-100 group-hover/step:opacity-100"
+              className="rounded p-0.5 text-muted opacity-0 hover:text-danger focus:opacity-100 [@media(hover:none)]:opacity-100 group-hover/step:opacity-100"
             >
               <Trash2 className="h-3 w-3" aria-hidden="true" />
             </button>

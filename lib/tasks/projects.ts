@@ -180,24 +180,40 @@ export async function setProjectCompleted(id: string, isCompleted: boolean): Pro
  * 날짜 없는 단계는 프로젝트와 함께 지운다(task_notes FK on delete cascade).
  */
 export async function deleteProject(id: string): Promise<void> {
+  // 프로젝트와 거기 딸린 단계·예정·한 일 기록을 한 번에 지운다 (task_notes.task_id 가 on delete cascade).
+  // 끝난 프로젝트는 삭제 대신 "완료"로 두면 기록이 남는다.
   const supabase = createSupabaseServiceClient();
-  const { error: detachError } = await supabase
-    .from("task_notes")
-    .update({ task_id: null })
-    .eq("task_id", id)
-    .not("work_date", "is", null);
-
-  if (detachError) {
-    throw new Error(`프로젝트 기록 보존 실패: ${detachError.message}`);
-  }
-
   const { error } = await supabase.from("tasks").delete().eq("id", id);
   if (error) {
     throw new Error(`프로젝트 삭제 실패: ${error.message}`);
   }
 }
 
-/** 남은 단계(날짜 없는 계획 항목) 추가 */
+/** 여러 단계를 붙여넣은 순서대로 한 번에 추가한다. */
+export async function addProjectSteps(projectId: string, bodies: string[]): Promise<ProjectStep[]> {
+  const supabase = createSupabaseServiceClient();
+  const base = Math.floor(Date.now() / 1000) % 2_000_000_000;
+  const { data, error } = await supabase
+    .from("task_notes")
+    .insert(
+      bodies.map((body, index) => ({
+        task_id: projectId,
+        body,
+        status: "planned",
+        work_date: null,
+        sort_order: base + index,
+      }))
+    )
+    .select("id, body, sort_order, created_at");
+
+  if (error || !data) {
+    throw new Error(`단계 추가 실패: ${error?.message ?? "알 수 없는 오류"}`);
+  }
+  return data
+    .map((row) => ({ id: row.id, body: row.body, sortOrder: row.sort_order, createdAt: row.created_at }))
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
 export async function addProjectStep(projectId: string, body: string): Promise<ProjectStep> {
   const supabase = createSupabaseServiceClient();
   const { data, error } = await supabase

@@ -6,6 +6,8 @@ import {
   createWorkItem,
   deleteWorkItem,
   moveWorkItems,
+  reorderWorkItems,
+  searchWorkItems,
   updateWorkItem,
   type WorkItem,
   type WorkItemPatch,
@@ -85,5 +87,22 @@ export async function deleteWorkItemAction(id: string): Promise<void> {
   await requireAdmin();
 
   await deleteWorkItem(id);
+  revalidatePath("/tasks");
+}
+
+/** 지난 기록 검색 (두 글자 이상). */
+export async function searchWorkItemsAction(query: string): Promise<WorkItem[]> {
+  await requireAdmin();
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+  return searchWorkItems(trimmed.slice(0, 100));
+}
+
+/** 끌어서 놓은 순서 저장. date 가 있으면 그 날짜로 옮기고, 없으면(프로젝트 단계) 순서만 바꾼다. */
+export async function reorderWorkItemsAction(ids: string[], date?: string): Promise<void> {
+  await requireAdmin();
+  if (date !== undefined) assertDate(date);
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 200) throw new Error("순서를 저장할 수 없습니다.");
+  await reorderWorkItems(ids, date);
   revalidatePath("/tasks");
 }

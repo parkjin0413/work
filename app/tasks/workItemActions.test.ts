@@ -7,6 +7,8 @@ const { requireAdminMock, storeMock, revalidatePathMock } = vi.hoisted(() => ({
     updateWorkItem: vi.fn(),
     moveWorkItems: vi.fn(),
     deleteWorkItem: vi.fn(),
+    reorderWorkItems: vi.fn(),
+    searchWorkItems: vi.fn(),
   },
   revalidatePathMock: vi.fn(),
 }));
@@ -19,6 +21,8 @@ import {
   createWorkItemAction,
   deleteWorkItemAction,
   moveWorkItemsAction,
+  reorderWorkItemsAction,
+  searchWorkItemsAction,
   updateWorkItemAction,
 } from "./workItemActions";
 
@@ -82,5 +86,29 @@ describe("moveWorkItemsAction / deleteWorkItemAction", () => {
   it("항목을 삭제한다", async () => {
     await deleteWorkItemAction("n1");
     expect(storeMock.deleteWorkItem).toHaveBeenCalledWith("n1");
+  });
+});
+
+describe("reorderWorkItemsAction / searchWorkItemsAction", () => {
+  it("순서를 저장하고, 날짜가 있으면 그 날짜로 옮긴다", async () => {
+    await reorderWorkItemsAction(["b", "a"], "2026-11-10");
+    expect(storeMock.reorderWorkItems).toHaveBeenCalledWith(["b", "a"], "2026-11-10");
+
+    await reorderWorkItemsAction(["s2", "s1"]);
+    expect(storeMock.reorderWorkItems).toHaveBeenLastCalledWith(["s2", "s1"], undefined);
+  });
+
+  it("잘못된 날짜·빈 목록은 거부한다", async () => {
+    await expect(reorderWorkItemsAction(["a"], "2026-13-45x")).rejects.toThrow("날짜가 올바르지 않습니다.");
+    await expect(reorderWorkItemsAction([], "2026-11-10")).rejects.toThrow();
+    expect(storeMock.reorderWorkItems).not.toHaveBeenCalled();
+  });
+
+  it("검색은 두 글자 미만이면 조회하지 않는다", async () => {
+    await expect(searchWorkItemsAction(" 나 ")).resolves.toEqual([]);
+    expect(storeMock.searchWorkItems).not.toHaveBeenCalled();
+    storeMock.searchWorkItems.mockResolvedValue([]);
+    await searchWorkItemsAction(" 나스 ");
+    expect(storeMock.searchWorkItems).toHaveBeenCalledWith("나스");
   });
 });

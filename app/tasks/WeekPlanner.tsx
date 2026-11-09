@@ -346,7 +346,7 @@ export function WeekPlanner({
           >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </Link>
-          <span className="text-[0.75rem] text-muted">
+          <span className="text-ui-body text-muted">
             {formatMonthDayWeekday(weekStart)} ~ {formatMonthDayWeekday(addDaysISO(weekStart, 6))}
             {isCurrentWeek ? " (이번 주)" : ""}
           </span>
@@ -358,7 +358,7 @@ export function WeekPlanner({
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </Link>
           {!isCurrentWeek ? (
-            <Link href="/tasks" className="ml-1 text-[0.75rem] text-accent hover:underline">
+            <Link href="/tasks" className="ml-1 text-ui-body text-accent hover:underline">
               이번 주로
             </Link>
           ) : null}
@@ -367,7 +367,7 @@ export function WeekPlanner({
           type="button"
           onClick={() => setShowReport((v) => !v)}
           aria-expanded={showReport}
-          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[0.75rem] font-medium ${
+          className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-ui-body font-medium ${
             showReport
               ? "border-accent bg-accent/10 text-accent"
               : isFriday && isCurrentWeek
@@ -381,7 +381,7 @@ export function WeekPlanner({
       </SectionHeader>
 
       {error ? (
-        <p role="alert" className="mb-3 text-[0.75rem] text-danger">
+        <p role="alert" className="mb-3 text-ui-body text-danger">
           {error}
         </p>
       ) : null}
@@ -434,7 +434,7 @@ export function WeekPlanner({
         </div>
         <DragOverlay>
           {dragItem ? (
-            <div className="max-w-[16rem] rounded-md border border-accent bg-surface px-2 py-1 text-[0.8rem] text-foreground shadow-lg">
+            <div className="max-w-[16rem] rounded-md border border-accent bg-surface px-2 py-1 text-ui-body text-foreground shadow-lg">
               {dragItem.body}
             </div>
           ) : null}
@@ -509,8 +509,8 @@ function WeekGrid({
   return (
     <div>
       <div className="mb-2 flex items-baseline gap-2">
-        <h3 className="text-[0.85rem] font-semibold text-foreground">{label}</h3>
-        <span className="text-[0.7rem] text-muted">
+        <h3 className="text-ui-title font-semibold text-foreground">{label}</h3>
+        <span className="text-ui-meta text-muted">
           완료 {doneCount} · 계획 {plannedCount}
         </span>
       </div>
@@ -533,8 +533,8 @@ function WeekGrid({
                     : "border-border text-foreground"
               }`}
             >
-              <span className="text-[0.75rem] font-semibold">{WEEKDAY_LABELS[getWeekdayIndex(date)]}</span>
-              <span className="text-[0.62rem] opacity-80">
+              <span className="text-ui-body font-semibold">{WEEKDAY_LABELS[getWeekdayIndex(date)]}</span>
+              <span className="text-ui-meta opacity-80">
                 {Number(date.slice(8, 10))}
                 {count > 0 ? ` · ${count}` : ""}
               </span>
@@ -597,14 +597,14 @@ function DayColumn({
       } ${compact ? "min-h-[7rem]" : "min-h-[12rem]"}`}
     >
       <div className="flex items-baseline gap-1.5">
-        <span className={`text-[0.85rem] font-semibold ${dateColor}`}>
+        <span className={`text-ui-head font-semibold ${dateColor}`}>
           {Number(date.slice(8, 10))} ({WEEKDAY_LABELS[weekday]})
         </span>
         {isToday ? (
-          <span className="rounded-full bg-accent/10 px-1.5 py-px text-[0.6rem] font-semibold text-accent">오늘</span>
+          <span className="rounded-full bg-accent/10 px-1.5 py-px text-ui-tiny font-semibold text-accent">오늘</span>
         ) : null}
         {holidayNames.length > 0 ? (
-          <span className="truncate text-[0.65rem] text-red-500">{holidayNames.join(" · ")}</span>
+          <span className="truncate text-ui-meta text-red-500">{holidayNames.join(" · ")}</span>
         ) : null}
       </div>
 
@@ -664,7 +664,7 @@ function ScheduleChip({
 }) {
   const dot = CATEGORY_COLORS[schedule.category]?.dot ?? "bg-slate-300";
   return (
-    <li className="group/schedule flex items-center gap-1.5 rounded-md border border-dashed border-border px-1.5 py-1 text-[0.7rem] text-muted">
+    <li className="group/schedule flex items-center gap-1.5 rounded-md border border-dashed border-border px-1.5 py-1 text-ui-meta text-muted">
       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} aria-hidden="true" />
       <span className="shrink-0 font-medium">{schedule.category}</span>
       <span className="min-w-0 flex-1 truncate" title={scheduleText(schedule)}>
@@ -723,13 +723,13 @@ function ItemRow({ item, isOverdue, handlers }: { item: WorkItem; isOverdue: boo
       {...listeners}
       role={undefined}
       tabIndex={-1}
-      className={`group/item -mx-1 flex cursor-grab items-start gap-1.5 rounded-md px-1 py-[0.3rem] hover:bg-bg active:cursor-grabbing ${
+      className={`group/item relative -mx-1 flex cursor-grab items-start gap-1.5 rounded-md px-1 py-[0.3rem] hover:bg-bg active:cursor-grabbing ${
         isDragging ? "opacity-40" : ""
       }`}
     >
       {!isDone && item.date > handlers.checkableUntil ? (
         <span
-          className="mt-[0.2rem] flex h-[0.85rem] w-[0.85rem] shrink-0 items-center justify-center"
+          className="mt-[0.12rem] flex h-[0.8rem] w-[0.8rem] shrink-0 items-center justify-center"
           title="다음 주 계획은 그 주가 되면 체크합니다"
           aria-hidden="true"
         >
@@ -742,7 +742,7 @@ function ItemRow({ item, isOverdue, handlers }: { item: WorkItem; isOverdue: boo
           disabled={isTemp}
           aria-label={`${item.body} ${isDone ? "완료 취소" : "완료"}`}
           aria-pressed={isDone}
-          className={`mt-[0.2rem] flex h-[0.85rem] w-[0.85rem] shrink-0 items-center justify-center rounded border ${
+          className={`mt-[0.12rem] flex h-[0.8rem] w-[0.8rem] shrink-0 items-center justify-center rounded border ${
             isDone
               ? "border-accent bg-accent text-accent-foreground"
               : isOverdue
@@ -750,25 +750,28 @@ function ItemRow({ item, isOverdue, handlers }: { item: WorkItem; isOverdue: boo
                 : "border-slate-300 dark:border-slate-500"
           }`}
         >
-          {isDone ? <Check className="h-[0.65rem] w-[0.65rem]" strokeWidth={3} aria-hidden="true" /> : null}
+          {isDone ? <Check className="h-[0.6rem] w-[0.6rem]" strokeWidth={3} aria-hidden="true" /> : null}
         </button>
       )}
       <div className="min-w-0 flex-1">
+        {/* 한글은 단어 중간에서 끊지 않고(keep-all) 띄어쓰기에서만 줄을 바꾼다. 프로젝트 태그는 따로 줄을 쓰지 않고 내용 뒤에 붙인다. */}
         <p
-          className={`whitespace-pre-wrap break-words text-[0.8rem] leading-snug ${
+          className={`whitespace-pre-wrap break-keep [overflow-wrap:anywhere] text-ui-body leading-[1.45] ${
             isDone ? "text-foreground" : isOverdue ? "text-amber-700 dark:text-amber-300" : "text-muted"
           }`}
         >
-          {item.body}
+          <span>{item.body}</span>
+          {item.projectName ? (
+            <span className="ml-1.5 whitespace-nowrap text-ui-meta font-normal text-muted">#{item.projectName}</span>
+          ) : null}
         </p>
-        {item.projectName ? <p className="truncate text-[0.62rem] text-muted">#{item.projectName}</p> : null}
       </div>
       {isOverdue ? (
         <button
           type="button"
           onClick={() => handlers.onMoveToToday(item)}
           title="오늘로 옮기기"
-          className="mt-px shrink-0 rounded px-1 text-[0.62rem] text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-400/10"
+          className="mt-px shrink-0 rounded px-1 text-ui-meta text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-400/10"
         >
           오늘로
         </button>
@@ -778,7 +781,7 @@ function ItemRow({ item, isOverdue, handlers }: { item: WorkItem; isOverdue: boo
           type="button"
           onClick={() => setIsEditing(true)}
           aria-label={`${item.body} 수정`}
-          className="mt-px shrink-0 rounded p-0.5 text-muted opacity-0 hover:text-foreground focus:opacity-100 [@media(hover:none)]:opacity-100 group-hover/item:opacity-100"
+          className="mt-px shrink-0 rounded p-0.5 text-muted opacity-0 hover:text-foreground focus:opacity-100 [@media(hover:none)]:opacity-100 group-hover/item:opacity-100 [@media(hover:hover)]:absolute [@media(hover:hover)]:right-0.5 [@media(hover:hover)]:top-[0.25rem] [@media(hover:hover)]:bg-bg"
         >
           <Pencil className="h-3 w-3" aria-hidden="true" />
         </button>
@@ -788,7 +791,7 @@ function ItemRow({ item, isOverdue, handlers }: { item: WorkItem; isOverdue: boo
 }
 
 const FIELD =
-  "w-full min-w-0 rounded-md border border-border bg-bg px-2 py-1 text-[0.75rem] text-foreground focus:outline-none focus:ring-2 focus:ring-accent";
+  "w-full min-w-0 rounded-md border border-border bg-bg px-2 py-1 text-ui-body text-foreground focus:outline-none focus:ring-2 focus:ring-accent";
 
 function ItemEditor({
   item,
@@ -838,14 +841,14 @@ function ItemEditor({
           type="button"
           onClick={save}
           disabled={!body.trim() || !date}
-          className="rounded-md bg-accent px-2.5 py-1 text-[0.7rem] font-medium text-accent-foreground hover:bg-accent-hover disabled:opacity-50"
+          className="rounded-md bg-accent px-2.5 py-1 text-ui-meta font-medium text-accent-foreground hover:bg-accent-hover disabled:opacity-50"
         >
           저장
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-border px-2.5 py-1 text-[0.7rem] text-muted"
+          className="rounded-md border border-border px-2.5 py-1 text-ui-meta text-muted"
         >
           취소
         </button>
@@ -946,12 +949,12 @@ function AddItemInput({ date, handlers }: { date: string; handlers: DayHandlers 
         onPaste={onPaste}
         placeholder={isFuture ? "+ 할 일 계획" : "+ 한 일 적기"}
         aria-label={`${formatMonthDayWeekday(date)} ${isFuture ? "할 일 계획" : "한 일 적기"}`}
-        className="w-full min-w-0 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-[0.75rem] text-foreground placeholder:text-muted hover:border-border focus:border-border focus:bg-bg focus:outline-none"
+        className="w-full min-w-0 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-ui-body text-foreground placeholder:text-muted hover:border-border focus:border-border focus:bg-bg focus:outline-none"
       />
       {showOptions ? (
         <div className="mt-1 flex items-center gap-1.5">
           <ProjectSelect projects={handlers.projects} value={projectId} onChange={setProjectId} />
-          <span className="shrink-0 text-[0.6rem] text-muted" title="여러 줄을 붙여넣으면 줄마다 하나씩 들어갑니다">
+          <span className="shrink-0 text-ui-tiny text-muted" title="여러 줄을 붙여넣으면 줄마다 하나씩 들어갑니다">
             Enter · 여러 줄 붙여넣기
           </span>
         </div>
@@ -971,7 +974,7 @@ function OverdueBar({
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-[0.75rem] text-amber-900 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-100">
+    <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-ui-body text-amber-900 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-100">
       <div className="flex flex-wrap items-center gap-2">
         <span>
           지난주까지 계획했지만 체크하지 않은 일 <strong>{items.length}건</strong>
@@ -991,7 +994,7 @@ function OverdueBar({
         <ul className="mt-2 flex flex-col gap-1">
           {items.map((item) => (
             <li key={item.id} className="flex items-center gap-2">
-              <span className="shrink-0 text-[0.68rem] opacity-70">{formatMonthDayWeekday(item.date)}</span>
+              <span className="shrink-0 text-ui-meta opacity-70">{formatMonthDayWeekday(item.date)}</span>
               <span className="min-w-0 flex-1 truncate">{item.body}</span>
               <button type="button" onClick={() => onMoveOne(item)} className="shrink-0 hover:underline">
                 오늘로
@@ -1015,28 +1018,28 @@ function ReportPanel({
   return (
     <div className="mb-5 rounded-2xl border border-accent/30 bg-surface p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-[0.85rem] font-semibold text-foreground">
+        <p className="text-ui-title font-semibold text-foreground">
           주간업무보고 미리보기
           {report.inAdvance ? (
-            <span className="ml-1.5 rounded-full bg-amber-100 px-2 py-px text-[0.65rem] font-semibold text-amber-800 dark:bg-amber-400/15 dark:text-amber-200">
+            <span className="ml-1.5 rounded-full bg-amber-100 px-2 py-px text-ui-meta font-semibold text-amber-800 dark:bg-amber-400/15 dark:text-amber-200">
               미리 쓰는 보고서
             </span>
           ) : null}
         </p>
-        <span className="text-[0.7rem] text-muted">
+        <span className="text-ui-meta text-muted">
           {report.inAdvance
             ? "아직 오지 않은 주라서 적어둔 계획이 모두 '한 일' 칸에 들어갑니다 (명절 전 미리 제출용)."
             : "이번 주는 체크한(완료) 항목만, 다음 주는 적어둔 계획이 들어갑니다."}
         </span>
         <CopyButton text={toExcelText(report)} label="엑셀용 복사" className="ml-auto" />
       </div>
-      <p className="mt-1 text-[0.7rem] text-muted">
+      <p className="mt-1 text-ui-meta text-muted">
         엑셀에서 내 이름 줄의 <strong className="text-foreground">&quot;日&quot; 머리칸</strong>을 선택하고 붙여넣으면
         기간 제목과 월~일 7줄이 한 번에 채워집니다.
       </p>
 
       {report.unfinished.length > 0 ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-bg px-3 py-1.5 text-[0.7rem] text-muted">
+        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-bg px-3 py-1.5 text-ui-meta text-muted">
           <span>
             이번 주에 못 한 계획 <strong className="text-foreground">{report.unfinished.length}건</strong>은 보고서에서
             빠졌습니다.
@@ -1052,7 +1055,7 @@ function ReportPanel({
       ) : null}
 
       <div className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-[48rem] border-collapse text-[0.72rem]">
+        <table className="w-full min-w-[48rem] border-collapse text-ui-body">
           <thead>
             <tr className="bg-accent/[0.08] text-foreground">
               <th className="w-8 border border-border px-1 py-1">日</th>

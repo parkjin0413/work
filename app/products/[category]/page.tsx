@@ -30,7 +30,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       <Sidebar />
-      <main className="min-w-0 flex-1 space-y-6 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] py-6">
+      <main className="min-w-0 flex-1 space-y-6 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-106.6667rem)/2))] py-6">
         <Link
           href="/products"
           className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-foreground"

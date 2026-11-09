@@ -94,7 +94,7 @@ export function ProjectBoard({ projects: serverProjects, todayISO }: { projects:
     <section>
       <SectionHeader icon={FolderKanban} title="프로젝트" />
       {error ? (
-        <p role="alert" className="mb-3 text-[0.75rem] text-danger">
+        <p role="alert" className="mb-3 text-ui-body text-danger">
           {error}
         </p>
       ) : null}
@@ -122,7 +122,7 @@ export function ProjectBoard({ projects: serverProjects, todayISO }: { projects:
               }}
             />
           ) : (
-            <div className="rounded-2xl border border-dashed border-border p-6 text-[0.8rem] text-muted">
+            <div className="rounded-2xl border border-dashed border-border p-6 text-ui-body text-muted">
               왼쪽에서 프로젝트를 추가하세요.
             </div>
           )}
@@ -174,7 +174,7 @@ function ProjectList({
         }}
         placeholder="+ 새 프로젝트 (Enter)"
         aria-label="새 프로젝트 이름"
-        className="mx-1 mt-2 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-[0.75rem] text-foreground placeholder:text-muted hover:border-border focus:border-border focus:bg-bg focus:outline-none"
+        className="mx-1 mt-2 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-ui-body text-foreground placeholder:text-muted hover:border-border focus:border-border focus:bg-bg focus:outline-none"
       />
 
       {completed.length > 0 ? (
@@ -183,7 +183,7 @@ function ProjectList({
             type="button"
             onClick={() => setShowCompleted((v) => !v)}
             aria-expanded={showCompleted}
-            className="flex items-center gap-1 px-2 py-1 text-[0.72rem] font-medium text-muted hover:text-foreground"
+            className="flex items-center gap-1 px-2 py-1 text-ui-body font-medium text-muted hover:text-foreground"
           >
             <ChevronDown
               className={`h-3.5 w-3.5 transition-transform ${showCompleted ? "" : "-rotate-90"}`}
@@ -207,7 +207,7 @@ function ProjectList({
 function ListGroup({ title, count, children }: { title: string; count: number; children: ReactNode }) {
   return (
     <div className="mb-1">
-      <p className="px-2 pb-1 pt-1.5 text-[0.65rem] font-semibold text-muted">
+      <p className="px-2 pb-1 pt-1.5 text-ui-meta font-semibold text-muted">
         {title} <span className="font-normal">{count}</span>
       </p>
       {count > 0 ? <ul className="flex flex-col">{children}</ul> : null}
@@ -244,14 +244,14 @@ function ProjectRow({
           }`}
           aria-hidden="true"
         />
-        <span className={`min-w-0 flex-1 truncate text-[0.8rem] ${isSelected ? "font-semibold" : "font-medium"}`}>
+        <span className={`min-w-0 flex-1 truncate text-ui-head ${isSelected ? "font-semibold" : "font-medium"}`}>
           {project.name}
         </span>
         {!project.isCompleted && project.kind === "project" && remaining > 0 ? (
-          <span className="shrink-0 text-[0.62rem] text-muted">남은 {remaining}</span>
+          <span className="shrink-0 text-ui-meta text-muted">남은 {remaining}</span>
         ) : null}
         {project.lastDoneDate ? (
-          <span className="shrink-0 text-[0.62rem] text-muted">{project.lastDoneDate.slice(5).replace("-", ".")}</span>
+          <span className="shrink-0 text-ui-meta text-muted">{project.lastDoneDate.slice(5).replace("-", ".")}</span>
         ) : null}
       </button>
     </li>
@@ -503,10 +503,10 @@ function ProjectDetail({
             }}
             autoFocus
             aria-label="프로젝트 이름"
-            className="min-w-0 flex-1 rounded-md border border-border bg-bg px-2 py-1 text-base font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+            className="min-w-0 flex-1 rounded-md border border-border bg-bg px-2 py-1 text-ui-title font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
           />
         ) : (
-          <h3 className="group/name flex min-w-0 items-center gap-1.5 text-base font-semibold text-foreground">
+          <h3 className="group/name flex min-w-0 items-center gap-1.5 text-ui-title font-semibold text-foreground">
             <span className={`truncate ${project.isCompleted ? "text-muted line-through" : ""}`}>{project.name}</span>
             <button
               type="button"
@@ -528,7 +528,7 @@ function ProjectDetail({
                 role="radio"
                 aria-checked={project.kind === kind}
                 onClick={() => setKind(kind)}
-                className={`rounded-md px-2.5 py-1 text-[0.7rem] font-medium ${
+                className={`rounded-md px-2.5 py-1 text-ui-meta font-medium ${
                   project.kind === kind ? "bg-accent/10 text-accent" : "text-muted hover:text-foreground"
                 }`}
               >
@@ -539,7 +539,7 @@ function ProjectDetail({
           <button
             type="button"
             onClick={toggleCompleted}
-            className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[0.7rem] font-medium ${
+            className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-ui-meta font-medium ${
               project.isCompleted
                 ? "border-border text-muted hover:text-foreground"
                 : "border-accent text-accent hover:bg-accent/10"
@@ -581,13 +581,13 @@ function ProjectDetail({
           rows={3}
           autoFocus
           aria-label="설명"
-          className="mt-3 w-full rounded-md border border-border bg-bg px-2 py-1.5 text-[0.75rem] text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+          className="mt-3 w-full rounded-md border border-border bg-bg px-2 py-1.5 text-ui-body text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
         />
       ) : (
         <button
           type="button"
           onClick={() => setIsEditingMemo(true)}
-          className="mt-3 block w-full whitespace-pre-wrap break-words rounded-md border-l-2 border-accent/30 py-0.5 pl-2.5 text-left text-[0.75rem] text-muted hover:bg-bg"
+          className="mt-3 block w-full whitespace-pre-wrap break-words rounded-md border-l-2 border-accent/30 py-0.5 pl-2.5 text-left text-ui-body text-muted hover:bg-bg"
         >
           {project.memo || "설명 추가…"}
         </button>
@@ -634,7 +634,7 @@ function ProjectDetail({
               }}
               placeholder="+ 단계 추가 (Enter · 여러 줄 붙여넣기 가능)"
               aria-label="단계 추가"
-              className="mt-1 w-full rounded-md border border-transparent bg-transparent px-1.5 py-1 text-[0.75rem] text-foreground placeholder:text-muted hover:border-border focus:border-border focus:bg-bg focus:outline-none"
+              className="mt-1 w-full rounded-md border border-transparent bg-transparent px-1.5 py-1 text-ui-body text-foreground placeholder:text-muted hover:border-border focus:border-border focus:bg-bg focus:outline-none"
             />
           </Block>
 
@@ -645,11 +645,11 @@ function ProjectDetail({
                 {project.scheduled.map((entry) => (
                   <li key={entry.id} className="group/entry flex items-start gap-3 rounded-md px-1 py-1 hover:bg-bg">
                     <span
-                      className={`w-[4.2rem] shrink-0 text-[0.7rem] ${entry.date < todayISO ? "text-amber-600" : "text-muted"}`}
+                      className={`w-[4.2rem] shrink-0 text-ui-meta ${entry.date < todayISO ? "text-amber-600" : "text-muted"}`}
                     >
                       {formatShortDateWeekday(entry.date)}
                     </span>
-                    <span className="min-w-0 flex-1 break-words text-[0.78rem] text-foreground">{entry.body}</span>
+                    <span className="min-w-0 flex-1 break-words text-ui-body text-foreground">{entry.body}</span>
                     <button
                       type="button"
                       onClick={() => unschedule(entry.id)}
@@ -669,7 +669,7 @@ function ProjectDetail({
         {/* 지금까지 한 일 */}
         <Block title="지금까지 한 일" count={project.done.length}>
           {project.done.length === 0 ? (
-            <p className="px-1 text-[0.72rem] text-muted">
+            <p className="px-1 text-ui-body text-muted">
               아직 기록이 없습니다. 주간 업무에서 이 프로젝트를 골라 적으면 여기 쌓입니다.
             </p>
           ) : (
@@ -678,10 +678,10 @@ function ProjectDetail({
                 const showDate = index === 0 || doneShown[index - 1].date !== entry.date;
                 return (
                   <li key={entry.id} className="flex items-start gap-3 px-1 py-[0.2rem]">
-                    <span className="w-[4.2rem] shrink-0 text-[0.7rem] text-muted">
+                    <span className="w-[4.2rem] shrink-0 text-ui-meta text-muted">
                       {showDate ? formatShortDateWeekday(entry.date) : ""}
                     </span>
-                    <span className="min-w-0 flex-1 whitespace-pre-wrap break-words text-[0.78rem] text-foreground">
+                    <span className="min-w-0 flex-1 whitespace-pre-wrap break-words text-ui-body text-foreground">
                       {entry.body}
                     </span>
                   </li>
@@ -693,7 +693,7 @@ function ProjectDetail({
             <button
               type="button"
               onClick={() => setShowAllDone((v) => !v)}
-              className="mt-1 px-1 text-[0.7rem] text-accent hover:underline"
+              className="mt-1 px-1 text-ui-meta text-accent hover:underline"
             >
               {showAllDone ? "접기" : `전체 ${project.done.length}건 보기`}
             </button>
@@ -708,9 +708,9 @@ function Block({ title, count, hint, children }: { title: string; count: number;
   return (
     <div>
       <div className="mb-1.5 flex items-baseline gap-1.5 border-b border-border pb-1.5">
-        <h4 className="text-[0.78rem] font-semibold text-foreground">{title}</h4>
-        <span className="text-[0.65rem] text-muted">{count}</span>
-        {hint ? <span className="ml-auto truncate text-[0.62rem] text-muted">{hint}</span> : null}
+        <h4 className="text-ui-head font-semibold text-foreground">{title}</h4>
+        <span className="text-ui-meta text-muted">{count}</span>
+        {hint ? <span className="ml-auto truncate text-ui-meta text-muted">{hint}</span> : null}
       </div>
       {children}
     </div>
@@ -797,13 +797,13 @@ function StepRow({
             }}
             autoFocus
             aria-label="단계 내용"
-            className="min-w-0 flex-1 rounded border border-border bg-surface px-1.5 py-0.5 text-[0.78rem] text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+            className="min-w-0 flex-1 rounded border border-border bg-surface px-1.5 py-0.5 text-ui-body text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
           />
         ) : (
           <button
             type="button"
             onClick={() => !isTemp && setIsEditing(true)}
-            className="min-w-0 flex-1 break-words text-left text-[0.78rem] text-foreground"
+            className="min-w-0 flex-1 break-words text-left text-ui-body text-foreground"
           >
             {step.body}
           </button>
@@ -835,7 +835,7 @@ function StepRow({
         <div className="ml-[1.35rem] mt-1.5 flex flex-col gap-1 rounded-lg border border-border bg-surface p-2">
           {weekRows.map((row) => (
             <div key={row.label} className="flex items-center gap-1">
-              <span className="w-[2.6rem] shrink-0 text-[0.62rem] text-muted">{row.label}</span>
+              <span className="w-[2.6rem] shrink-0 text-ui-meta text-muted">{row.label}</span>
               {row.dates.map((date) => {
                 const isSelected = date === picked;
                 const isToday = date === todayISO;
@@ -858,31 +858,31 @@ function StepRow({
                             : "border-border text-foreground hover:border-accent hover:text-accent"
                     }`}
                   >
-                    <span className="text-[0.68rem] font-semibold">{WEEKDAY_LABELS[getWeekdayIndex(date)]}</span>
-                    <span className="text-[0.55rem] opacity-70">{Number(date.slice(8, 10))}</span>
+                    <span className="text-ui-meta font-semibold">{WEEKDAY_LABELS[getWeekdayIndex(date)]}</span>
+                    <span className="text-ui-tiny opacity-70">{Number(date.slice(8, 10))}</span>
                   </button>
                 );
               })}
             </div>
           ))}
           <label className="mt-0.5 flex items-center gap-1">
-            <span className="w-[2.6rem] shrink-0 text-[0.62rem] text-muted">그 외</span>
+            <span className="w-[2.6rem] shrink-0 text-ui-meta text-muted">그 외</span>
             <input
               type="date"
               value={picked}
               aria-label="날짜 직접 선택"
               onChange={(e) => setPicked(e.target.value)}
-              className="rounded-md border border-border bg-bg px-1.5 py-0.5 text-[0.68rem] text-foreground"
+              className="rounded-md border border-border bg-bg px-1.5 py-0.5 text-ui-meta text-foreground"
             />
           </label>
           <div className="mt-1 flex items-center justify-end gap-1.5 border-t border-border pt-1.5">
-            <span className="mr-auto text-[0.62rem] text-muted">
+            <span className="mr-auto text-ui-meta text-muted">
               {picked ? `${formatShortDateWeekday(picked)}에 하기` : "날짜를 고르세요"}
             </span>
             <button
               type="button"
               onClick={closePicker}
-              className="rounded-md px-2 py-0.5 text-[0.68rem] text-muted hover:text-foreground"
+              className="rounded-md px-2 py-0.5 text-ui-meta text-muted hover:text-foreground"
             >
               취소
             </button>
@@ -890,7 +890,7 @@ function StepRow({
               type="button"
               onClick={confirmPick}
               disabled={!picked}
-              className="rounded-md bg-accent px-2.5 py-0.5 text-[0.68rem] font-semibold text-white disabled:opacity-40"
+              className="rounded-md bg-accent px-2.5 py-0.5 text-ui-meta font-semibold text-white disabled:opacity-40"
             >
               확인
             </button>

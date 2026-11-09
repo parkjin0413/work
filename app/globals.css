@@ -31,28 +31,9 @@ html {
   font-size: 18px;
 }
 
-/* 4K 모니터에서만 글자를 키운다. Tailwind 크기·여백이 전부 rem 기반이라
-   기준 글자 크기 하나로 UI 전체가 비례해서 커진다.
-   - 4K + 배율 150%: devicePixelRatio 1.5, 창 폭 2560px → 아래 두 규칙 모두 해당
-   - 4K + 배율 100~125%: 창 폭 3072~3840px → 폭 기준 규칙에 해당
-   - 1920 모니터(dppx 1, 폭 1920px)는 어디에도 해당 없음 → 기존 18px 유지 */
-@media (min-resolution: 1.5dppx) and (min-width: 1500px) {
-  html {
-    font-size: 20px;
-  }
-}
-
-@media (min-width: 2300px) {
-  html {
-    font-size: 20px;
-  }
-}
-
-@media (min-width: 3200px) {
-  html {
-    font-size: 22px;
-  }
-}
+/* 기준 글자 크기 18px = 24인치 1920×1080 기준. 더 큰·고해상도 모니터에서는
+   lib/ui/rootFontSize.ts 스크립트가 실제 눈에 보이는 크기가 같도록 html font-size 를 키운다
+   (27인치 4K 배율 150% → 20px). Tailwind 크기·여백이 전부 rem 이라 화면 전체가 같은 비율로 커진다. */
 
 /* 휴대폰(터치)에서 입력칸을 누를 때 화면이 확대되지 않게: iOS 는 16px 미만 글자에서 확대한다. */
 @media (max-width: 639px) and (hover: none) {

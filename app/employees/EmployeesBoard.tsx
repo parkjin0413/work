@@ -36,7 +36,7 @@ type ViewMode = "grouped" | "flat";
 
 /**
  * 부서 배치: 내용 폭을 N칸으로 나누고, 부서마다 "인원수만큼" 칸을 차지해 왼쪽부터 채운다.
- * 칸 수는 브라우저 폭이 아니라 실제 내용 폭(최대 1920px)을 재서, 카드 한 장이 약 280px 아래로
+ * 칸 수는 브라우저 폭이 아니라 실제 내용 폭을 재서, 카드 한 장이 약 280px(기준 글씨 18px 기준) 아래로
  * 좁아지지 않는 가장 큰 값으로 정한다. 1920px 폭이면 6칸.
  */
 const COLUMN_CHOICES = [8, 6, 5, 4, 3, 2, 1];
@@ -50,7 +50,10 @@ function useColumnCount(ref: RefObject<HTMLElement>): number {
     if (!element) return;
     const observer = new ResizeObserver(([entry]) => {
       const width = entry.contentRect.width;
-      const fit = COLUMN_CHOICES.find((n) => (width - CARD_GAP * (n - 1)) / n >= MIN_CARD_WIDTH) ?? 1;
+      // 큰 모니터에서 기준 글씨가 커지면(lib/ui/rootFontSize) 카드 최소 폭도 같은 비율로 키운다.
+      const scale = (parseFloat(getComputedStyle(document.documentElement).fontSize) || 18) / 18;
+      const fit =
+        COLUMN_CHOICES.find((n) => (width - CARD_GAP * scale * (n - 1)) / n >= MIN_CARD_WIDTH * scale) ?? 1;
       setColumns(fit);
     });
     observer.observe(element);

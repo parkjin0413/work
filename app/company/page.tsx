@@ -25,7 +25,7 @@ export default async function CompanyPage() {
     return (
       <div className="flex min-h-screen flex-col bg-bg">
         <Sidebar />
-        <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] py-6">
+        <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-106.6667rem)/2))] py-6">
           <h1 className="text-lg font-semibold text-foreground">회사 · 직원</h1>
           <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
             <p className="text-sm text-muted">
@@ -41,7 +41,7 @@ export default async function CompanyPage() {
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       <Sidebar />
-      <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] py-6">
+      <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-106.6667rem)/2))] py-6">
         <h1 className="text-lg font-semibold text-foreground">회사 · 직원</h1>
 
         <section aria-label="회사" className="mt-5">

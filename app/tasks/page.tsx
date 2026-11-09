@@ -13,7 +13,7 @@ import { SectionHeader } from "./SectionHeader";
 import { WeekPlanner } from "./WeekPlanner";
 import { WorkSearch } from "./WorkSearch";
 
-const MAIN_CLASS = "min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] py-6";
+const MAIN_CLASS = "min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-106.6667rem)/2))] py-6";
 
 /** 두 주(이번 주 + 다음 주)에 걸친 공휴일. 연말에는 두 해를 합친다. */
 function holidaysBetween(first: string, last: string): Record<string, string[]> {

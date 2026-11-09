@@ -77,7 +77,7 @@ describe("TasksPage", () => {
     const { container } = await renderTasksPage();
 
     const headings = Array.from(container.querySelectorAll("h1, h2")).map((el) => el.textContent);
-    expect(headings).toEqual(["업무관리", "주간 업무", "프로젝트"]);
+    expect(headings).toEqual(["업무", "주간 업무", "프로젝트"]);
   });
 
   it("쿼리로 준 주가 유효한 월요일이면 그 주부터 2주치 항목과 일정을 조회한다", async () => {

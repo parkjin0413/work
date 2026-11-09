@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 /** 결재란 한 칸: 위에 직급(역할), 아래 서명 칸. 도장이 있으면 서명 칸에 겹쳐 찍는다. */
 export function ApprovalBox({ label, name, stampUrl }: { label: string; name: string; stampUrl?: string | null }) {
   return (
@@ -40,8 +42,21 @@ export function PaperFooter() {
   );
 }
 
+/**
+ * 휴대폰처럼 좁은 화면: A4 양식을 폭에 맞춰 줄이면 글자가 너무 작아지고, 그냥 두면 표 칸이 세로로 찌그러진다.
+ * 그래서 양식은 읽을 수 있는 폭(40rem)을 유지하고 옆으로 밀어서 보게 한다. 인쇄에는 영향 없음.
+ */
+export function PaperScroll({ children }: { children: ReactNode }) {
+  return (
+    <div className="paper-scroll">
+      <p className="no-print mb-1.5 text-xs text-muted sm:hidden">← 옆으로 밀어서 전체를 볼 수 있습니다</p>
+      <div className="paper-scroll-area overflow-x-auto">{children}</div>
+    </div>
+  );
+}
+
 /** 인쇄 양식 표 칸 */
 export const PAPER_TH = "paper-cell border border-[#211D14] bg-[#F5F3EA] px-3 py-2 text-center font-medium";
 export const PAPER_TD = "paper-cell border border-[#211D14] px-3 py-2 text-center";
 export const PAPER_SHEET =
-  "print-sheet mx-auto w-full max-w-3xl border border-[#E7E2D2] bg-white p-6 text-[#211D14] sm:p-10";
+  "print-sheet mx-auto w-full min-w-[40rem] max-w-3xl border border-[#E7E2D2] bg-white p-6 text-[#211D14] sm:p-10";

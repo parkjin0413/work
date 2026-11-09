@@ -95,13 +95,14 @@ export function HostingBoard({ sites: initialSites, today }: { sites: HostingSit
         <section className="rounded-2xl border border-border bg-surface p-4">
           <h2 className="text-sm font-semibold text-foreground">만료 일정</h2>
           <p className="mt-0.5 text-xs text-muted">가까운 순서 · 30일 이내는 주황, 지난 항목은 빨강으로 표시됩니다.</p>
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {expiries.map((item) => (
               <li
                 key={`${item.siteId}-${item.label}`}
-                className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm"
+                className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm"
               >
-                <span className="min-w-0 truncate">
+                {/* 좁은 화면에서는 말줄임 대신 두 줄로 */}
+                <span className="min-w-0 break-keep sm:truncate">
                   <span className="font-medium text-foreground">{item.siteName}</span>
                   <span className="text-muted"> · {item.label}</span>
                 </span>

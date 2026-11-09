@@ -54,7 +54,7 @@ export function WorkSearch({ todayISO }: { todayISO: string }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Escape" && setQuery("")}
-            placeholder="지난 기록 검색 (두 글자 이상)"
+            placeholder="지난 기록 검색 (2자 이상)"
             aria-label="기록 검색"
             className="w-full rounded-lg border border-border bg-surface py-1.5 pl-8 pr-8 text-ui-body text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
           />
@@ -73,10 +73,13 @@ export function WorkSearch({ todayISO }: { todayISO: string }) {
           href="/tasks/export"
           download
           title="날짜가 있는 기록 전체를 CSV(엑셀)로 내려받기"
+          aria-label="전체 기록 CSV 내려받기"
           className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-ui-body font-medium text-foreground hover:bg-surface-hover"
         >
           <Download className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>전체 기록 CSV</span>
+          {/* 휴대폰에서는 검색칸이 넉넉하도록 짧게 */}
+          <span className="sm:hidden">CSV</span>
+          <span className="hidden sm:inline">전체 기록 CSV</span>
         </a>
       </div>
 

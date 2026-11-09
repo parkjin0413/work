@@ -35,7 +35,7 @@ export function Sidebar() {
     >
       <Link
         href="/tasks"
-        aria-label="강산이엔지 업무 대시보드 (업무관리로 이동)"
+        aria-label="강산이엔지 업무 대시보드 (업무로 이동)"
         className="hidden shrink-0 items-center gap-2 justify-self-start rounded-lg pr-1 hover:opacity-80 sm:flex"
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- 작은 고정 로고라 next/image 최적화가 필요 없다 */}

@@ -64,7 +64,7 @@ export default async function TasksPage({ searchParams }: { searchParams: { week
       <Sidebar />
       <main className={MAIN_CLASS}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-lg font-semibold text-foreground">업무관리</h1>
+          <h1 className="text-lg font-semibold text-foreground">업무</h1>
           <WorkSearch todayISO={todayISO} />
         </div>
 

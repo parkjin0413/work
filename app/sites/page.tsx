@@ -22,7 +22,7 @@ export default async function SitesPage() {
       <div className="flex min-h-screen flex-col bg-bg">
         <Sidebar />
         <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-106.6667rem)/2))] py-6">
-          <h1 className="text-lg font-semibold text-foreground">어카운트·북마크</h1>
+          <h1 className="text-lg font-semibold text-foreground">어카운트</h1>
           <p className="mt-6 text-sm text-muted">계정관리·즐겨찾기 데이터를 불러오지 못했습니다.</p>
         </main>
       </div>
@@ -70,7 +70,7 @@ export default async function SitesPage() {
     <div className="flex min-h-screen flex-col bg-bg">
       <Sidebar />
       <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-106.6667rem)/2))] py-6">
-        <h1 className="text-lg font-semibold text-foreground">어카운트·북마크</h1>
+        <h1 className="text-lg font-semibold text-foreground">어카운트</h1>
 
         <SitesPreview items={items} categories={categories} />
       </main>

@@ -817,7 +817,8 @@ function SiteRow({
 }) {
   return (
     <div className="group relative flex flex-col py-[0.55rem] pl-1.5 pr-3 transition-colors duration-150 before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent before:opacity-0 before:transition-opacity hover:bg-accent/[0.04] hover:before:opacity-100">
-      <div className="flex items-center gap-2">
+      {/* 휴대폰: 이름이 잘리지 않게 ID·PW 를 이름 아래 줄로 내린다 */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 sm:flex-nowrap">
         {dragHandle ? (
           <button
             type="button"
@@ -876,7 +877,9 @@ function SiteRow({
         </div>
         {item.username || item.password ? (
           <div
-            className="ml-auto flex max-w-[58%] shrink-0 flex-col text-[0.725rem]"
+            className={`ml-auto flex max-w-[58%] shrink-0 flex-col text-[0.725rem] max-sm:ml-0 max-sm:!w-full max-sm:max-w-none ${
+              dragHandle ? "max-sm:pl-7" : ""
+            }`}
             // 라벨(1.75rem) + 간격 + 값 글자 수(ch) + 좌우 안쪽 여백
             style={{ width: `calc(1.75rem + 0.25rem + ${credentialChars + 1}ch + 0.75rem)` }}
           >

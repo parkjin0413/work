@@ -93,10 +93,10 @@ export function LeaveForm({ mode, action, drafter, candidates, stampUrl, cancelH
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 xl:items-start">
         <form onSubmit={onSubmit} className="space-y-6 rounded-2xl border border-border bg-surface p-5 sm:p-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <ReadOnlyField label="기안자" value={drafter.name} />
             <ReadOnlyField label="부서" value={drafter.department} />
-            <Field label="기안일" htmlFor="leave-drafted-at">
+            <Field label="기안일" htmlFor="leave-drafted-at" className="col-span-2 sm:col-span-1">
               <input
                 id="leave-drafted-at"
                 type="date"

@@ -76,6 +76,7 @@ html {
     right: 0;
     /* Tailwind 의 sm:p-10 · max-w-3xl · border 보다 우선해야 해서 !important */
     max-width: none !important;
+    min-width: 0 !important; /* 휴대폰 화면용 최소 폭(40rem)은 인쇄에서 쓰지 않는다 */
     border: none !important;
     padding: 0 !important;
     /* 표 머리칸의 옅은 배경색도 인쇄한다 (브라우저 기본값은 배경색을 빼고 인쇄) */
@@ -91,6 +92,10 @@ html {
 
   .print-sheet .paper-block {
     margin-bottom: 1rem !important;
+  }
+
+  .paper-scroll-area {
+    overflow: visible !important;
   }
 
   /* 표 한 줄이 두 장에 걸쳐 잘리지 않게 */

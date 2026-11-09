@@ -12,4 +12,4 @@ export async function loadFormContext() {
 }
 
 /** 도장이 없을 때 작성 화면 위에 띄우는 안내 */
-export const NO_STAMP_MESSAGE = "등록된 도장이 없습니다. 양식 문서 첫 화면의 '내 도장'에서 등록하면 담당 칸에 자동으로 찍힙니다.";
+export const NO_STAMP_MESSAGE = "등록된 도장이 없습니다. 양식 첫 화면의 '내 도장'에서 등록하면 담당 칸에 자동으로 찍힙니다.";

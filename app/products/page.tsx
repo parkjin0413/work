@@ -43,7 +43,7 @@ export default function ProductsPage() {
       <div className="flex min-h-screen flex-col bg-bg">
         <Sidebar />
         <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-106.6667rem)/2))] py-6">
-          <h1 className="text-lg font-semibold text-foreground">제품정보</h1>
+          <h1 className="text-lg font-semibold text-foreground">제품</h1>
           <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
             <p className="text-sm text-muted">
               제품 데이터를 불러오지 못했습니다. content/products/ 파일 구조와
@@ -71,7 +71,7 @@ export default function ProductsPage() {
       <main className="min-w-0 flex-1 space-y-8 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-106.6667rem)/2))] py-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-lg font-semibold text-foreground">제품정보</h1>
+            <h1 className="text-lg font-semibold text-foreground">제품</h1>
             <p className="mt-1 text-sm text-muted">
               벽재 / 바닥재 / 천장재를 같은 양식으로 정리한 참고 카탈로그입니다.
               편집은 <code className="font-mono text-xs">content/products/</code> 파일에서 합니다.

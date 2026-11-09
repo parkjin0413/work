@@ -587,7 +587,7 @@ function ProjectDetail({
         <button
           type="button"
           onClick={() => setIsEditingMemo(true)}
-          className="mt-3 block w-full whitespace-pre-wrap break-words rounded-md border-l-2 border-accent/30 py-0.5 pl-2.5 text-left text-ui-body text-muted hover:bg-bg"
+          className="mt-3 block w-full whitespace-pre-wrap break-keep [overflow-wrap:anywhere] rounded-md border-l-2 border-accent/30 py-0.5 pl-2.5 text-left text-ui-body text-muted hover:bg-bg"
         >
           {project.memo || "설명 추가…"}
         </button>
@@ -649,7 +649,7 @@ function ProjectDetail({
                     >
                       {formatShortDateWeekday(entry.date)}
                     </span>
-                    <span className="min-w-0 flex-1 break-words text-ui-body text-foreground">{entry.body}</span>
+                    <span className="min-w-0 flex-1 break-keep [overflow-wrap:anywhere] text-ui-body text-foreground">{entry.body}</span>
                     <button
                       type="button"
                       onClick={() => unschedule(entry.id)}
@@ -681,7 +681,7 @@ function ProjectDetail({
                     <span className="w-[4.2rem] shrink-0 text-ui-meta text-muted">
                       {showDate ? formatShortDateWeekday(entry.date) : ""}
                     </span>
-                    <span className="min-w-0 flex-1 whitespace-pre-wrap break-words text-ui-body text-foreground">
+                    <span className="min-w-0 flex-1 whitespace-pre-wrap break-keep [overflow-wrap:anywhere] text-ui-body text-foreground">
                       {entry.body}
                     </span>
                   </li>
@@ -803,7 +803,7 @@ function StepRow({
           <button
             type="button"
             onClick={() => !isTemp && setIsEditing(true)}
-            className="min-w-0 flex-1 break-words text-left text-ui-body text-foreground"
+            className="min-w-0 flex-1 break-keep [overflow-wrap:anywhere] text-left text-ui-body text-foreground"
           >
             {step.body}
           </button>

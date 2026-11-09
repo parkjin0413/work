@@ -26,7 +26,7 @@ export default async function CompanyPage() {
       <div className="flex min-h-screen flex-col bg-bg">
         <Sidebar />
         <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-106.6667rem)/2))] py-6">
-          <h1 className="text-lg font-semibold text-foreground">회사 · 직원</h1>
+          <h1 className="text-lg font-semibold text-foreground">회사</h1>
           <div className="mt-6 rounded-2xl border border-border bg-surface p-6">
             <p className="text-sm text-muted">
               회사·직원 정보를 불러오지 못했습니다. Supabase 연결 상태와 0019_company_vehicles.sql 마이그레이션 실행
@@ -42,7 +42,7 @@ export default async function CompanyPage() {
     <div className="flex min-h-screen flex-col bg-bg">
       <Sidebar />
       <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-106.6667rem)/2))] py-6">
-        <h1 className="text-lg font-semibold text-foreground">회사 · 직원</h1>
+        <h1 className="text-lg font-semibold text-foreground">회사</h1>
 
         <section aria-label="회사" className="mt-5">
           <PartnersBoard partners={partners} trailing={<VehiclesCard vehicles={vehicles} />} />

@@ -38,9 +38,19 @@ export const INPUT_CLASS =
 export const SMALL_BUTTON_CLASS =
   "rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40";
 
-export function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; children: ReactNode }) {
+export function Field({
+  label,
+  htmlFor,
+  className,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <div>
+    <div className={className}>
       <label htmlFor={htmlFor} className="mb-1.5 block text-sm font-medium text-muted">
         {label}
       </label>

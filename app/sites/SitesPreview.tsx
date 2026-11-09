@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { groupWeight, splitIntoColumns } from "@/lib/sites/columns";
 import {
   DndContext,
   DragOverlay,
@@ -159,11 +160,34 @@ export function SitesPreview({ items, categories }: { items: SiteItem[]; categor
 
 type Source = SiteItem["source"];
 
+/** 단 안의 카드 칸 */
+const COLUMN_ITEM_CLASS = "w-full";
+
+/** 화면 폭별 단 수 (예전 lg:2 · xl:3 · 2xl:4 단과 같은 기준) */
+const COLUMN_QUERIES: [string, number][] = [
+  ["(min-width: 1536px)", 4],
+  ["(min-width: 1280px)", 3],
+  ["(min-width: 1024px)", 2],
+];
+
+// 서버에서는 useLayoutEffect 경고가 나므로 브라우저에서만 쓴다.
+const useIsomorphicLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
 /**
- * 다단(columns) 배치의 카드 칸. Safari 는 아래 마진을 다음 단 위로 넘기거나 카드를 단 사이에서 쪼개
- * 간격이 틀어지므로, 마진 대신 inline-block + 아래 안쪽 여백으로 칸을 만든다.
+ * 첫 화면이 그려지기 전에 단 수를 정하고, 창 크기가 바뀌면 다시 정한다.
+ * 서버에서는 창 폭을 모르므로 정해지기 전(null)에는 카드를 숨겨 1단→4단으로 튀는 걸 막는다.
  */
-const COLUMN_ITEM_CLASS = "inline-block w-full break-inside-avoid pb-4 align-top";
+function useColumnCount(): number | null {
+  const [count, setCount] = useState<number | null>(null);
+  useIsomorphicLayoutEffect(() => {
+    const lists = COLUMN_QUERIES.map(([query, n]) => [window.matchMedia(query), n] as const);
+    const update = () => setCount(lists.find(([list]) => list.matches)?.[1] ?? 1);
+    update();
+    lists.forEach(([list]) => list.addEventListener("change", update));
+    return () => lists.forEach(([list]) => list.removeEventListener("change", update));
+  }, []);
+  return count;
+}
 
 /** 카드 높이가 제각각인 다단 배치라, 끄는 동안 다른 카드를 밀지 않고 놓을 자리만 표시한다. */
 const noShiftStrategy = () => null;
@@ -221,6 +245,10 @@ function ZoneGroups({
     }
   }
 
+  const measuredColumns = useColumnCount();
+  const columnCount = measuredColumns ?? 1;
+  const columns = useMemo(() => splitIntoColumns(order.map(groupWeight), columnCount), [order, columnCount]);
+
   const cards = order.map((g) => {
     const props = {
       group: g,
@@ -254,7 +282,16 @@ function ZoneGroups({
         onDragCancel={() => setActiveName(null)}
       >
         <SortableContext items={order.map(idOf)} strategy={noShiftStrategy}>
-          <div className="columns-1 gap-4 lg:columns-2 xl:columns-3 2xl:columns-4">{cards}</div>
+          {/* 단을 코드에서 직접 나눈다 (브라우저 다단 배치는 맥 Safari 에서 카드가 옆 단으로 튀고 깜빡였다) */}
+          <div
+            className={`grid items-start gap-4 ${measuredColumns === null ? "invisible" : ""}`}
+            style={{ gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))` }}>
+            {columns.map((indexes, column) => (
+              <div key={column} className="flex min-w-0 flex-col gap-4">
+                {indexes.map((index) => cards[index])}
+              </div>
+            ))}
+          </div>
         </SortableContext>
         <DragOverlay>
           {activeName ? (

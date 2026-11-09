@@ -95,7 +95,12 @@ export function WeekPlanner({
   const isCurrentWeek = weekStart === currentWeekStart;
   const isFriday = getWeekdayIndex(todayISO) === 4;
   const sortedItems = useMemo(() => [...items].sort(compareWorkItems), [items]);
-  const report = useMemo(() => buildWeeklyReport(weekStart, sortedItems), [weekStart, sortedItems]);
+  // 아직 오지 않은 주(명절 전 미리 제출 등)는 계획까지 "한 일"로 넣는다.
+  const isFutureWeek = weekStart > currentWeekStart;
+  const report = useMemo(
+    () => buildWeeklyReport(weekStart, sortedItems, { inAdvance: isFutureWeek }),
+    [weekStart, sortedItems, isFutureWeek],
+  );
   const projectNameById = useMemo(() => new Map(projects.map((p) => [p.id, p.name])), [projects]);
 
   async function run(task: () => Promise<unknown>, rollback: () => void, message: string) {
@@ -190,8 +195,10 @@ export function WeekPlanner({
     );
   }
 
-  function saveItem(item: WorkItem, patch: { body: string; date: string; projectId: string | null }) {
+  function saveItem(item: WorkItem, edit: { body: string; date: string; projectId: string | null }) {
     const before = items;
+    // 체크한 항목을 다음 주 이후로 옮기면 다시 계획으로 (그 주가 되면 체크한다)
+    const patch = needsUnchecking(item, edit.date) ? { ...edit, status: "planned" as const } : edit;
     patchLocal(item.id, {
       ...patch,
       projectName: patch.projectId ? (projectNameById.get(patch.projectId) ?? item.projectName) : null,
@@ -201,6 +208,12 @@ export function WeekPlanner({
       () => setItems(before),
       "수정에 실패했습니다.",
     );
+  }
+
+  /** 체크(완료)는 이번 주 일요일까지만. 그 뒤 날짜는 "다음 주 계획"이라 체크하지 않는다. */
+  const checkableUntil = addDaysISO(currentWeekStart, 6);
+  function needsUnchecking(item: WorkItem, date: string) {
+    return item.status === "done" && date > checkableUntil;
   }
 
   function deleteItem(item: WorkItem) {
@@ -289,9 +302,21 @@ export function WeekPlanner({
     const date = plan.date;
     const order = new Map(plan.orderedIds.map((id, index) => [id, index]));
     const before = items;
-    setItems((prev) => prev.map((i) => (order.has(i.id) ? { ...i, date, sortOrder: order.get(i.id)! } : i)));
+    const dragged = sortedItems.find((i) => i.id === String(event.active.id));
+    const uncheck = dragged && needsUnchecking(dragged, date) ? dragged.id : null;
+    setItems((prev) =>
+      prev.map((i) =>
+        order.has(i.id)
+          ? { ...i, date, sortOrder: order.get(i.id)!, ...(i.id === uncheck ? { status: "planned" as const } : {}) }
+          : i,
+      ),
+    );
     void run(
-      () => reorderWorkItemsAction(plan.orderedIds, date),
+      () =>
+        Promise.all([
+          reorderWorkItemsAction(plan.orderedIds, date),
+          uncheck ? updateWorkItemAction(uncheck, { status: "planned" }) : null,
+        ]),
       () => setItems(before),
       "옮기기에 실패했습니다.",
     );
@@ -307,6 +332,7 @@ export function WeekPlanner({
     onDelete: deleteItem,
     onMoveToToday: (item) => moveItems([item], todayISO),
     overDate,
+    checkableUntil,
   };
 
   return (
@@ -424,6 +450,8 @@ type DayHandlers = {
   onAdd: (input: NewItem) => void;
   onAddMany: (input: Omit<NewItem, "body" | "scheduleId"> & { bodies: string[] }) => void;
   onToggle: (item: WorkItem) => void;
+  /** 이 날짜까지만 체크할 수 있다 (이번 주 일요일) */
+  checkableUntil: string;
   onSave: (item: WorkItem, patch: { body: string; date: string; projectId: string | null }) => void;
   onDelete: (item: WorkItem) => void;
   onMoveToToday: (item: WorkItem) => void;
@@ -699,22 +727,32 @@ function ItemRow({ item, isOverdue, handlers }: { item: WorkItem; isOverdue: boo
         isDragging ? "opacity-40" : ""
       }`}
     >
-      <button
-        type="button"
-        onClick={() => handlers.onToggle(item)}
-        disabled={isTemp}
-        aria-label={`${item.body} ${isDone ? "완료 취소" : "완료"}`}
-        aria-pressed={isDone}
-        className={`mt-[0.2rem] flex h-[0.85rem] w-[0.85rem] shrink-0 items-center justify-center rounded border ${
-          isDone
-            ? "border-accent bg-accent text-accent-foreground"
-            : isOverdue
-              ? "border-amber-400"
-              : "border-slate-300 dark:border-slate-500"
-        }`}
-      >
-        {isDone ? <Check className="h-[0.65rem] w-[0.65rem]" strokeWidth={3} aria-hidden="true" /> : null}
-      </button>
+      {!isDone && item.date > handlers.checkableUntil ? (
+        <span
+          className="mt-[0.2rem] flex h-[0.85rem] w-[0.85rem] shrink-0 items-center justify-center"
+          title="다음 주 계획은 그 주가 되면 체크합니다"
+          aria-hidden="true"
+        >
+          <span className="h-[0.3rem] w-[0.3rem] rounded-full bg-slate-400 dark:bg-slate-500" />
+        </span>
+      ) : (
+        <button
+          type="button"
+          onClick={() => handlers.onToggle(item)}
+          disabled={isTemp}
+          aria-label={`${item.body} ${isDone ? "완료 취소" : "완료"}`}
+          aria-pressed={isDone}
+          className={`mt-[0.2rem] flex h-[0.85rem] w-[0.85rem] shrink-0 items-center justify-center rounded border ${
+            isDone
+              ? "border-accent bg-accent text-accent-foreground"
+              : isOverdue
+                ? "border-amber-400"
+                : "border-slate-300 dark:border-slate-500"
+          }`}
+        >
+          {isDone ? <Check className="h-[0.65rem] w-[0.65rem]" strokeWidth={3} aria-hidden="true" /> : null}
+        </button>
+      )}
       <div className="min-w-0 flex-1">
         <p
           className={`whitespace-pre-wrap break-words text-[0.8rem] leading-snug ${
@@ -977,9 +1015,18 @@ function ReportPanel({
   return (
     <div className="mb-5 rounded-2xl border border-accent/30 bg-surface p-4 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-[0.85rem] font-semibold text-foreground">주간업무보고 미리보기</p>
+        <p className="text-[0.85rem] font-semibold text-foreground">
+          주간업무보고 미리보기
+          {report.inAdvance ? (
+            <span className="ml-1.5 rounded-full bg-amber-100 px-2 py-px text-[0.65rem] font-semibold text-amber-800 dark:bg-amber-400/15 dark:text-amber-200">
+              미리 쓰는 보고서
+            </span>
+          ) : null}
+        </p>
         <span className="text-[0.7rem] text-muted">
-          이번 주는 체크한(완료) 항목만, 다음 주는 적어둔 계획이 들어갑니다.
+          {report.inAdvance
+            ? "아직 오지 않은 주라서 적어둔 계획이 모두 '한 일' 칸에 들어갑니다 (명절 전 미리 제출용)."
+            : "이번 주는 체크한(완료) 항목만, 다음 주는 적어둔 계획이 들어갑니다."}
         </span>
         <CopyButton text={toExcelText(report)} label="엑셀용 복사" className="ml-auto" />
       </div>

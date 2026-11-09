@@ -20,6 +20,8 @@ export type WeeklyReport = {
   nextWeek: ReportDay[];
   /** 이번 주에 계획만 하고 완료하지 못한 항목 (보고서에서는 빠진다) */
   unfinished: WorkItem[];
+  /** 아직 오지 않은 주를 미리 쓰는 보고서인지 */
+  inAdvance: boolean;
 };
 
 /** "11월 02일 - 11월 08일" (양식과 같은 두 자리 일) */
@@ -57,18 +59,26 @@ function buildDays(weekStart: string, items: WorkItem[], status: WorkItem["statu
 /**
  * 이번 주는 "완료한 항목"만, 다음 주는 적어둔 항목 전부(대부분 계획)를 날짜별로 정리한다.
  * items 는 정렬된 상태(compareWorkItems)로 넘긴다.
+ *
+ * inAdvance: 아직 오지 않은 주의 보고서를 미리 쓰는 경우(명절 전 제출 등). 그 주 항목은 아직
+ * 체크할 수 없으니 계획까지 전부 "한 일" 칸에 넣고, 못 한 계획도 따지지 않는다.
  */
-export function buildWeeklyReport(weekStart: string, items: WorkItem[]): WeeklyReport {
+export function buildWeeklyReport(
+  weekStart: string,
+  items: WorkItem[],
+  { inAdvance = false }: { inAdvance?: boolean } = {}
+): WeeklyReport {
   const nextWeekStart = addDaysISO(weekStart, 7);
   const thisWeekEnd = addDaysISO(weekStart, 6);
   return {
     thisWeekTitle: formatReportRange(weekStart),
     nextWeekTitle: formatReportRange(nextWeekStart),
-    thisWeek: buildDays(weekStart, items, "done"),
+    thisWeek: buildDays(weekStart, items, inAdvance ? "any" : "done"),
     nextWeek: buildDays(nextWeekStart, items, "any"),
-    unfinished: items.filter(
-      (item) => item.status === "planned" && item.date >= weekStart && item.date <= thisWeekEnd
-    ),
+    unfinished: inAdvance
+      ? []
+      : items.filter((item) => item.status === "planned" && item.date >= weekStart && item.date <= thisWeekEnd),
+    inAdvance,
   };
 }
 

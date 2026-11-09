@@ -105,3 +105,23 @@ describe("spreadAcrossWeek", () => {
     expect(spreadAcrossWeek([], "2026-11-16")).toEqual([]);
   });
 });
+
+describe("buildWeeklyReport 미리 쓰는 보고서", () => {
+  it("아직 오지 않은 주는 계획도 '한 일' 칸에 넣고, 못 한 계획을 따지지 않는다", () => {
+    const items = [
+      item({ id: "1", date: "2026-11-16", body: "계획 A", status: "planned" }),
+      item({ id: "2", date: "2026-11-16", body: "계획 B", status: "planned" }),
+      item({ id: "3", date: "2026-11-24", body: "그다음 주 계획", status: "planned" }),
+    ];
+
+    const normal = buildWeeklyReport("2026-11-16", items);
+    expect(normal.thisWeek[0].lines).toEqual([]);
+    expect(normal.unfinished).toHaveLength(2);
+
+    const advance = buildWeeklyReport("2026-11-16", items, { inAdvance: true });
+    expect(advance.inAdvance).toBe(true);
+    expect(advance.thisWeek[0].lines).toEqual(["1. 계획 A", "2. 계획 B"]);
+    expect(advance.nextWeek[1].lines).toEqual(["1. 그다음 주 계획"]);
+    expect(advance.unfinished).toEqual([]);
+  });
+});

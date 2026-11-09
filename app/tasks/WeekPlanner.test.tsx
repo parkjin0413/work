@@ -72,3 +72,36 @@ describe("WeekPlanner 여러 줄 붙여넣기", () => {
     expect(actions.createWorkItemsAction).not.toHaveBeenCalled();
   });
 });
+
+describe("WeekPlanner 체크 규칙", () => {
+  const planned = (id: string, date: string, body: string) => ({
+    id,
+    date,
+    body,
+    status: "planned" as const,
+    projectId: null,
+    projectName: null,
+    scheduleId: null,
+    sortOrder: 0,
+    createdAt: "2026-11-09T00:00:00.000Z",
+  });
+
+  it("이번 주 항목은 체크할 수 있고, 다음 주 계획은 체크 칸이 없다", () => {
+    render(
+      <WeekPlanner
+        weekStart="2026-11-09"
+        currentWeekStart="2026-11-09"
+        todayISO="2026-11-09"
+        items={[planned("a", "2026-11-12", "이번 주 목요일 일"), planned("b", "2026-11-16", "다음 주 월요일 일")]}
+        overdue={[]}
+        schedules={[]}
+        holidays={{}}
+        projects={[]}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "이번 주 목요일 일 완료" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "다음 주 월요일 일 완료" })).not.toBeInTheDocument();
+    expect(screen.getByText("다음 주 월요일 일")).toBeInTheDocument();
+  });
+});

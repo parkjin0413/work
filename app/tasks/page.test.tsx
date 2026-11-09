@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import TasksPage from "./page";
-import { getKstTodayISO, getWeekdayIndex } from "@/lib/tasks/week";
+import type { WorkItem } from "@/lib/tasks/workItems";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
@@ -12,30 +12,48 @@ vi.mock("@/lib/supabase/client", () => ({
   createSupabaseBrowserClient: () => ({ auth: { signOut: vi.fn() } }),
 }));
 
-const { getBoardMock, getNoteLogForWeekMock } = vi.hoisted(() => ({
-  getBoardMock: vi.fn(),
-  getNoteLogForWeekMock: vi.fn(),
+const mocks = vi.hoisted(() => ({
+  listProjects: vi.fn(),
+  listWorkItemsInRange: vi.fn(),
+  listOverduePlanned: vi.fn(),
+  listSchedulesInRange: vi.fn(),
 }));
 
-vi.mock("@/lib/tasks/tasksStore", () => ({
-  getBoard: getBoardMock,
-  getNoteLogForWeek: getNoteLogForWeekMock,
+vi.mock("@/lib/tasks/projects", () => ({ listProjects: mocks.listProjects }));
+vi.mock("@/lib/tasks/workItems", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/tasks/workItems")>();
+  return {
+    ...actual,
+    listWorkItemsInRange: mocks.listWorkItemsInRange,
+    listOverduePlanned: mocks.listOverduePlanned,
+  };
+});
+vi.mock("@/lib/schedule/scheduleStore", () => ({ listSchedulesInRange: mocks.listSchedulesInRange }));
+vi.mock("./projectActions", () => ({
+  createProjectAction: vi.fn(),
+  updateProjectAction: vi.fn(),
+  setProjectCompletedAction: vi.fn(),
+  deleteProjectAction: vi.fn(),
+  addProjectStepAction: vi.fn(),
+}));
+vi.mock("./workItemActions", () => ({
+  createWorkItemAction: vi.fn(),
+  updateWorkItemAction: vi.fn(),
+  moveWorkItemsAction: vi.fn(),
+  deleteWorkItemAction: vi.fn(),
 }));
 
-const emptyLog = {
-  weekStart: "2026-09-21",
-  weekEnd: "2026-09-27",
-  days: [
-    "2026-09-21",
-    "2026-09-22",
-    "2026-09-23",
-    "2026-09-24",
-    "2026-09-25",
-    "2026-09-26",
-    "2026-09-27",
-  ].map((date) => ({ date, entries: [] })),
-  completed: [],
-};
+function item(partial: Partial<WorkItem> & Pick<WorkItem, "id" | "date" | "body">): WorkItem {
+  return {
+    status: "done",
+    projectId: null,
+    projectName: null,
+    scheduleId: null,
+    sortOrder: 0,
+    createdAt: `${partial.date}T01:00:00.000Z`,
+    ...partial,
+  };
+}
 
 async function renderTasksPage(searchParams: { week?: string } = {}) {
   const element = await TasksPage({ searchParams });
@@ -44,174 +62,100 @@ async function renderTasksPage(searchParams: { week?: string } = {}) {
 
 describe("TasksPage", () => {
   beforeEach(() => {
-    getBoardMock.mockReset();
-    getNoteLogForWeekMock.mockReset().mockResolvedValue(emptyLog);
+    Object.values(mocks).forEach((fn) => fn.mockReset());
+    mocks.listProjects.mockResolvedValue([]);
+    mocks.listWorkItemsInRange.mockResolvedValue([]);
+    mocks.listOverduePlanned.mockResolvedValue([]);
+    mocks.listSchedulesInRange.mockResolvedValue([]);
   });
 
-  it("오늘 요일의 고정 업무는 바로 보여준다", async () => {
-    const todayWeekday = getWeekdayIndex(getKstTodayISO());
-    getBoardMock.mockResolvedValue({
-      fixedTasks: [
-        { taskId: "task-1", templateId: "tpl-1", name: "오늘 할 고정 업무", weekday: todayWeekday, isCompleted: false },
-      ],
-      incomplete: [],
-      completed: [],
-    });
-
-    await renderTasksPage();
-
-    expect(screen.getByText("오늘 할 고정 업무")).toBeInTheDocument();
-  });
-
-  it("다른 요일의 고정 업무는 전체 보기를 눌러야 나온다", async () => {
-    const otherWeekday = (getWeekdayIndex(getKstTodayISO()) + 1) % 7;
-    getBoardMock.mockResolvedValue({
-      fixedTasks: [
-        { taskId: "task-1", templateId: "tpl-1", name: "다른 요일 고정 업무", weekday: otherWeekday, isCompleted: false },
-      ],
-      incomplete: [],
-      completed: [],
-    });
-
-    await renderTasksPage();
-
-    expect(screen.queryByText("다른 요일 고정 업무")).not.toBeInTheDocument();
-    expect(screen.getByText("오늘 예정 없음")).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "전체 보기 (+1)" }));
-    expect(screen.getByText("다른 요일 고정 업무")).toBeInTheDocument();
-  });
-
-  it("지정한 날짜(월/일/요일)와 함께 업무 목록을 보여준다", async () => {
-    getBoardMock.mockResolvedValue({
-      fixedTasks: [],
-      incomplete: [
-        {
-          id: "task-2",
-          name: "디자인 시안 검토",
-          memo: "1차 컨펌 대기",
-          taskDate: "2026-08-10",
-          isCompleted: false,
-          completedAt: null,
-          createdAt: "2026-08-10T00:00:00.000Z",
-          sortOrder: 0,
-          notes: [],
-        },
-      ],
-      completed: [],
-    });
-
-    await renderTasksPage();
-
-    expect(screen.getByText("디자인 시안 검토")).toBeInTheDocument();
-    // 2026-08-10은 월요일
-    expect(screen.getByText("8월 10일 (월)")).toBeInTheDocument();
-  });
-
-  it("완료된 업무는 완료일과 함께 완료됨 섹션에 남아있다", async () => {
-    getBoardMock.mockResolvedValue({
-      fixedTasks: [],
-      incomplete: [],
-      completed: [
-        {
-          id: "task-3",
-          name: "지난주에 끝낸 인쇄 업무",
-          memo: null,
-          taskDate: "2026-08-05",
-          isCompleted: true,
-          completedAt: "2026-08-20T00:00:00.000Z",
-          createdAt: "2026-08-05T00:00:00.000Z",
-          sortOrder: 0,
-          notes: [],
-        },
-      ],
-    });
-
-    await renderTasksPage();
-
-    // 완료됨 섹션은 기본 접힘 — 건수는 바로 보이고, 펼치면 카드가 나온다
-    const toggle = screen.getByRole("button", { name: /완료됨 1건/ });
-    expect(toggle).toBeInTheDocument();
-    fireEvent.click(toggle);
-    expect(screen.getByText("지난주에 끝낸 인쇄 업무")).toHaveClass("line-through");
-    // completed_at 2026-08-20은 목요일
-    expect(screen.getByText("완료 8월 20일 (목)")).toBeInTheDocument();
-  });
-
-  it("재시도까지 실패하면 안내 문구를 보여준다", async () => {
-    getBoardMock.mockRejectedValue(new Error("db down"));
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    await renderTasksPage();
-
-    // 최초 1회 + 재시도 2회
-    expect(getBoardMock).toHaveBeenCalledTimes(3);
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    consoleErrorSpy.mockRestore();
-    consoleWarnSpy.mockRestore();
-
-    expect(
-      screen.getByText(
-        "업무 정보를 불러오지 못했습니다. Supabase 연결 상태와 tasks 관련 마이그레이션(0004~0006) 실행 여부를 확인해주세요."
-      )
-    ).toBeInTheDocument();
-  });
-
-  it("첫 조회가 실패해도 재시도가 성공하면 정상 화면을 보여준다", async () => {
-    // 콜드 스타트 직후 첫 요청만 실패하는 상황
-    getBoardMock
-      .mockRejectedValueOnce(new Error("fetch failed"))
-      .mockResolvedValue({ fixedTasks: [], incomplete: [], completed: [] });
-    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    await renderTasksPage();
-
-    expect(getBoardMock).toHaveBeenCalledTimes(2);
-    expect(screen.getByText("업무 목록")).toBeInTheDocument();
-    expect(screen.queryByText(/업무 정보를 불러오지 못했습니다/)).not.toBeInTheDocument();
-    consoleWarnSpy.mockRestore();
-  });
-
-  it("주간 메모만 실패하면 업무 목록은 그대로 보여주고 메모 영역에만 안내를 띄운다", async () => {
-    getBoardMock.mockResolvedValue({ fixedTasks: [], incomplete: [], completed: [] });
-    getNoteLogForWeekMock.mockRejectedValue(new Error("db down"));
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
-    await renderTasksPage();
-
-    expect(screen.getByText(/진행 메모를 불러오지 못했습니다/)).toBeInTheDocument();
-    expect(screen.getByText("업무 목록")).toBeInTheDocument();
-    expect(screen.queryByText(/업무 정보를 불러오지 못했습니다/)).not.toBeInTheDocument();
-    consoleErrorSpy.mockRestore();
-    consoleWarnSpy.mockRestore();
-  });
-
-  it("주간 메모 정리를 업무 목록보다 위에 보여준다", async () => {
-    getBoardMock.mockResolvedValue({ fixedTasks: [], incomplete: [], completed: [] });
-
+  it("주간 업무를 프로젝트 목록보다 위에 보여준다", async () => {
     const { container } = await renderTasksPage();
 
     const headings = Array.from(container.querySelectorAll("h1, h2")).map((el) => el.textContent);
-    expect(headings).toEqual(["업무관리", "주간 메모 정리", "고정 업무", "업무 목록"]);
+    expect(headings).toEqual(["업무관리", "주간 업무", "프로젝트"]);
   });
 
-  it("쿼리로 준 주(week)가 유효한 월요일이면 그 주의 메모를 조회한다", async () => {
-    getBoardMock.mockResolvedValue({ fixedTasks: [], incomplete: [], completed: [] });
-
+  it("쿼리로 준 주가 유효한 월요일이면 그 주부터 2주치 항목과 일정을 조회한다", async () => {
     await renderTasksPage({ week: "2026-09-07" });
 
-    expect(getNoteLogForWeekMock).toHaveBeenCalledWith("2026-09-07");
+    expect(mocks.listWorkItemsInRange).toHaveBeenCalledWith("2026-09-07", "2026-09-20");
+    expect(mocks.listSchedulesInRange).toHaveBeenCalledWith("2026-09-07", "2026-09-20");
+    // 지난 주를 볼 때는 밀린 계획을 띄우지 않는다
+    expect(mocks.listOverduePlanned).not.toHaveBeenCalled();
   });
 
   it("월요일이 아닌 week 값은 무시하고 이번 주를 조회한다", async () => {
-    getBoardMock.mockResolvedValue({ fixedTasks: [], incomplete: [], completed: [] });
+    await renderTasksPage({ week: "2026-09-09" });
 
-    await renderTasksPage({ week: "2026-09-09" }); // 수요일 → 무효
+    const [first] = mocks.listWorkItemsInRange.mock.calls[0];
+    expect(first).not.toBe("2026-09-09");
+    expect(mocks.listOverduePlanned).toHaveBeenCalled();
+  });
 
-    const calledWith = getNoteLogForWeekMock.mock.calls[0][0];
-    expect(calledWith).not.toBe("2026-09-09");
-    expect(/^\d{4}-\d{2}-\d{2}$/.test(calledWith)).toBe(true);
+  it("항목을 날짜 칸에 보여주고, 보고서 미리보기에는 완료한 항목만 번호를 붙여 넣는다", async () => {
+    mocks.listWorkItemsInRange.mockResolvedValue([
+      item({ id: "a", date: "2026-09-07", body: "전시회 철거 물품 정리", projectName: "2026 전시회" }),
+      item({ id: "b", date: "2026-09-07", body: "못 한 계획", status: "planned" }),
+      item({ id: "c", date: "2026-09-14", body: "사이트맵 확정", status: "planned" }),
+    ]);
+
+    await renderTasksPage({ week: "2026-09-07" });
+
+    expect(screen.getByText("전시회 철거 물품 정리")).toBeInTheDocument();
+    expect(screen.getByText("#2026 전시회")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /주간업무보고 만들기/ }));
+    expect(screen.getByText("9월 07일 - 9월 13일")).toBeInTheDocument();
+    expect(screen.getByText("1. 전시회 철거 물품 정리")).toBeInTheDocument();
+    expect(screen.getByText("1. 사이트맵 확정")).toBeInTheDocument();
+    expect(screen.queryByText("1. 못 한 계획")).not.toBeInTheDocument();
+    expect(screen.getByText(/이번 주에 못 한 계획/)).toBeInTheDocument();
+  });
+
+  it("연간일정을 해당 날짜에 흐리게 보여준다", async () => {
+    mocks.listSchedulesInRange.mockResolvedValue([
+      {
+        id: "s1",
+        title: "카페24 미팅",
+        category: "미팅",
+        startDate: "2026-09-08",
+        endDate: "2026-09-08",
+        memo: null,
+        leaveType: null,
+        employeeId: null,
+        employeeLabel: null,
+      },
+    ]);
+
+    await renderTasksPage({ week: "2026-09-07" });
+
+    expect(screen.getByRole("button", { name: "카페24 미팅 일정을 8일 업무로 담기" })).toBeInTheDocument();
+  });
+
+  it("주간 항목 조회가 실패해도 프로젝트 목록은 보여준다", async () => {
+    mocks.listWorkItemsInRange.mockRejectedValue(new Error("db down"));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await renderTasksPage();
+
+    expect(screen.getByText(/주간 업무를 불러오지 못했습니다/)).toBeInTheDocument();
+    expect(screen.getByText("프로젝트")).toBeInTheDocument();
+    consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
+  });
+
+  it("프로젝트 목록만 실패하면 그 자리에만 안내를 띄운다", async () => {
+    mocks.listProjects.mockRejectedValue(new Error("db down"));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await renderTasksPage();
+
+    expect(screen.getByText(/프로젝트 목록을 불러오지 못했습니다/)).toBeInTheDocument();
+    expect(screen.getByText("주간 업무")).toBeInTheDocument();
+    consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 });

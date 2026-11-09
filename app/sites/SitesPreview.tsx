@@ -159,6 +159,12 @@ export function SitesPreview({ items, categories }: { items: SiteItem[]; categor
 
 type Source = SiteItem["source"];
 
+/**
+ * 다단(columns) 배치의 카드 칸. Safari 는 아래 마진을 다음 단 위로 넘기거나 카드를 단 사이에서 쪼개
+ * 간격이 틀어지므로, 마진 대신 inline-block + 아래 안쪽 여백으로 칸을 만든다.
+ */
+const COLUMN_ITEM_CLASS = "inline-block w-full break-inside-avoid pb-4 align-top";
+
 /** 카드 높이가 제각각인 다단 배치라, 끄는 동안 다른 카드를 밀지 않고 놓을 자리만 표시한다. */
 const noShiftStrategy = () => null;
 
@@ -227,7 +233,9 @@ function ZoneGroups({
     return canReorder && g.categoryId ? (
       <SortableGroupCard key={idOf(g)} id={idOf(g)} {...props} />
     ) : (
-      <GroupCard key={idOf(g)} {...props} />
+      <div key={idOf(g)} className={COLUMN_ITEM_CLASS}>
+        <GroupCard {...props} />
+      </div>
     );
   });
 
@@ -263,7 +271,7 @@ function ZoneGroups({
 function SortableGroupCard({ id, ...props }: { id: string } & Omit<Parameters<typeof GroupCard>[0], "headerHandle" | "dragState">) {
   const { attributes, listeners, setNodeRef, isDragging, isOver } = useSortable({ id });
   return (
-    <div ref={setNodeRef} className="mb-4 break-inside-avoid">
+    <div ref={setNodeRef} className={COLUMN_ITEM_CLASS}>
       <GroupCard {...props} headerHandle={{ attributes, listeners }} dragState={isDragging ? "dragging" : isOver ? "over" : null} />
     </div>
   );
@@ -374,9 +382,7 @@ function GroupCard({
 
   return (
     <div
-      className={`overflow-hidden rounded-2xl border bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.05),0_4px_14px_-6px_rgba(16,24,40,0.08)] transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(16,24,40,0.05),0_14px_28px_-10px_rgba(16,24,40,0.16)] ${
-        headerHandle ? "" : "mb-4 break-inside-avoid"
-      } ${dragState === "over" ? "border-accent ring-2 ring-accent" : "border-border"} ${dragState === "dragging" ? "opacity-40" : ""}`}
+      className={`overflow-hidden rounded-2xl border bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.05),0_4px_14px_-6px_rgba(16,24,40,0.08)] transition-shadow duration-200 ease-out hover:shadow-[0_2px_4px_rgba(16,24,40,0.05),0_14px_28px_-10px_rgba(16,24,40,0.16)] ${dragState === "over" ? "border-accent ring-2 ring-accent" : "border-border"} ${dragState === "dragging" ? "opacity-40" : ""}`}
     >
       {/* 제목 줄: 테마 포인트 색(12%)을 깔아 회색 바탕과 확실히 구분 */}
       <div className="group/header flex items-center justify-between gap-2 border-b border-accent/25 bg-accent/[0.12] px-4 py-3 text-foreground">

@@ -62,3 +62,62 @@ html {
     font-size: 16px !important;
   }
 }
+
+/* 양식 문서 인쇄: A4 한 장에 문서(.print-sheet)만 찍는다. 글자 크기는 화면 배율과 무관하게 16px 기준. */
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm 12mm 12mm 12mm;
+  }
+
+  html {
+    font-size: 16px !important;
+  }
+
+  body {
+    background: #ffffff !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-sheet,
+  .print-sheet * {
+    visibility: visible;
+  }
+
+  /* 위에서부터 내용 길이만큼 (bottom 을 묶으면 한 장을 넘는 문서가 잘린다) */
+  .print-sheet {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* Tailwind 의 sm:p-10 · max-w-3xl · border 보다 우선해야 해서 !important */
+    max-width: none !important;
+    border: none !important;
+    padding: 0 !important;
+    /* 표 머리칸의 옅은 배경색도 인쇄한다 (브라우저 기본값은 배경색을 빼고 인쇄) */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 보통 길이의 품의서가 A4 한 장에 들어가게 인쇄할 때만 칸·간격을 조금 줄인다 (화면은 그대로) */
+  .print-sheet .paper-cell {
+    padding-top: 0.3rem !important;
+    padding-bottom: 0.3rem !important;
+  }
+
+  .print-sheet .paper-block {
+    margin-bottom: 1rem !important;
+  }
+
+  /* 표 한 줄이 두 장에 걸쳐 잘리지 않게 */
+  .print-sheet tr {
+    break-inside: avoid;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

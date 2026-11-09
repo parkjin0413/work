@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, CalendarDays, CheckSquare, Globe, KeyRound, LogOut, Package } from "lucide-react";
+import { Building2, CalendarDays, CheckSquare, FileText, Globe, KeyRound, LogOut, Package } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 // 별도 홈 대시보드 없음 — 업무관리가 사실상 기본 화면(첫 메뉴)이라 "/" 항목은 두지 않는다.
 const NAV_ITEMS = [
   { href: "/tasks", label: "업무관리", icon: CheckSquare },
   { href: "/calendar", label: "연간일정", icon: CalendarDays },
+  { href: "/forms", label: "양식 문서", icon: FileText },
   { href: "/sites", label: "어카운트·북마크", icon: KeyRound },
   { href: "/company", label: "회사 · 직원", icon: Building2 },
   { href: "/hosting", label: "호스팅", icon: Globe },
@@ -30,7 +31,7 @@ export function Sidebar() {
   return (
     <nav
       aria-label="주요 메뉴"
-      className="sticky top-0 z-30 grid h-14 w-full shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-surface px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] shadow-[0_1px_2px_rgba(16,24,40,0.04)] lg:grid-cols-[1fr_auto_1fr] lg:gap-6"
+      className="sticky top-0 z-30 print:hidden grid h-14 w-full shrink-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-surface px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-1920px)/2))] shadow-[0_1px_2px_rgba(16,24,40,0.04)] lg:grid-cols-[1fr_auto_1fr] lg:gap-6"
     >
       <Link
         href="/tasks"

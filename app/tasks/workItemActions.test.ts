@@ -4,6 +4,7 @@ const { requireAdminMock, storeMock, revalidatePathMock } = vi.hoisted(() => ({
   requireAdminMock: vi.fn(),
   storeMock: {
     createWorkItem: vi.fn(),
+    createWorkItems: vi.fn(),
     updateWorkItem: vi.fn(),
     moveWorkItems: vi.fn(),
     deleteWorkItem: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock("next/cache", () => ({ revalidatePath: revalidatePathMock }));
 
 import {
   createWorkItemAction,
+  createWorkItemsAction,
   deleteWorkItemAction,
   moveWorkItemsAction,
   reorderWorkItemsAction,
@@ -110,5 +112,25 @@ describe("reorderWorkItemsAction / searchWorkItemsAction", () => {
     storeMock.searchWorkItems.mockResolvedValue([]);
     await searchWorkItemsAction(" 나스 ");
     expect(storeMock.searchWorkItems).toHaveBeenCalledWith("나스");
+  });
+});
+
+describe("createWorkItemsAction", () => {
+  it("빈 줄을 빼고 한 날짜에 여러 항목을 추가한다", async () => {
+    storeMock.createWorkItems.mockResolvedValue([]);
+    await createWorkItemsAction({ date: "2026-11-16", bodies: [" A ", "", "B"], status: "planned", projectId: "" });
+    expect(storeMock.createWorkItems).toHaveBeenCalledWith({
+      date: "2026-11-16",
+      bodies: ["A", "B"],
+      status: "planned",
+      projectId: null,
+    });
+  });
+
+  it("내용이 없으면 거부한다", async () => {
+    await expect(
+      createWorkItemsAction({ date: "2026-11-16", bodies: [" "], status: "planned", projectId: null })
+    ).rejects.toThrow("내용을 입력해주세요.");
+    expect(storeMock.createWorkItems).not.toHaveBeenCalled();
   });
 });

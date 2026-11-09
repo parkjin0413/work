@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -35,12 +35,14 @@ import { CopyButton } from "@/components/CopyButton";
 import { CATEGORY_COLORS } from "@/lib/schedule/categories";
 import type { Schedule } from "@/lib/schedule/scheduleStore";
 import { addDaysISO, formatMonthDayWeekday, getWeekdayIndex, WEEKDAY_LABELS } from "@/lib/tasks/week";
+import { splitPastedLines } from "@/lib/tasks/pasteLines";
 import { planDrop } from "@/lib/tasks/reorder";
 import { buildWeeklyReport, spreadAcrossWeek, toExcelText } from "@/lib/tasks/weeklyReport";
 import { compareWorkItems, type ProjectOption, type WorkItem, type WorkItemStatus } from "@/lib/tasks/workItems";
 import { SectionHeader } from "./SectionHeader";
 import {
   createWorkItemAction,
+  createWorkItemsAction,
   deleteWorkItemAction,
   moveWorkItemsAction,
   reorderWorkItemsAction,
@@ -134,6 +136,36 @@ export function WeekPlanner({
       router.refresh();
     } catch (e) {
       setItems((prev) => prev.filter((i) => i.id !== tempId));
+      setError(e instanceof Error && e.message ? e.message : "추가에 실패했습니다.");
+    }
+  }
+
+  /** 여러 줄 붙여넣기: 한 날짜에 줄마다 항목 하나씩 */
+  async function addItems(input: Omit<NewItem, "body" | "scheduleId"> & { bodies: string[] }) {
+    const now = new Date().toISOString();
+    const temps: WorkItem[] = input.bodies.map((body) => ({
+      id: `tmp-${++tempSeq}`,
+      date: input.date,
+      body,
+      status: input.status,
+      projectId: input.projectId,
+      projectName: input.projectId ? (projectNameById.get(input.projectId) ?? null) : null,
+      scheduleId: null,
+      sortOrder: Number.MAX_SAFE_INTEGER,
+      createdAt: now,
+    }));
+    const tempIds = new Set(temps.map((t) => t.id));
+    setItems((prev) => [...prev, ...temps]);
+    setError(null);
+    try {
+      const saved = await createWorkItemsAction(input);
+      setItems((prev) => {
+        const savedIds = new Set(saved.map((i) => i.id));
+        return [...prev.filter((i) => !tempIds.has(i.id) && !savedIds.has(i.id)), ...saved];
+      });
+      router.refresh();
+    } catch (e) {
+      setItems((prev) => prev.filter((i) => !tempIds.has(i.id)));
       setError(e instanceof Error && e.message ? e.message : "추가에 실패했습니다.");
     }
   }
@@ -269,6 +301,7 @@ export function WeekPlanner({
     todayISO,
     projects,
     onAdd: addItem,
+    onAddMany: addItems,
     onToggle: toggleItem,
     onSave: saveItem,
     onDelete: deleteItem,
@@ -389,6 +422,7 @@ type DayHandlers = {
   todayISO: string;
   projects: ProjectOption[];
   onAdd: (input: NewItem) => void;
+  onAddMany: (input: Omit<NewItem, "body" | "scheduleId"> & { bodies: string[] }) => void;
   onToggle: (item: WorkItem) => void;
   onSave: (item: WorkItem, patch: { body: string; date: string; projectId: string | null }) => void;
   onDelete: (item: WorkItem) => void;
@@ -836,6 +870,14 @@ function AddItemInput({ date, handlers }: { date: string; handlers: DayHandlers 
     setBody("");
   }
 
+  /** 엑셀 "1. … 2. …" 칸처럼 여러 줄이면 줄마다 항목으로 넣는다. 한 줄이면 평소처럼 붙여넣기. */
+  function onPaste(e: ClipboardEvent<HTMLInputElement>) {
+    const bodies = splitPastedLines(e.clipboardData.getData("text/plain"));
+    if (bodies.length < 2) return;
+    e.preventDefault();
+    handlers.onAddMany({ date, bodies, status: isFuture ? "planned" : "done", projectId: projectId || null });
+  }
+
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     // 한글 조합 중 Enter는 글자 확정이라 무시한다.
     if (e.key === "Enter" && !e.nativeEvent.isComposing) {
@@ -863,6 +905,7 @@ function AddItemInput({ date, handlers }: { date: string; handlers: DayHandlers 
         value={body}
         onChange={(e) => setBody(e.target.value)}
         onKeyDown={onKeyDown}
+        onPaste={onPaste}
         placeholder={isFuture ? "+ 할 일 계획" : "+ 한 일 적기"}
         aria-label={`${formatMonthDayWeekday(date)} ${isFuture ? "할 일 계획" : "한 일 적기"}`}
         className="w-full min-w-0 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-[0.75rem] text-foreground placeholder:text-muted hover:border-border focus:border-border focus:bg-bg focus:outline-none"
@@ -870,7 +913,9 @@ function AddItemInput({ date, handlers }: { date: string; handlers: DayHandlers 
       {showOptions ? (
         <div className="mt-1 flex items-center gap-1.5">
           <ProjectSelect projects={handlers.projects} value={projectId} onChange={setProjectId} />
-          <span className="shrink-0 text-[0.6rem] text-muted">Enter</span>
+          <span className="shrink-0 text-[0.6rem] text-muted" title="여러 줄을 붙여넣으면 줄마다 하나씩 들어갑니다">
+            Enter · 여러 줄 붙여넣기
+          </span>
         </div>
       ) : null}
     </div>

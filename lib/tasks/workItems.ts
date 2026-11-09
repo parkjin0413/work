@@ -124,6 +124,30 @@ export async function createWorkItem(input: WorkItemInput): Promise<WorkItem> {
   return toWorkItem(data as unknown as Row);
 }
 
+/** 한 날짜에 여러 항목을 붙여넣은 순서대로 한 번에 추가한다. */
+export async function createWorkItems(input: Omit<WorkItemInput, "body"> & { bodies: string[] }): Promise<WorkItem[]> {
+  const supabase = createSupabaseServiceClient();
+  const base = Math.floor(Date.now() / 1000) % 2_000_000_000;
+  const { data, error } = await supabase
+    .from("task_notes")
+    .insert(
+      input.bodies.map((body, index) => ({
+        work_date: input.date,
+        body,
+        status: input.status,
+        task_id: input.projectId,
+        schedule_id: null,
+        sort_order: base + index,
+      })),
+    )
+    .select(SELECT_COLUMNS);
+
+  if (error || !data) {
+    throw new Error(`업무 항목 추가 실패: ${error?.message ?? "알 수 없는 오류"}`);
+  }
+  return (data as unknown as Row[]).map(toWorkItem).sort(compareWorkItems);
+}
+
 export type WorkItemPatch = Partial<{
   /** null 이면 날짜를 비워 프로젝트의 "남은 단계"로 돌려보낸다 */
   date: string | null;
@@ -171,8 +195,8 @@ export async function reorderWorkItems(ids: string[], date?: string): Promise<vo
       supabase
         .from("task_notes")
         .update(date === undefined ? { sort_order: index } : { sort_order: index, work_date: date })
-        .eq("id", id)
-    )
+        .eq("id", id),
+    ),
   );
   const failed = results.find((r) => r.error);
   if (failed?.error) {

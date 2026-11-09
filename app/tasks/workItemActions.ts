@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import {
   createWorkItem,
+  createWorkItems,
   deleteWorkItem,
   moveWorkItems,
   reorderWorkItems,
@@ -50,6 +51,30 @@ export async function createWorkItemAction(input: {
   });
   revalidatePath("/tasks");
   return item;
+}
+
+/** 여러 줄 붙여넣기: 한 날짜에 여러 항목을 한 번에 추가한다. */
+export async function createWorkItemsAction(input: {
+  date: string;
+  bodies: string[];
+  status: WorkItemStatus;
+  projectId: string | null;
+}): Promise<WorkItem[]> {
+  await requireAdmin();
+  assertDate(input.date);
+  assertStatus(input.status);
+  const bodies = (Array.isArray(input.bodies) ? input.bodies : []).map((b) => b.trim()).filter(Boolean);
+  if (bodies.length === 0) throw new Error("내용을 입력해주세요.");
+  if (bodies.length > 50) throw new Error("한 번에 50개까지 추가할 수 있습니다.");
+
+  const items = await createWorkItems({
+    date: input.date,
+    bodies: bodies.map(cleanBody),
+    status: input.status,
+    projectId: input.projectId || null,
+  });
+  revalidatePath("/tasks");
+  return items;
 }
 
 export async function updateWorkItemAction(id: string, patch: WorkItemPatch): Promise<void> {

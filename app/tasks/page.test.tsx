@@ -39,6 +39,7 @@ vi.mock("./projectActions", () => ({
 }));
 vi.mock("./workItemActions", () => ({
   createWorkItemAction: vi.fn(),
+  createWorkItemsAction: vi.fn(),
   updateWorkItemAction: vi.fn(),
   moveWorkItemsAction: vi.fn(),
   deleteWorkItemAction: vi.fn(),

@@ -2,7 +2,8 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { withRetry } from "@/lib/supabase/withRetry";
-import { getStampUrl, listExpenseReports, listLeaveRequests } from "@/lib/forms/formsStore";
+import { getStampUrl, listExpenseReports, listExpenseStatements, listLeaveRequests } from "@/lib/forms/formsStore";
+import type { ExpenseStatementSummary } from "@/lib/forms/statement";
 import { StampCard } from "./StampCard";
 
 const NEW_BUTTON_CLASS =
@@ -35,6 +36,13 @@ export default async function FormsPage() {
     );
   }
   const stampUrl = await getStampUrl();
+  // 경비내역서는 표(0023)를 나중에 만들었으므로, 아직 없어도 나머지 목록은 보여준다.
+  let statements: ExpenseStatementSummary[] | null = null;
+  try {
+    statements = await withRetry(() => listExpenseStatements(), "forms/statement");
+  } catch (error) {
+    console.error("[forms] 경비내역서 목록 조회 실패:", error);
+  }
 
   return (
     <>
@@ -42,64 +50,128 @@ export default async function FormsPage() {
       <p className="mt-1 text-sm text-muted">사내 서류를 정해진 양식에 맞춰 작성하고 인쇄합니다.</p>
 
       <div className="mt-5 grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <section aria-label="품의서" className="rounded-2xl border border-border bg-surface">
-          <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-            <div>
-              <h2 className="text-base font-semibold text-foreground">품의서</h2>
-              <p className="break-keep text-xs text-muted">
-                지출 내역과 안건을 정리해 결재를 받는 문서 · {expenses.length}건
-              </p>
+        <div className="flex min-w-0 flex-col gap-6">
+          <section aria-label="품의서" className="rounded-2xl border border-border bg-surface">
+            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+              <div>
+                <h2 className="text-base font-semibold text-foreground">품의서</h2>
+                <p className="break-keep text-xs text-muted">
+                  지출 내역과 안건을 정리해 결재를 받는 문서 · {expenses.length}건
+                </p>
+              </div>
+              <Link href="/forms/expense/new" className={NEW_BUTTON_CLASS}>
+                + 새 품의서
+              </Link>
             </div>
-            <Link href="/forms/expense/new" className={NEW_BUTTON_CLASS}>
-              + 새 품의서
-            </Link>
-          </div>
-          {expenses.length === 0 ? (
-            <p className="p-6 text-center text-sm text-muted">작성한 품의서가 없습니다.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm sm:min-w-[36rem]">
+            {expenses.length === 0 ? (
+              <p className="p-6 text-center text-sm text-muted">작성한 품의서가 없습니다.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm sm:min-w-[36rem]">
+                  <thead>
+                    <tr className="border-b border-border text-xs text-muted">
+                      <th className={`${TH_CLASS} hidden sm:table-cell`}>문서번호</th>
+                      <th className={TH_CLASS}>제목</th>
+                      <th className={`${TH_CLASS} hidden sm:table-cell`}>기안일</th>
+                      <th className={`${TH_CLASS} text-right`}>금액</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {expenses.map((report) => (
+                      <tr key={report.id} className="border-b border-border last:border-0 hover:bg-surface-hover">
+                        <td className={`${TD_CLASS} hidden whitespace-nowrap sm:table-cell`}>
+                          <Link
+                            href={`/forms/expense/${report.id}`}
+                            className="font-medium text-accent hover:underline"
+                          >
+                            {report.docNumber}
+                          </Link>
+                        </td>
+                        <td className={TD_CLASS}>
+                          <Link
+                            href={`/forms/expense/${report.id}`}
+                            className="break-keep text-foreground hover:underline"
+                          >
+                            {report.title}
+                          </Link>
+                          {/* 휴대폰에서는 문서번호·기안일 칸을 숨기고 제목 아래에 작게 */}
+                          <p className="mt-0.5 text-xs text-muted sm:hidden">
+                            {report.docNumber} · {dot(report.draftedAt)}
+                          </p>
+                        </td>
+                        <td className={`${TD_CLASS} hidden whitespace-nowrap text-muted sm:table-cell`}>
+                          {dot(report.draftedAt)}
+                        </td>
+                        <td className={`${TD_CLASS} whitespace-nowrap text-right text-foreground`}>
+                          {report.totalAmount.toLocaleString("ko-KR")}원
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section aria-label="경비내역서" className="rounded-2xl border border-border bg-surface">
+            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+              <div>
+                <h2 className="text-base font-semibold text-foreground">경비내역서</h2>
+                <p className="break-keep text-xs text-muted">
+                  식대·주차비·자차(110%) 등 경비를 정리해 결재를 받는 문서
+                  {statements ? ` · ${statements.length}건` : ""}
+                </p>
+              </div>
+              <Link href="/forms/statement/new" className={NEW_BUTTON_CLASS}>
+                + 새 경비내역서
+              </Link>
+            </div>
+            {statements === null ? (
+              <p className="p-6 text-center text-sm text-muted">
+                경비내역서 목록을 불러오지 못했습니다. 0023_expense_statements.sql 실행 여부를 확인해주세요.
+              </p>
+            ) : statements.length === 0 ? (
+              <p className="p-6 text-center text-sm text-muted">작성한 경비내역서가 없습니다.</p>
+            ) : (
+              <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-border text-xs text-muted">
-                    <th className={`${TH_CLASS} hidden sm:table-cell`}>문서번호</th>
-                    <th className={TH_CLASS}>제목</th>
-                    <th className={`${TH_CLASS} hidden sm:table-cell`}>기안일</th>
-                    <th className={`${TH_CLASS} text-right`}>금액</th>
+                    <th className={TH_CLASS}>내역 기간</th>
+                    <th className={`${TH_CLASS} hidden sm:table-cell`}>작성일</th>
+                    <th className={`${TH_CLASS} text-right`}>합계</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {expenses.map((report) => (
-                    <tr key={report.id} className="border-b border-border last:border-0 hover:bg-surface-hover">
-                      <td className={`${TD_CLASS} hidden whitespace-nowrap sm:table-cell`}>
-                        <Link href={`/forms/expense/${report.id}`} className="font-medium text-accent hover:underline">
-                          {report.docNumber}
-                        </Link>
-                      </td>
+                  {statements.map((statement) => (
+                    <tr key={statement.id} className="border-b border-border last:border-0 hover:bg-surface-hover">
                       <td className={TD_CLASS}>
                         <Link
-                          href={`/forms/expense/${report.id}`}
-                          className="break-keep text-foreground hover:underline"
+                          href={`/forms/statement/${statement.id}`}
+                          className="font-medium text-accent hover:underline"
                         >
-                          {report.title}
+                          {statement.firstDate && statement.lastDate
+                            ? statement.firstDate === statement.lastDate
+                              ? dot(statement.firstDate)
+                              : `${dot(statement.firstDate)} ~ ${dot(statement.lastDate).slice(5)}`
+                            : "-"}
                         </Link>
-                        {/* 휴대폰에서는 문서번호·기안일 칸을 숨기고 제목 아래에 작게 */}
-                        <p className="mt-0.5 text-xs text-muted sm:hidden">
-                          {report.docNumber} · {dot(report.draftedAt)}
+                        <p className="text-xs text-muted">
+                          {statement.rowCount}건<span className="sm:hidden"> · {dot(statement.writtenAt)} 작성</span>
                         </p>
                       </td>
                       <td className={`${TD_CLASS} hidden whitespace-nowrap text-muted sm:table-cell`}>
-                        {dot(report.draftedAt)}
+                        {dot(statement.writtenAt)}
                       </td>
                       <td className={`${TD_CLASS} whitespace-nowrap text-right text-foreground`}>
-                        {report.totalAmount.toLocaleString("ko-KR")}원
+                        {statement.totalAmount.toLocaleString("ko-KR")}원
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
-        </section>
+            )}
+          </section>
+        </div>
 
         <div className="flex flex-col gap-6">
           <section aria-label="휴가신청서" className="rounded-2xl border border-border bg-surface">

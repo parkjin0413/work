@@ -6,8 +6,12 @@ import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { getKstTodayISO } from "@/lib/tasks/week";
 import { parseExpenseFields, parseLeaveFields, readApproverIds } from "@/lib/forms/parse";
 import { MAX_EXPENSE_APPROVERS, MAX_LEAVE_APPROVERS } from "@/lib/forms/types";
+import { parseStatementFields } from "@/lib/forms/statement";
 import {
   createExpenseReport,
+  createExpenseStatement,
+  deleteExpenseStatement,
+  updateExpenseStatement,
   createLeaveRequest,
   deleteExpenseReport,
   deleteLeaveRequest,
@@ -150,4 +154,51 @@ export async function deleteStampAction(): Promise<void> {
   await requireAdmin();
   await deleteStamp();
   revalidatePath("/forms", "layout");
+}
+
+// ── 경비내역서 ──────────────────────────────────────────
+
+export async function createExpenseStatementAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  await requireAdmin();
+  const fields = parseStatementFields(formData);
+  if (!fields.ok) return { error: fields.error };
+
+  let id: string;
+  try {
+    id = await createExpenseStatement(await getDrafterProfile(), fields.value);
+  } catch (error) {
+    console.error("[forms] 경비내역서 저장 실패:", error);
+    return { error: "저장 중 오류가 발생했습니다. 0023_expense_statements.sql 실행 여부를 확인해주세요." };
+  }
+
+  revalidatePath("/forms");
+  redirect(`/forms/statement/${id}`);
+}
+
+export async function updateExpenseStatementAction(
+  id: string,
+  _prev: FormState,
+  formData: FormData
+): Promise<FormState> {
+  await requireAdmin();
+  const fields = parseStatementFields(formData);
+  if (!fields.ok) return { error: fields.error };
+
+  try {
+    await updateExpenseStatement(id, fields.value);
+  } catch (error) {
+    console.error("[forms] 경비내역서 수정 실패:", error);
+    return { error: "수정 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." };
+  }
+
+  revalidatePath("/forms");
+  revalidatePath(`/forms/statement/${id}`);
+  redirect(`/forms/statement/${id}`);
+}
+
+export async function deleteExpenseStatementAction(id: string): Promise<void> {
+  await requireAdmin();
+  await deleteExpenseStatement(id);
+  revalidatePath("/forms");
+  redirect("/forms");
 }

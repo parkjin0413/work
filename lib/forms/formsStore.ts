@@ -2,6 +2,14 @@ import { createSupabaseServiceClient } from "@/lib/supabase/serviceClient";
 import { MY_EMPLOYEE_NAME } from "@/lib/leave/config";
 import { expenseDocPrefix, leaveDocPrefix, nextExpenseDocNumber, nextLeaveDocNumber } from "./docNumber";
 import type { ExpenseFields, LeaveFields } from "./parse";
+import { buildSuggestions } from "./statement";
+import type {
+  ExpenseStatement,
+  ExpenseStatementSummary,
+  StatementFields,
+  StatementRow,
+  StatementSuggestion,
+} from "./statement";
 import {
   EMPTY_LEAVE_BALANCE_ENTRY,
   type ApproverCandidate,
@@ -60,7 +68,7 @@ export async function listApproverCandidates(): Promise<ApproverCandidate[]> {
       (a, b) =>
         (a.department?.sort_order ?? 0) - (b.department?.sort_order ?? 0) ||
         (a.department?.name ?? "").localeCompare(b.department?.name ?? "") ||
-        a.sort_order - b.sort_order
+        a.sort_order - b.sort_order,
     )
     .map((row) => ({
       id: row.id,
@@ -201,7 +209,7 @@ function expenseColumns(fields: ExpenseFields, approvers: FormApprover[]) {
 export async function createExpenseReport(
   drafter: DrafterProfile,
   fields: ExpenseFields,
-  approvers: FormApprover[]
+  approvers: FormApprover[],
 ): Promise<string> {
   const existing = await listDocNumbers("expense_reports", expenseDocPrefix(drafter.department, fields.draftedAt));
   const supabase = createSupabaseServiceClient();
@@ -327,7 +335,7 @@ export async function createLeaveRequest(
   drafter: DrafterProfile,
   today: string,
   fields: LeaveFields,
-  approvers: FormApprover[]
+  approvers: FormApprover[],
 ): Promise<string> {
   const existing = await listDocNumbers("leave_requests", leaveDocPrefix(today, drafter.phone));
   const supabase = createSupabaseServiceClient();
@@ -411,4 +419,130 @@ export async function deleteStamp(): Promise<void> {
   const supabase = createSupabaseServiceClient();
   const { error } = await supabase.storage.from(STAMP_BUCKET).remove(paths);
   if (error) throw new Error(`도장 삭제 실패: ${error.message}`);
+}
+
+// ── 경비내역서 ──────────────────────────────────────────
+
+type StatementDbRow = {
+  id: string;
+  drafter_name: string;
+  drafter_position: string;
+  written_at: string;
+  fuel_price: number | null;
+  rows: Partial<StatementRow>[] | null;
+  total_amount: number | string;
+  created_at: string;
+};
+
+function toStatementRows(value: Partial<StatementRow>[] | null): StatementRow[] {
+  return (value ?? []).map((row) => ({
+    kind: row.kind === "car" ? "car" : "general",
+    date: String(row.date ?? ""),
+    description: String(row.description ?? ""),
+    amount: Number(row.amount) || 0,
+    distance: row.distance == null ? null : Number(row.distance),
+    note: String(row.note ?? ""),
+  }));
+}
+
+function toExpenseStatement(row: StatementDbRow): ExpenseStatement {
+  return {
+    id: row.id,
+    drafterName: row.drafter_name,
+    drafterPosition: row.drafter_position,
+    writtenAt: row.written_at,
+    fuelPrice: row.fuel_price,
+    rows: toStatementRows(row.rows),
+    totalAmount: Number(row.total_amount) || 0,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listExpenseStatements(): Promise<ExpenseStatementSummary[]> {
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("expense_statements")
+    .select("id, written_at, total_amount, rows")
+    .order("written_at", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(`경비내역서 목록 조회 실패: ${error.message}`);
+
+  return (data ?? []).map((row) => {
+    const rows = toStatementRows(row.rows as Partial<StatementRow>[] | null);
+    const dates = rows
+      .map((r) => r.date)
+      .filter(Boolean)
+      .sort();
+    return {
+      id: row.id,
+      writtenAt: row.written_at,
+      totalAmount: Number(row.total_amount) || 0,
+      firstDate: dates[0] ?? null,
+      lastDate: dates[dates.length - 1] ?? null,
+      rowCount: rows.length,
+    };
+  });
+}
+
+export async function getExpenseStatement(id: string): Promise<ExpenseStatement | null> {
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase.from("expense_statements").select("*").eq("id", id).maybeSingle();
+  if (error) throw new Error(`경비내역서 조회 실패: ${error.message}`);
+  return data ? toExpenseStatement(data as StatementDbRow) : null;
+}
+
+function statementColumns(fields: StatementFields) {
+  return {
+    written_at: fields.writtenAt,
+    fuel_price: fields.fuelPrice,
+    rows: fields.rows,
+    total_amount: fields.totalAmount,
+  };
+}
+
+export async function createExpenseStatement(drafter: DrafterProfile, fields: StatementFields): Promise<string> {
+  const supabase = createSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("expense_statements")
+    .insert({ drafter_name: drafter.name, drafter_position: drafter.position, ...statementColumns(fields) })
+    .select("id")
+    .single();
+  if (error || !data) throw new Error(`경비내역서 저장 실패: ${error?.message ?? "알 수 없는 오류"}`);
+  return data.id;
+}
+
+/** 수정해도 작성자 정보는 처음 그대로 둔다. */
+export async function updateExpenseStatement(id: string, fields: StatementFields): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase
+    .from("expense_statements")
+    .update({ ...statementColumns(fields), updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw new Error(`경비내역서 수정 실패: ${error.message}`);
+}
+
+export async function deleteExpenseStatement(id: string): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase.from("expense_statements").delete().eq("id", id);
+  if (error) throw new Error(`경비내역서 삭제 실패: ${error.message}`);
+}
+
+/** 지난 경비내역서 줄에서 자동완성 후보를 모은다 (최근 문서 먼저). 실패해도 작성은 되도록 빈 목록. */
+export async function listStatementSuggestions(): Promise<StatementSuggestion[]> {
+  try {
+    const supabase = createSupabaseServiceClient();
+    const { data, error } = await supabase
+      .from("expense_statements")
+      .select("rows")
+      .order("written_at", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(36);
+    if (error) throw new Error(error.message);
+    return buildSuggestions(
+      (data ?? []).map((row) => ({ rows: toStatementRows(row.rows as Partial<StatementRow>[] | null) })),
+    );
+  } catch (error) {
+    console.error("[forms] 경비내역서 후보 조회 실패:", error);
+    return [];
+  }
 }

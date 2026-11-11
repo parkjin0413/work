@@ -41,6 +41,38 @@ function isSubmitKey(e: KeyboardEvent) {
 
 let tempSeq = 0;
 
+/** 날짜 정하기에 쓰는 이번 주·다음 주 월~금 */
+function buildWeekRows(todayISO: string) {
+  const monday = getMondayOfISO(todayISO);
+  const days = (start: string) => Array.from({ length: 5 }, (_, i) => addDaysISO(start, i));
+  return [
+    { label: "이번 주", dates: days(monday) },
+    { label: "다음 주", dates: days(addDaysISO(monday, 7)) },
+  ];
+}
+type WeekRows = ReturnType<typeof buildWeekRows>;
+
+/** 남은 단계에 날짜를 정하면 "예정"으로 옮긴다 */
+function withScheduledStep(p: Project, step: ProjectStep, date: string): Project {
+  return {
+    ...p,
+    steps: p.steps.filter((s) => s.id !== step.id),
+    scheduled: [...p.scheduled, { id: step.id, date, body: step.body, status: "planned" as const }].sort((a, b) =>
+      a.date.localeCompare(b.date),
+    ),
+  };
+}
+
+/** 남은 단계를 체크하면 오늘 한 일로 옮긴다 */
+function withCompletedStep(p: Project, step: ProjectStep, todayISO: string): Project {
+  return {
+    ...p,
+    steps: p.steps.filter((s) => s.id !== step.id),
+    done: [{ id: step.id, date: todayISO, body: step.body, status: "done" as const }, ...p.done],
+    lastDoneDate: todayISO,
+  };
+}
+
 export function ProjectBoard({ projects: serverProjects, todayISO }: { projects: Project[]; todayISO: string }) {
   const router = useRouter();
   const [projects, setProjects] = useState(serverProjects);
@@ -83,6 +115,25 @@ export function ProjectBoard({ projects: serverProjects, todayISO }: { projects:
     setProjects((prev) => prev.map((p) => (p.id === id ? updater(p) : p)));
   }
 
+  /** 날짜 미정 카드에서 날짜 정하기·완료 (화면 먼저 바꾸고 저장, 실패하면 되돌림) */
+  function scheduleUndated(projectId: string, step: ProjectStep, date: string) {
+    const before = projects;
+    patchProject(projectId, (p) => withScheduledStep(p, step, date));
+    void run(
+      () => updateWorkItemAction(step.id, { date }),
+      () => setProjects(before),
+    );
+  }
+
+  function completeUndated(projectId: string, step: ProjectStep) {
+    const before = projects;
+    patchProject(projectId, (p) => withCompletedStep(p, step, todayISO));
+    void run(
+      () => updateWorkItemAction(step.id, { date: todayISO, status: "done" }),
+      () => setProjects(before),
+    );
+  }
+
   async function createProject(name: string) {
     await run(async () => {
       const id = await createProjectAction(name, "project");
@@ -98,6 +149,13 @@ export function ProjectBoard({ projects: serverProjects, todayISO }: { projects:
           {error}
         </p>
       ) : null}
+      <UndatedSteps
+        projects={active}
+        todayISO={todayISO}
+        onOpen={selectProject}
+        onSchedule={scheduleUndated}
+        onComplete={completeUndated}
+      />
       <div className="grid gap-4 lg:grid-cols-[19rem_minmax(0,1fr)]">
         <ProjectList
           projects={projects}
@@ -285,14 +343,7 @@ function ProjectDetail({
   const [showAllDone, setShowAllDone] = useState(false);
 
   // 날짜 정하기: 이번 주·다음 주 월~금을 요일 버튼으로 (그 밖의 날짜는 달력)
-  const weekRows = useMemo(() => {
-    const monday = getMondayOfISO(todayISO);
-    const days = (start: string) => Array.from({ length: 5 }, (_, i) => addDaysISO(start, i));
-    return [
-      { label: "이번 주", dates: days(monday) },
-      { label: "다음 주", dates: days(addDaysISO(monday, 7)) },
-    ];
-  }, [todayISO]);
+  const weekRows = useMemo(() => buildWeekRows(todayISO), [todayISO]);
 
   /** 화면을 먼저 바꾸고 저장한다. 실패하면 되돌린다. */
   function optimistic(updater: (p: Project) => Project, task: () => Promise<unknown>) {
@@ -414,33 +465,14 @@ function ProjectDetail({
 
   function scheduleStep(step: ProjectStep, date: string) {
     optimistic(
-      (p) => ({
-        ...p,
-        steps: p.steps.filter((s) => s.id !== step.id),
-        scheduled: [...p.scheduled, { id: step.id, date, body: step.body, status: "planned" as const }].sort((a, b) =>
-          a.date.localeCompare(b.date),
-        ),
-      }),
+      (p) => withScheduledStep(p, step, date),
       () => updateWorkItemAction(step.id, { date }),
     );
   }
 
   function completeStep(step: ProjectStep) {
     optimistic(
-      (p) => ({
-        ...p,
-        steps: p.steps.filter((s) => s.id !== step.id),
-        done: [
-          {
-            id: step.id,
-            date: todayISO,
-            body: step.body,
-            status: "done" as const,
-          },
-          ...p.done,
-        ],
-        lastDoneDate: todayISO,
-      }),
+      (p) => withCompletedStep(p, step, todayISO),
       () => updateWorkItemAction(step.id, { date: todayISO, status: "done" }),
     );
   }
@@ -649,7 +681,9 @@ function ProjectDetail({
                     >
                       {formatShortDateWeekday(entry.date)}
                     </span>
-                    <span className="min-w-0 flex-1 break-keep [overflow-wrap:anywhere] text-ui-body text-foreground">{entry.body}</span>
+                    <span className="min-w-0 flex-1 break-keep [overflow-wrap:anywhere] text-ui-body text-foreground">
+                      {entry.body}
+                    </span>
                     <button
                       type="button"
                       onClick={() => unschedule(entry.id)}
@@ -727,7 +761,7 @@ function StepRow({
   onDelete,
 }: {
   step: ProjectStep;
-  weekRows: { label: string; dates: string[] }[];
+  weekRows: WeekRows;
   todayISO: string;
   onComplete: () => void;
   onSchedule: (date: string) => void;
@@ -737,23 +771,11 @@ function StepRow({
   const [isPicking, setIsPicking] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [body, setBody] = useState(step.body);
-  const [picked, setPicked] = useState("");
   const isTemp = step.id.startsWith("tmp-");
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: step.id,
     disabled: isTemp || isEditing || isPicking,
   });
-
-  function closePicker() {
-    setIsPicking(false);
-    setPicked("");
-  }
-
-  function confirmPick() {
-    if (!picked) return;
-    onSchedule(picked);
-    closePicker();
-  }
 
   function saveBody() {
     setIsEditing(false);
@@ -812,7 +834,7 @@ function StepRow({
           <span className="flex shrink-0 items-center opacity-60 group-hover/step:opacity-100">
             <button
               type="button"
-              onClick={() => (isPicking ? closePicker() : setIsPicking(true))}
+              onClick={() => setIsPicking((v) => !v)}
               aria-expanded={isPicking}
               aria-label={`${step.body} 날짜 정하기`}
               title="날짜 정하기"
@@ -832,70 +854,225 @@ function StepRow({
         ) : null}
       </div>
       {isPicking ? (
-        <div className="ml-[1.35rem] mt-1.5 flex flex-col gap-1 rounded-lg border border-border bg-surface p-2">
-          {weekRows.map((row) => (
-            <div key={row.label} className="flex items-center gap-1">
-              <span className="w-[2.6rem] shrink-0 text-ui-meta text-muted">{row.label}</span>
-              {row.dates.map((date) => {
-                const isSelected = date === picked;
-                const isToday = date === todayISO;
-                const isPast = date < todayISO;
-                return (
-                  <button
-                    key={date}
-                    type="button"
-                    onClick={() => setPicked(isSelected ? "" : date)}
-                    aria-pressed={isSelected}
-                    aria-label={`${formatShortDateWeekday(date)} 선택`}
-                    title={formatShortDateWeekday(date)}
-                    className={`flex w-[2.4rem] flex-col items-center rounded-md border py-0.5 leading-tight ${
-                      isSelected
-                        ? "border-accent bg-accent text-white"
-                        : isToday
-                          ? "border-accent bg-accent/10 text-accent hover:border-accent"
-                          : isPast
-                            ? "border-border text-muted hover:border-accent hover:text-accent"
-                            : "border-border text-foreground hover:border-accent hover:text-accent"
-                    }`}
-                  >
-                    <span className="text-ui-meta font-semibold">{WEEKDAY_LABELS[getWeekdayIndex(date)]}</span>
-                    <span className="text-ui-tiny opacity-70">{Number(date.slice(8, 10))}</span>
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-          <label className="mt-0.5 flex items-center gap-1">
-            <span className="w-[2.6rem] shrink-0 text-ui-meta text-muted">그 외</span>
-            <input
-              type="date"
-              value={picked}
-              aria-label="날짜 직접 선택"
-              onChange={(e) => setPicked(e.target.value)}
-              className="rounded-md border border-border bg-bg px-1.5 py-0.5 text-ui-meta text-foreground"
-            />
-          </label>
-          <div className="mt-1 flex items-center justify-end gap-1.5 border-t border-border pt-1.5">
-            <span className="mr-auto text-ui-meta text-muted">
-              {picked ? `${formatShortDateWeekday(picked)}에 하기` : "날짜를 고르세요"}
-            </span>
-            <button
-              type="button"
-              onClick={closePicker}
-              className="rounded-md px-2 py-0.5 text-ui-meta text-muted hover:text-foreground"
-            >
-              취소
-            </button>
-            <button
-              type="button"
-              onClick={confirmPick}
-              disabled={!picked}
-              className="rounded-md bg-accent px-2.5 py-0.5 text-ui-meta font-semibold text-white disabled:opacity-40"
-            >
-              확인
-            </button>
-          </div>
+        <DatePickerPanel
+          weekRows={weekRows}
+          todayISO={todayISO}
+          className="ml-[1.35rem] mt-1.5"
+          onCancel={() => setIsPicking(false)}
+          onConfirm={(date) => {
+            onSchedule(date);
+            setIsPicking(false);
+          }}
+        />
+      ) : null}
+    </li>
+  );
+}
+
+/** 날짜 고르기: 이번 주·다음 주 요일 버튼 또는 달력 → "확인"을 눌러야 정해진다 */
+function DatePickerPanel({
+  weekRows,
+  todayISO,
+  className = "",
+  onConfirm,
+  onCancel,
+}: {
+  weekRows: WeekRows;
+  todayISO: string;
+  className?: string;
+  onConfirm: (date: string) => void;
+  onCancel: () => void;
+}) {
+  const [picked, setPicked] = useState("");
+  return (
+    <div className={`flex flex-col gap-1 rounded-lg border border-border bg-surface p-2 ${className}`}>
+      {weekRows.map((row) => (
+        <div key={row.label} className="flex items-center gap-1">
+          <span className="w-[2.6rem] shrink-0 text-ui-meta text-muted">{row.label}</span>
+          {row.dates.map((date) => {
+            const isSelected = date === picked;
+            const isToday = date === todayISO;
+            const isPast = date < todayISO;
+            return (
+              <button
+                key={date}
+                type="button"
+                onClick={() => setPicked(isSelected ? "" : date)}
+                aria-pressed={isSelected}
+                aria-label={`${formatShortDateWeekday(date)} 선택`}
+                title={formatShortDateWeekday(date)}
+                className={`flex w-[2.4rem] flex-col items-center rounded-md border py-0.5 leading-tight ${
+                  isSelected
+                    ? "border-accent bg-accent text-white"
+                    : isToday
+                      ? "border-accent bg-accent/10 text-accent hover:border-accent"
+                      : isPast
+                        ? "border-border text-muted hover:border-accent hover:text-accent"
+                        : "border-border text-foreground hover:border-accent hover:text-accent"
+                }`}
+              >
+                <span className="text-ui-meta font-semibold">{WEEKDAY_LABELS[getWeekdayIndex(date)]}</span>
+                <span className="text-ui-tiny opacity-70">{Number(date.slice(8, 10))}</span>
+              </button>
+            );
+          })}
         </div>
+      ))}
+      <label className="mt-0.5 flex items-center gap-1">
+        <span className="w-[2.6rem] shrink-0 text-ui-meta text-muted">그 외</span>
+        <input
+          type="date"
+          value={picked}
+          aria-label="날짜 직접 선택"
+          onChange={(e) => setPicked(e.target.value)}
+          className="rounded-md border border-border bg-bg px-1.5 py-0.5 text-ui-meta text-foreground"
+        />
+      </label>
+      <div className="mt-1 flex items-center justify-end gap-1.5 border-t border-border pt-1.5">
+        <span className="mr-auto text-ui-meta text-muted">
+          {picked ? `${formatShortDateWeekday(picked)}에 하기` : "날짜를 고르세요"}
+        </span>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md px-2 py-0.5 text-ui-meta text-muted hover:text-foreground"
+        >
+          취소
+        </button>
+        <button
+          type="button"
+          onClick={() => picked && onConfirm(picked)}
+          disabled={!picked}
+          className="rounded-md bg-accent px-2.5 py-0.5 text-ui-meta font-semibold text-white disabled:opacity-40"
+        >
+          확인
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 날짜 미정: 진행 중인 프로젝트·상시 업무의 "남은 단계"를 프로젝트별 카드로 모아 둔다.
+ * 언젠가 할 일 중에서 골라 날짜를 정하면 주간 업무에 계획으로 들어간다.
+ */
+function UndatedSteps({
+  projects,
+  todayISO,
+  onOpen,
+  onSchedule,
+  onComplete,
+}: {
+  projects: Project[];
+  todayISO: string;
+  onOpen: (projectId: string) => void;
+  onSchedule: (projectId: string, step: ProjectStep, date: string) => void;
+  onComplete: (projectId: string, step: ProjectStep) => void;
+}) {
+  const weekRows = useMemo(() => buildWeekRows(todayISO), [todayISO]);
+  const withSteps = projects.filter((p) => p.steps.some((s) => !s.id.startsWith("tmp-")));
+  const total = withSteps.reduce((sum, p) => sum + p.steps.length, 0);
+  if (withSteps.length === 0) return null;
+
+  return (
+    <section id="undated-steps" aria-label="날짜 미정" className="mb-5 scroll-mt-20">
+      <div className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <h3 className="text-ui-title font-semibold text-foreground">날짜 미정</h3>
+        <span className="text-ui-meta text-muted">{total}건</span>
+        <span className="text-ui-meta text-muted">
+          · 언젠가 할 일 — 골라서 날짜를 정하면 주간 업무에 계획으로 들어갑니다
+        </span>
+      </div>
+      <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-7">
+        {withSteps.map((project) => (
+          <div key={project.id} className="min-w-0 rounded-xl border border-border bg-surface p-2.5">
+            <div className="mb-1.5 flex items-baseline gap-1.5">
+              <button
+                type="button"
+                onClick={() => onOpen(project.id)}
+                title="프로젝트 열기"
+                className="min-w-0 truncate text-left text-ui-body font-semibold text-foreground hover:text-accent"
+              >
+                {project.name}
+              </button>
+              {project.kind === "ongoing" ? (
+                <span className="shrink-0 rounded-full bg-bg px-1.5 text-ui-tiny text-muted">상시</span>
+              ) : null}
+              <span className="ml-auto shrink-0 text-ui-meta text-muted">{project.steps.length}</span>
+            </div>
+            <ul className="flex flex-col">
+              {project.steps.map((step) => (
+                <UndatedStepRow
+                  key={step.id}
+                  step={step}
+                  weekRows={weekRows}
+                  todayISO={todayISO}
+                  onSchedule={(date) => onSchedule(project.id, step, date)}
+                  onComplete={() => onComplete(project.id, step)}
+                />
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function UndatedStepRow({
+  step,
+  weekRows,
+  todayISO,
+  onSchedule,
+  onComplete,
+}: {
+  step: ProjectStep;
+  weekRows: WeekRows;
+  todayISO: string;
+  onSchedule: (date: string) => void;
+  onComplete: () => void;
+}) {
+  const [isPicking, setIsPicking] = useState(false);
+  const isTemp = step.id.startsWith("tmp-");
+  return (
+    <li className="rounded-md px-1 py-[0.3rem] hover:bg-bg">
+      <div className="flex items-start gap-1.5">
+        <button
+          type="button"
+          onClick={onComplete}
+          disabled={isTemp}
+          aria-label={`날짜 미정: ${step.body} 오늘 한 일로 완료`}
+          title="오늘 한 일로 완료"
+          className="mt-[0.2rem] h-[0.85rem] w-[0.85rem] shrink-0 rounded border border-slate-300 hover:border-accent dark:border-slate-500"
+        />
+        <span className="min-w-0 flex-1 break-keep [overflow-wrap:anywhere] text-[0.72rem] leading-snug text-foreground">
+          {step.body}
+        </span>
+        <button
+          type="button"
+          onClick={() => setIsPicking((v) => !v)}
+          disabled={isTemp}
+          aria-expanded={isPicking}
+          aria-label={`날짜 미정: ${step.body} 날짜 정하기`}
+          className={`inline-flex shrink-0 items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-ui-meta ${
+            isPicking ? "border-accent text-accent" : "border-border text-muted hover:border-accent hover:text-accent"
+          }`}
+        >
+          <CalendarPlus className="h-3 w-3" aria-hidden="true" />
+          날짜
+        </button>
+      </div>
+      {isPicking ? (
+        <DatePickerPanel
+          weekRows={weekRows}
+          todayISO={todayISO}
+          className="ml-[1.35rem] mt-1.5"
+          onCancel={() => setIsPicking(false)}
+          onConfirm={(date) => {
+            onSchedule(date);
+            setIsPicking(false);
+          }}
+        />
       ) : null}
     </li>
   );

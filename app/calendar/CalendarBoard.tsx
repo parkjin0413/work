@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Cake, ChevronLeft, ChevronRight, Globe, Palmtree, Pencil, Trash2 } from "lucide-react";
+import { Cake, ChevronLeft, ChevronRight, FileText, Globe, Palmtree, Pencil, Trash2 } from "lucide-react";
 import { addMonths, daysInMonth, enumerateDates, firstWeekday, monthRange, weekdayOf } from "@/lib/schedule/calendar";
 import {
   CATEGORY_COLORS,
@@ -51,7 +51,7 @@ function formatPeriod(start: string, end: string): string {
 }
 
 function OverlayIcon({ kind, size }: { kind: OverlayItem["kind"]; size: number }) {
-  const Icon = kind === "hosting" ? Globe : kind === "leave" ? Palmtree : Cake;
+  const Icon = kind === "hosting" ? Globe : kind === "leave" ? Palmtree : kind === "document" ? FileText : Cake;
   return <Icon size={size} className="shrink-0" aria-hidden="true" />;
 }
 
@@ -159,6 +159,7 @@ export function CalendarBoard({
     { key: "leave", label: "연차 발생", colors: OVERLAY_COLORS.leave },
     { key: "birthday", label: "직원 생일", colors: OVERLAY_COLORS.birthday },
     { key: "hosting", label: "호스팅·도메인", colors: OVERLAY_COLORS.hosting },
+    { key: "document", label: "결재 문서", colors: OVERLAY_COLORS.document },
   ];
 
   const agenda = (
@@ -316,6 +317,10 @@ export function CalendarBoard({
                     {overlay.kind === "hosting" ? (
                       <Link href="/hosting" className="shrink-0 text-xs underline">
                         호스팅 보기
+                      </Link>
+                    ) : overlay.href ? (
+                      <Link href={overlay.href} className="shrink-0 text-xs underline">
+                        문서 보기
                       </Link>
                     ) : (
                       <span className="shrink-0 text-xs opacity-80">{overlay.detail}</span>

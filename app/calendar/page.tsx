@@ -8,7 +8,12 @@ import { getMonthHolidays } from "@/lib/schedule/holidays";
 import { listLeaveSchedules, listSchedulesInRange, listTeamMembers, type TeamMember } from "@/lib/schedule/scheduleStore";
 import { HIRE_DATE } from "@/lib/leave/config";
 import { leaveEventsInRange, summarizeLeave, type LeaveSummary } from "@/lib/leave/annualLeave";
-import { listBirthdayOverlays, listHostingOverlays, type OverlayItem } from "@/lib/schedule/overlays";
+import {
+  listBirthdayOverlays,
+  listDocumentOverlays,
+  listHostingOverlays,
+  type OverlayItem,
+} from "@/lib/schedule/overlays";
 import { CalendarBoard } from "./CalendarBoard";
 
 /** 부가 정보(호스팅 만료·생일)는 실패해도 달력 자체는 보여준다. */
@@ -78,9 +83,10 @@ export default async function CalendarPage({
     );
   }
 
-  const [hostingOverlays, birthdayOverlays, leaveSummary, teamMembers] = await Promise.all([
+  const [hostingOverlays, birthdayOverlays, documentOverlays, leaveSummary, teamMembers] = await Promise.all([
     loadOverlay("calendar/hosting", () => listHostingOverlays(first, last)),
     loadOverlay("calendar/birthdays", () => listBirthdayOverlays(first, last)),
+    loadOverlay("calendar/documents", () => listDocumentOverlays(first, last)),
     loadLeaveSummary(today),
     loadTeamMembers(),
   ]);
@@ -94,8 +100,8 @@ export default async function CalendarPage({
       <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-106.6667rem)/2))] py-6">
         <h1 className="text-lg font-semibold text-foreground">일정</h1>
         <p className="mt-1 text-sm text-muted">
-          날짜를 누르면 그날 일정을 보고 추가할 수 있습니다. 호스팅·도메인 계약일과 직원 생일은 자동으로
-          표시됩니다.
+          날짜를 누르면 그날 일정을 보고 추가할 수 있습니다. 호스팅·도메인 계약일, 직원 생일, 결재 문서(품의서·경비내역서)는
+          자동으로 표시됩니다.
         </p>
 
         <CalendarBoard
@@ -104,7 +110,7 @@ export default async function CalendarPage({
           today={today}
           initialDate={selectedDate}
           schedules={schedules}
-          overlays={[...leaveOverlays, ...hostingOverlays, ...birthdayOverlays]}
+          overlays={[...leaveOverlays, ...hostingOverlays, ...birthdayOverlays, ...documentOverlays]}
           leaveSummary={leaveSummary}
           teamMembers={teamMembers}
           holidays={getMonthHolidays(ym)}

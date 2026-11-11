@@ -79,6 +79,11 @@ export default async function TasksPage({ searchParams }: { searchParams: { week
               schedules={schedules}
               holidays={holidaysBetween(weekStart, rangeEnd)}
               projects={projectOptions}
+              undatedCount={
+                projectListResult.status === "fulfilled"
+                  ? projectListResult.value.filter((p) => !p.isCompleted).reduce((sum, p) => sum + p.steps.length, 0)
+                  : 0
+              }
             />
           ) : (
             <ErrorBox message="주간 업무를 불러오지 못했습니다. Supabase에서 0020_work_items 마이그레이션을 실행했는지 확인해주세요." />

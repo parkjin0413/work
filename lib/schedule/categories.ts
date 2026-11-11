@@ -45,7 +45,7 @@ export const CATEGORY_COLORS: Record<ScheduleCategory, ChipColors> = {
   },
 };
 
-/** 다른 메뉴에서 자동으로 가져온 항목(호스팅 만료, 직원 생일). 점선 테두리로 직접 입력한 일정과 구분한다. */
+/** 다른 메뉴에서 자동으로 가져온 항목(호스팅 만료, 직원 생일, 결재 문서). 점선 테두리로 직접 입력한 일정과 구분한다. */
 export const OVERLAY_COLORS = {
   hosting: {
     chip: "border-dashed border-amber-300 bg-amber-50/60 text-amber-800 dark:border-amber-400/40 dark:bg-amber-400/5 dark:text-amber-200",
@@ -58,5 +58,10 @@ export const OVERLAY_COLORS = {
   birthday: {
     chip: "border-dashed border-rose-300 bg-rose-50/60 text-rose-800 dark:border-rose-400/40 dark:bg-rose-400/5 dark:text-rose-200",
     dot: "bg-rose-300 dark:bg-rose-400",
+  },
+  // 결재 문서(품의서·경비내역서)
+  document: {
+    chip: "border-dashed border-violet-300 bg-violet-50/60 text-violet-800 dark:border-violet-400/40 dark:bg-violet-400/5 dark:text-violet-200",
+    dot: "bg-violet-300 dark:bg-violet-400",
   },
 } as const;

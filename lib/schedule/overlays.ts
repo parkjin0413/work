@@ -1,13 +1,15 @@
-// 다른 메뉴의 데이터를 달력에 함께 띄우기 위한 항목 (호스팅·도메인 계약일, 직원 생일).
+// 다른 메뉴의 데이터를 달력에 함께 띄우기 위한 항목 (호스팅·도메인 계약일, 직원 생일, 결재 문서).
 import { createSupabaseServiceClient } from "@/lib/supabase/serviceClient";
 import { enumerateDates, toLunar } from "./calendar";
 
 export type OverlayItem = {
   id: string;
-  kind: "hosting" | "birthday" | "leave";
+  kind: "hosting" | "birthday" | "leave" | "document";
   date: string;
   title: string;
   detail: string;
+  /** 누르면 갈 화면 (결재 문서) */
+  href?: string;
 };
 
 const HOSTING_DATE_COLUMNS = [
@@ -94,4 +96,54 @@ export function buildBirthdayOverlays(rows: BirthdayRow[], first: string, last: 
   }
 
   return items;
+}
+
+// ── 결재 문서 (양식 메뉴) ───────────────────────────────
+
+type ExpenseReportRow = { id: string; doc_number: string; title: string; drafted_at: string };
+type StatementRow = { id: string; written_at: string; total_amount: number | string };
+
+/** 품의서는 기안일에 "품의서 번호 · 제목", 경비내역서는 작성일에 "경비내역서 · 합계" 로 표시한다. */
+export function buildDocumentOverlays(reports: ExpenseReportRow[], statements: StatementRow[]): OverlayItem[] {
+  return [
+    ...reports.map((r) => ({
+      id: `doc-expense-${r.id}`,
+      kind: "document" as const,
+      date: r.drafted_at,
+      title: `품의서 ${r.doc_number} · ${r.title}`,
+      detail: "품의서",
+      href: `/forms/expense/${r.id}`,
+    })),
+    ...statements.map((s) => ({
+      id: `doc-statement-${s.id}`,
+      kind: "document" as const,
+      date: s.written_at,
+      title: `경비내역서 · ${(Number(s.total_amount) || 0).toLocaleString("ko-KR")}원`,
+      detail: "경비내역서",
+      href: `/forms/statement/${s.id}`,
+    })),
+  ];
+}
+
+/** 기간 안의 품의서·경비내역서. 한쪽 표를 못 읽어도 다른 쪽은 보여준다. */
+export async function listDocumentOverlays(first: string, last: string): Promise<OverlayItem[]> {
+  const supabase = createSupabaseServiceClient();
+  const [reports, statements] = await Promise.all([
+    supabase
+      .from("expense_reports")
+      .select("id, doc_number, title, drafted_at")
+      .gte("drafted_at", first)
+      .lte("drafted_at", last),
+    supabase
+      .from("expense_statements")
+      .select("id, written_at, total_amount")
+      .gte("written_at", first)
+      .lte("written_at", last),
+  ]);
+  if (reports.error) console.error("[calendar] 품의서 조회 실패:", reports.error.message);
+  if (statements.error) console.error("[calendar] 경비내역서 조회 실패:", statements.error.message);
+  return buildDocumentOverlays(
+    (reports.data ?? []) as ExpenseReportRow[],
+    (statements.data ?? []) as StatementRow[]
+  );
 }

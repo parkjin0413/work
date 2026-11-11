@@ -60,6 +60,8 @@ type Props = {
   schedules: Schedule[];
   holidays: Record<string, string[]>;
   projects: ProjectOption[];
+  /** 프로젝트의 날짜 안 정한 남은 단계 수 (아래 "날짜 미정" 카드로 가는 표시) */
+  undatedCount?: number;
 };
 
 type NewItem = {
@@ -81,6 +83,7 @@ export function WeekPlanner({
   schedules,
   holidays,
   projects,
+  undatedCount = 0,
 }: Props) {
   const router = useRouter();
   const [items, setItems] = useState(serverItems);
@@ -363,6 +366,15 @@ export function WeekPlanner({
             </Link>
           ) : null}
         </div>
+        {undatedCount > 0 ? (
+          <a
+            href="#undated-steps"
+            title="프로젝트의 날짜 안 정한 남은 단계로 이동"
+            className="inline-flex items-center gap-1 rounded-lg border border-dashed border-border px-2.5 py-1.5 text-ui-body text-muted hover:border-accent hover:text-accent"
+          >
+            날짜 미정 <b className="font-semibold text-foreground">{undatedCount}</b>건
+          </a>
+        ) : null}
         <button
           type="button"
           onClick={() => setShowReport((v) => !v)}

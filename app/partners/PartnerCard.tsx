@@ -8,7 +8,16 @@ import type { DragHandleProps } from "./PartnersBoard";
 import { updatePartnerAction, deletePartnerAction } from "./actions";
 import { PartnerFilePreview } from "./PartnerFilePreview";
 
-type FieldKey = "companyName" | "representative" | "address" | "businessNumber" | "phone" | "email";
+type FieldKey =
+  | "companyName"
+  | "representative"
+  | "address"
+  | "businessNumber"
+  | "phone"
+  | "email"
+  | "bankName"
+  | "accountNumber"
+  | "accountHolder";
 
 const FIELD_LABELS: Record<Exclude<FieldKey, "companyName">, string> = {
   representative: "대표자",
@@ -16,9 +25,13 @@ const FIELD_LABELS: Record<Exclude<FieldKey, "companyName">, string> = {
   businessNumber: "사업자번호",
   phone: "전화번호",
   email: "이메일",
+  bankName: "은행",
+  accountNumber: "계좌번호",
+  accountHolder: "예금주",
 };
 
-const DIGITS_ONLY_FIELDS: FieldKey[] = ["businessNumber", "phone"];
+// 숫자만 복사: 이체 화면 계좌번호 칸에 바로 붙여넣을 수 있게
+const DIGITS_ONLY_FIELDS: FieldKey[] = ["businessNumber", "phone", "accountNumber"];
 
 function toCopyValue(field: FieldKey, value: string): string {
   return DIGITS_ONLY_FIELDS.includes(field) ? value.replace(/[^0-9]/g, "") : value;
@@ -33,6 +46,7 @@ export function PartnerCard({
 }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bankbookInputRef = useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -46,7 +60,11 @@ export function PartnerCard({
   const [editBusinessNumber, setEditBusinessNumber] = useState(partner.businessNumber ?? "");
   const [editPhone, setEditPhone] = useState(partner.phone ?? "");
   const [editEmail, setEditEmail] = useState(partner.email ?? "");
+  const [editBankName, setEditBankName] = useState(partner.bankName ?? "");
+  const [editAccountNumber, setEditAccountNumber] = useState(partner.accountNumber ?? "");
+  const [editAccountHolder, setEditAccountHolder] = useState(partner.accountHolder ?? "");
   const [removeExistingFile, setRemoveExistingFile] = useState(false);
+  const [removeBankbook, setRemoveBankbook] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -73,8 +91,13 @@ export function PartnerCard({
     setEditBusinessNumber(partner.businessNumber ?? "");
     setEditPhone(partner.phone ?? "");
     setEditEmail(partner.email ?? "");
+    setEditBankName(partner.bankName ?? "");
+    setEditAccountNumber(partner.accountNumber ?? "");
+    setEditAccountHolder(partner.accountHolder ?? "");
     setRemoveExistingFile(false);
+    setRemoveBankbook(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (bankbookInputRef.current) bankbookInputRef.current.value = "";
     setErrorMessage(null);
   }
 
@@ -91,10 +114,18 @@ export function PartnerCard({
       formData.set("businessNumber", editBusinessNumber);
       formData.set("phone", editPhone);
       formData.set("email", editEmail);
+      formData.set("bankName", editBankName);
+      formData.set("accountNumber", editAccountNumber);
+      formData.set("accountHolder", editAccountHolder);
       formData.set("removeRegistrationFile", removeExistingFile ? "true" : "false");
+      formData.set("removeBankbookFile", removeBankbook ? "true" : "false");
       const file = fileInputRef.current?.files?.[0];
       if (file && file.size > 0) {
         formData.set("registrationFile", file);
+      }
+      const bankbook = bankbookInputRef.current?.files?.[0];
+      if (bankbook && bankbook.size > 0) {
+        formData.set("bankbookFile", bankbook);
       }
       await updatePartnerAction(formData);
       setIsEditing(false);
@@ -164,6 +195,30 @@ export function PartnerCard({
           placeholder="이메일"
           className="rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground"
         />
+        <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-2">
+          <input
+            value={editBankName}
+            onChange={(e) => setEditBankName(e.target.value)}
+            aria-label="은행명"
+            placeholder="은행명"
+            className="min-w-0 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground"
+          />
+          <input
+            value={editAccountNumber}
+            onChange={(e) => setEditAccountNumber(e.target.value)}
+            aria-label="계좌번호"
+            placeholder="계좌번호"
+            inputMode="numeric"
+            className="min-w-0 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground"
+          />
+        </div>
+        <input
+          value={editAccountHolder}
+          onChange={(e) => setEditAccountHolder(e.target.value)}
+          aria-label="예금주"
+          placeholder="예금주"
+          className="rounded-lg border border-border bg-bg px-2 py-1 text-sm text-foreground"
+        />
 
         <label className="flex flex-col gap-1 text-xs text-muted">
           사업자등록증 (선택, 이미지 또는 PDF)
@@ -183,6 +238,23 @@ export function PartnerCard({
               onChange={(e) => setRemoveExistingFile(e.target.checked)}
             />
             등록된 사업자등록증 삭제 ({partner.registrationFileName})
+          </label>
+        ) : null}
+
+        <label className="flex flex-col gap-1 text-xs text-muted">
+          통장 사본 (선택, 이미지 또는 PDF · 비공개 보관)
+          <input
+            ref={bankbookInputRef}
+            type="file"
+            accept="image/*,.pdf"
+            aria-label="통장 사본 교체"
+            className="rounded-lg border border-border bg-bg px-2 py-1 text-xs text-foreground file:mr-2 file:rounded-md file:border-0 file:bg-accent/10 file:px-2 file:py-1 file:text-xs file:text-accent"
+          />
+        </label>
+        {partner.bankbookFileName ? (
+          <label className="flex items-center gap-2 text-xs text-muted">
+            <input type="checkbox" checked={removeBankbook} onChange={(e) => setRemoveBankbook(e.target.checked)} />
+            등록된 통장 사본 삭제 ({partner.bankbookFileName})
           </label>
         ) : null}
 
@@ -221,6 +293,9 @@ export function PartnerCard({
     { key: "businessNumber", value: partner.businessNumber },
     { key: "phone", value: partner.phone },
     { key: "email", value: partner.email },
+    { key: "bankName", value: partner.bankName },
+    { key: "accountNumber", value: partner.accountNumber },
+    { key: "accountHolder", value: partner.accountHolder },
   ];
 
   return (
@@ -296,13 +371,30 @@ export function PartnerCard({
         ) : null
       )}
 
-      {partner.registrationFileUrl ? (
-        <PartnerFilePreview
-          fileUrl={partner.registrationFileUrl}
-          downloadUrl={partner.registrationFileDownloadUrl}
-          fileName={partner.registrationFileName}
-          companyName={partner.companyName}
-        />
+      {/* 사업자등록증 · 통장 사본을 나란히 */}
+      {partner.registrationFileUrl || partner.bankbookFileUrl ? (
+        <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-2">
+          {partner.registrationFileUrl ? (
+            <PartnerFilePreview
+              fileUrl={partner.registrationFileUrl}
+              downloadUrl={partner.registrationFileDownloadUrl}
+              fileName={partner.registrationFileName}
+              companyName={partner.companyName}
+              label="사업자등록증"
+            />
+          ) : (
+            <span />
+          )}
+          {partner.bankbookFileUrl ? (
+            <PartnerFilePreview
+              fileUrl={partner.bankbookFileUrl}
+              downloadUrl={partner.bankbookFileDownloadUrl}
+              fileName={partner.bankbookFileName}
+              companyName={partner.companyName}
+              label="통장 사본"
+            />
+          ) : null}
+        </div>
       ) : null}
 
       {errorMessage ? (

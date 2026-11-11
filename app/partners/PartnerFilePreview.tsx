@@ -12,11 +12,14 @@ export function PartnerFilePreview({
   downloadUrl,
   fileName,
   companyName,
+  label = "사업자등록증",
 }: {
   fileUrl: string;
   downloadUrl: string | null;
   fileName: string | null;
   companyName: string;
+  /** 파일 종류 (사업자등록증 / 통장 사본) */
+  label?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const pdf = isPdf(fileName);
@@ -33,7 +36,7 @@ export function PartnerFilePreview({
   }, [isOpen]);
 
   return (
-    <div className="mt-2 flex items-center gap-2 border-t border-border pt-2">
+    <div className="flex min-w-0 items-center gap-2">
       <button
         type="button"
         onClick={() => setIsOpen(true)}
@@ -46,11 +49,14 @@ export function PartnerFilePreview({
           </span>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={fileUrl} alt={`${companyName} 사업자등록증`} className="h-14 w-14 object-cover" />
+          <img src={fileUrl} alt={`${companyName} ${label}`} className="h-14 w-14 object-cover" />
         )}
       </button>
       <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="truncate text-xs text-muted">{fileName}</span>
+        <span className="text-xs font-medium text-foreground">{label}</span>
+        <span className="truncate text-xs text-muted" title={fileName ?? undefined}>
+          {fileName}
+        </span>
         {downloadUrl ? (
           <a href={downloadUrl} className="flex items-center gap-1 text-xs text-accent hover:underline">
             <Download size={12} />
@@ -63,7 +69,7 @@ export function PartnerFilePreview({
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`${companyName} 사업자등록증 보기`}
+          aria-label={`${companyName} ${label} 보기`}
           onClick={() => setIsOpen(false)}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
         >
@@ -83,14 +89,14 @@ export function PartnerFilePreview({
             {pdf ? (
               <iframe
                 src={fileUrl}
-                title={`${companyName} 사업자등록증`}
+                title={`${companyName} ${label}`}
                 className="h-[80vh] w-full rounded-lg"
               />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={fileUrl}
-                alt={`${companyName} 사업자등록증`}
+                alt={`${companyName} ${label}`}
                 className="mx-auto max-h-[80vh] w-auto rounded-lg"
               />
             )}

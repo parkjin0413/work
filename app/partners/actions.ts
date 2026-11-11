@@ -34,7 +34,11 @@ export async function createPartnerAction(formData: FormData): Promise<void> {
     businessNumber: normalize(String(formData.get("businessNumber") ?? "")),
     phone: normalize(String(formData.get("phone") ?? "")),
     email: normalize(String(formData.get("email") ?? "")),
+    bankName: normalize(String(formData.get("bankName") ?? "")),
+    accountNumber: normalize(String(formData.get("accountNumber") ?? "")),
+    accountHolder: normalize(String(formData.get("accountHolder") ?? "")),
     registrationFile: readFile(formData, "registrationFile"),
+    bankbookFile: readFile(formData, "bankbookFile"),
   });
   revalidatePath("/company");
 }
@@ -55,8 +59,13 @@ export async function updatePartnerAction(formData: FormData): Promise<void> {
     businessNumber: normalize(String(formData.get("businessNumber") ?? "")),
     phone: normalize(String(formData.get("phone") ?? "")),
     email: normalize(String(formData.get("email") ?? "")),
+    bankName: normalize(String(formData.get("bankName") ?? "")),
+    accountNumber: normalize(String(formData.get("accountNumber") ?? "")),
+    accountHolder: normalize(String(formData.get("accountHolder") ?? "")),
     registrationFile: readFile(formData, "registrationFile"),
     removeRegistrationFile: formData.get("removeRegistrationFile") === "true",
+    bankbookFile: readFile(formData, "bankbookFile"),
+    removeBankbookFile: formData.get("removeBankbookFile") === "true",
   });
   revalidatePath("/company");
 }

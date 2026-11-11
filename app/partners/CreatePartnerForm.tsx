@@ -7,6 +7,7 @@ import { createPartnerAction } from "./actions";
 export function CreatePartnerForm() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bankbookInputRef = useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [representative, setRepresentative] = useState("");
@@ -14,6 +15,9 @@ export function CreatePartnerForm() {
   const [businessNumber, setBusinessNumber] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountHolder, setAccountHolder] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -24,8 +28,12 @@ export function CreatePartnerForm() {
     setBusinessNumber("");
     setPhone("");
     setEmail("");
+    setBankName("");
+    setAccountNumber("");
+    setAccountHolder("");
     setErrorMessage(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (bankbookInputRef.current) bankbookInputRef.current.value = "";
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -43,9 +51,16 @@ export function CreatePartnerForm() {
       formData.set("businessNumber", businessNumber);
       formData.set("phone", phone);
       formData.set("email", email);
+      formData.set("bankName", bankName);
+      formData.set("accountNumber", accountNumber);
+      formData.set("accountHolder", accountHolder);
       const file = fileInputRef.current?.files?.[0];
       if (file && file.size > 0) {
         formData.set("registrationFile", file);
+      }
+      const bankbook = bankbookInputRef.current?.files?.[0];
+      if (bankbook && bankbook.size > 0) {
+        formData.set("bankbookFile", bankbook);
       }
       await createPartnerAction(formData);
       resetForm();
@@ -117,6 +132,30 @@ export function CreatePartnerForm() {
         aria-label="이메일"
         className="rounded-lg border border-border bg-bg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
       />
+      <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-2">
+        <input
+          value={bankName}
+          onChange={(e) => setBankName(e.target.value)}
+          placeholder="은행명"
+          aria-label="은행명"
+          className="min-w-0 rounded-lg border border-border bg-bg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+        <input
+          value={accountNumber}
+          onChange={(e) => setAccountNumber(e.target.value)}
+          placeholder="계좌번호"
+          aria-label="계좌번호"
+          inputMode="numeric"
+          className="min-w-0 rounded-lg border border-border bg-bg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+      </div>
+      <input
+        value={accountHolder}
+        onChange={(e) => setAccountHolder(e.target.value)}
+        placeholder="예금주"
+        aria-label="예금주"
+        className="rounded-lg border border-border bg-bg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+      />
 
       <label className="flex flex-col gap-1 text-xs text-muted">
         사업자등록증 (선택, 이미지 또는 PDF)
@@ -125,6 +164,17 @@ export function CreatePartnerForm() {
           type="file"
           accept="image/*,.pdf"
           aria-label="사업자등록증"
+          className="rounded-lg border border-border bg-bg px-3 py-1.5 text-sm text-foreground file:mr-2 file:rounded-md file:border-0 file:bg-accent/10 file:px-2 file:py-1 file:text-xs file:text-accent"
+        />
+      </label>
+
+      <label className="flex flex-col gap-1 text-xs text-muted">
+        통장 사본 (선택, 이미지 또는 PDF · 비공개 보관)
+        <input
+          ref={bankbookInputRef}
+          type="file"
+          accept="image/*,.pdf"
+          aria-label="통장 사본"
           className="rounded-lg border border-border bg-bg px-3 py-1.5 text-sm text-foreground file:mr-2 file:rounded-md file:border-0 file:bg-accent/10 file:px-2 file:py-1 file:text-xs file:text-accent"
         />
       </label>

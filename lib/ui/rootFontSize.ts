@@ -34,17 +34,40 @@ export function computeRootFontSize(screenWidth: number, devicePixelRatio: numbe
 
 /**
  * <head> 에 넣어 첫 화면이 그려지기 전에 실행하는 스크립트.
- * 창을 다른 모니터로 옮기거나 배율을 바꾸면 다시 계산한다.
+ * 모니터를 여러 대 쓰면 창이 있는 모니터에 따라 값이 달라지므로, 아래 경우마다 다시 계산한다.
+ *   - 창 크기가 바뀔 때 (resize)
+ *   - 창을 다른 모니터로 옮기거나 배율이 바뀔 때 (devicePixelRatio 변화 감지)
+ *   - 다른 창·탭에 있다가 돌아올 때 (focus, visibilitychange), 뒤로 가기로 다시 열릴 때 (pageshow)
+ *   - 처음 연 직후 화면 정보가 늦게 확정되는 경우를 위해 load 후 한 번 더
+ * 값이 같으면 아무것도 바꾸지 않아 화면이 흔들리지 않는다.
  */
 export const ROOT_FONT_SIZE_SCRIPT = `(function(){
   var compute = ${computeRootFontSize.toString()};
+  var current = null;
   function apply(){
     try {
       var fine = window.matchMedia && window.matchMedia("(pointer: fine)").matches;
       var px = compute(window.screen.width, window.devicePixelRatio || 1, fine);
-      document.documentElement.style.fontSize = px === ${BASE_ROOT_PX} ? "" : px + "px";
+      var value = px === ${BASE_ROOT_PX} ? "" : px + "px";
+      if (value === current) return;
+      current = value;
+      document.documentElement.style.fontSize = value;
     } catch (e) {}
   }
+  var dprQuery = null;
+  function watchDpr(){
+    try {
+      if (dprQuery) dprQuery.removeEventListener("change", onDprChange);
+      dprQuery = window.matchMedia("(resolution: " + (window.devicePixelRatio || 1) + "dppx)");
+      dprQuery.addEventListener("change", onDprChange);
+    } catch (e) {}
+  }
+  function onDprChange(){ apply(); watchDpr(); }
   apply();
+  watchDpr();
   window.addEventListener("resize", apply);
+  window.addEventListener("focus", apply);
+  window.addEventListener("pageshow", apply);
+  window.addEventListener("load", apply);
+  document.addEventListener("visibilitychange", function(){ if (!document.hidden) apply(); });
 })();`;

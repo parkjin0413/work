@@ -24,17 +24,43 @@ describe("computeRootFontSize", () => {
     expect(computeRootFontSize(1024, 2, true)).toBe(18);
   });
 
-  it("스크립트 안의 함수가 바깥 상수 없이 그대로 동작한다", () => {
+  it("스크립트: 첫 계산 후, 창을 다른 모니터로 옮기면(배율 변화) 다시 계산한다", () => {
     const html = { style: { fontSize: "" } };
-    const listeners: string[] = [];
+    const windowListeners: Record<string, () => void> = {};
+    const docListeners: Record<string, () => void> = {};
+    const mediaListeners: (() => void)[] = [];
     const fakeWindow = {
-      matchMedia: () => ({ matches: true }),
+      matchMedia: (query: string) => ({
+        matches: query.includes("pointer"),
+        addEventListener: (_: string, fn: () => void) => mediaListeners.push(fn),
+        removeEventListener: () => {},
+      }),
       screen: { width: 2560 },
       devicePixelRatio: 1.5,
-      addEventListener: (name: string) => listeners.push(name),
+      addEventListener: (name: string, fn: () => void) => (windowListeners[name] = fn),
     };
-    new Function("window", "document", ROOT_FONT_SIZE_SCRIPT)(fakeWindow, { documentElement: html });
+    const fakeDocument = {
+      documentElement: html,
+      hidden: false,
+      addEventListener: (name: string, fn: () => void) => (docListeners[name] = fn),
+    };
+    new Function("window", "document", ROOT_FONT_SIZE_SCRIPT)(fakeWindow, fakeDocument);
+
+    // 27인치 4K(150%) 모니터에서 처음 열림 → 20px
     expect(html.style.fontSize).toBe("20px");
-    expect(listeners).toEqual(["resize"]);
+    expect(Object.keys(windowListeners).sort()).toEqual(["focus", "load", "pageshow", "resize"]);
+    expect(Object.keys(docListeners)).toEqual(["visibilitychange"]);
+
+    // FHD(100%) 모니터로 옮김 → 배율이 바뀌어 기준 18px(기본값)로
+    fakeWindow.screen.width = 1920;
+    fakeWindow.devicePixelRatio = 1;
+    mediaListeners[mediaListeners.length - 1]();
+    expect(html.style.fontSize).toBe("");
+
+    // 다시 4K 모니터로 와서 창을 누르면(focus) 20px
+    fakeWindow.screen.width = 2560;
+    fakeWindow.devicePixelRatio = 1.5;
+    windowListeners.focus();
+    expect(html.style.fontSize).toBe("20px");
   });
 });

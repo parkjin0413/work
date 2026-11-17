@@ -18,7 +18,8 @@ import { ScheduleForm } from "./ScheduleForm";
 import { createScheduleAction, deleteScheduleAction, updateScheduleAction } from "./actions";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
-const MAX_CHIPS_PER_CELL = 3;
+// 칸 기본 높이는 일정 3개 정도. 일정이 많은 날은 5개까지 보이고(그 주 줄만 높아짐), 그 이상은 "+N건 더"
+const MAX_CHIPS_PER_CELL = 5;
 
 type FilterKey = ScheduleCategory | OverlayItem["kind"];
 

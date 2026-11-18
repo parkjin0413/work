@@ -50,7 +50,7 @@ function useColumnCount(ref: RefObject<HTMLElement>): number {
     if (!element) return;
     const observer = new ResizeObserver(([entry]) => {
       const width = entry.contentRect.width;
-      // 큰 모니터에서 기준 글씨가 커지면(lib/ui/rootFontSize) 카드 최소 폭도 같은 비율로 키운다.
+      // 큰 모니터에서 기준 글씨가 커지면(app/globals.css 의 html font-size) 카드 최소 폭도 같은 비율로 키운다.
       const scale = (parseFloat(getComputedStyle(document.documentElement).fontSize) || 18) / 18;
       const fit =
         COLUMN_CHOICES.find((n) => (width - CARD_GAP * scale * (n - 1)) / n >= MIN_CARD_WIDTH * scale) ?? 1;

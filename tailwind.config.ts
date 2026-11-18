@@ -27,7 +27,7 @@ const config: Config = {
         "success-bg": "var(--color-success-bg)",
       },
       // 업무 화면 글자 위계. 24인치 FHD(기준 글씨 18px) 에 맞춘 값이고, 큰 모니터에서는 기준 글씨가 커지며
-      // 같은 비율로 커진다(lib/ui/rootFontSize). 괄호는 FHD / 27인치 4K(150%, 20px) 에서의 크기.
+      // 같은 비율로 커진다(app/globals.css 의 html font-size). 괄호는 FHD / 27인치 4K(150%, 20px) 에서의 크기.
       fontSize: {
         "ui-title": "0.9rem", // 16.2 / 18px 소제목: 이번 주/다음 주, 프로젝트 이름, 보고서 제목
         "ui-head": "0.8rem", // 14.4 / 16px 카드 머리: 요일, 프로젝트 목록 이름, 단계 묶음 제목

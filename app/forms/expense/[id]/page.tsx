@@ -21,6 +21,7 @@ export default async function ExpenseReportPage({ params }: { params: { id: stri
     <>
       <DocumentToolbar
         editHref={`/forms/expense/${report.id}/edit`}
+        copyHref={`/forms/expense/new?from=${report.id}`}
         onDelete={deleteExpenseReportAction.bind(null, report.id)}
         label={`품의서 ${report.docNumber}`}
       />

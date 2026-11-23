@@ -48,7 +48,7 @@ export default async function CompanyPage() {
           <PartnersBoard partners={partners} trailing={<VehiclesCard vehicles={vehicles} />} />
         </section>
 
-        <section aria-label="직원명단" className="mt-10">
+        <section id="employees" aria-label="직원명단" className="mt-10 scroll-mt-20">
           <h2 className="text-base font-semibold text-foreground">직원명단</h2>
           <EmployeesBoard departments={departments} partners={partners} />
         </section>

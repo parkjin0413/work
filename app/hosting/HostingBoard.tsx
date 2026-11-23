@@ -101,8 +101,8 @@ export function HostingBoard({ sites: initialSites, today }: { sites: HostingSit
                 key={`${item.siteId}-${item.label}`}
                 className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm"
               >
-                {/* 좁은 화면에서는 말줄임 대신 두 줄로 */}
-                <span className="min-w-0 break-keep sm:truncate">
+                {/* 이름이 길면 말줄임 대신 두 줄로 */}
+                <span className="min-w-0 break-keep">
                   <span className="font-medium text-foreground">{item.siteName}</span>
                   <span className="text-muted"> · {item.label}</span>
                 </span>

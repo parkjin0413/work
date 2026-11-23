@@ -13,7 +13,16 @@ export type SiteItem = {
   /** 원래 메뉴의 분류 이름과 id */
   originalCategory: string;
   categoryId: string;
+  /** 맨 위 "고정"에 보일지 */
+  pinned?: boolean;
+  /** "고정" 영역 안의 순서 (없으면 null → 맨 뒤) */
+  pinOrder?: number | null;
+  /** 계정 비밀번호를 마지막으로 바꾼 날 (모르면 null) */
+  passwordChangedAt?: string | null;
 };
+
+/** 비밀번호를 바꾼 지 이만큼(일) 지나면 "오래됨"으로 표시한다 */
+export const PASSWORD_STALE_DAYS = 180;
 
 export type SiteGroup = { name: string; categoryId: string | null; items: SiteItem[] };
 

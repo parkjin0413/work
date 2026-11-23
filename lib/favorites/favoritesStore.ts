@@ -1,9 +1,14 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/serviceClient";
+import { isMissingColumnError } from "@/lib/supabase/missingColumn";
 
 export type FavoriteSummary = {
   id: string;
   name: string;
   url: string;
+  /** 어카운트 맨 위 "고정"에 보일지 (0026 전에는 늘 false) */
+  pinned: boolean;
+  /** "고정" 영역 안의 순서 (0027 전이거나 아직 안 옮겼으면 null) */
+  pinOrder: number | null;
 };
 
 export type CategoryWithFavorites = {
@@ -31,11 +36,20 @@ export async function listCategoriesWithFavorites(): Promise<CategoryWithFavorit
     throw new Error(`카테고리 조회 실패: ${categoriesError.message}`);
   }
 
-  const { data: favorites, error: favoritesError } = await supabase
-    .from("favorites")
-    .select("id, name, url, category_id")
-    .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
+  const query = (columns: string) =>
+    supabase
+      .from("favorites")
+      .select(columns)
+      .order("sort_order", { ascending: true })
+      .order("created_at", { ascending: true });
+  // 0027(고정 순서)·0026(고정) 실행 전이면 있는 열만 읽는다.
+  let { data, error: favoritesError } = await query("id, name, url, category_id, pinned, pin_order");
+  if (isMissingColumnError(favoritesError))
+    ({ data, error: favoritesError } = await query("id, name, url, category_id, pinned"));
+  if (isMissingColumnError(favoritesError)) ({ data, error: favoritesError } = await query("id, name, url, category_id"));
+  const favorites = data as unknown as
+    | { id: string; name: string; url: string; category_id: string; pinned?: boolean; pin_order?: number | null }[]
+    | null;
 
   if (favoritesError) {
     throw new Error(`즐겨찾기 조회 실패: ${favoritesError.message}`);
@@ -46,8 +60,25 @@ export async function listCategoriesWithFavorites(): Promise<CategoryWithFavorit
     name: category.name,
     favorites: (favorites ?? [])
       .filter((favorite) => favorite.category_id === category.id)
-      .map((favorite) => ({ id: favorite.id, name: favorite.name, url: favorite.url })),
+      .map((favorite) => ({ id: favorite.id, name: favorite.name, url: favorite.url, pinned: favorite.pinned ?? false,
+        pinOrder: favorite.pin_order ?? null,
+      })),
   }));
+}
+
+/** 어카운트 맨 위 "고정"에 올리거나 내린다. 0026 전이면 안내 문구로 실패한다. */
+export async function setFavoritePinned(id: string, pinned: boolean): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase.from("favorites").update({ pinned }).eq("id", id);
+  if (isMissingColumnError(error)) throw new Error("고정하려면 0026_account_pins.sql 을 먼저 실행해주세요.");
+  if (error) throw new Error(`고정 변경 실패: ${error.message}`);
+}
+
+export async function setFavoritePinOrder(id: string, pinOrder: number | null): Promise<void> {
+  const supabase = createSupabaseServiceClient();
+  const { error } = await supabase.from("favorites").update({ pin_order: pinOrder }).eq("id", id);
+  if (isMissingColumnError(error)) throw new Error("고정 순서를 바꾸려면 0027_pin_order.sql 을 먼저 실행해주세요.");
+  if (error) throw new Error(`고정 순서 변경 실패: ${error.message}`);
 }
 
 export async function createCategory(name: string): Promise<void> {

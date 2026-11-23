@@ -216,7 +216,7 @@ export function StatementForm({ mode, action, drafter, stampUrl, cancelHref, ini
                           role="radio"
                           aria-checked={row.kind === kind}
                           onClick={() => update(row.key, { kind })}
-                          className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium ${
+                          className={`inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border px-2.5 py-1 text-xs font-medium ${
                             row.kind === kind
                               ? "border-accent bg-accent/10 text-accent"
                               : "border-border text-muted hover:text-foreground"
@@ -233,7 +233,7 @@ export function StatementForm({ mode, action, drafter, stampUrl, cancelHref, ini
                       disabled={rows.length >= STATEMENT_MAX_ROWS}
                       aria-label={`${index + 1}번 줄 복사`}
                       title="같은 줄을 아래에 하나 더"
-                      className="ml-auto inline-flex items-center gap-1 rounded px-1.5 py-1 text-xs text-muted hover:bg-bg hover:text-foreground disabled:opacity-30"
+                      className="ml-auto inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded px-1.5 py-1 text-xs text-muted hover:bg-bg hover:text-foreground disabled:opacity-30"
                     >
                       <Copy className="h-3.5 w-3.5" aria-hidden="true" />
                       복사
@@ -250,7 +250,7 @@ export function StatementForm({ mode, action, drafter, stampUrl, cancelHref, ini
                   </div>
 
                   <input type="hidden" name="row_kind" value={row.kind} />
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-[9.5rem_minmax(0,1fr)]">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-[9.5rem_minmax(0,1fr)]">
                     <input
                       type="date"
                       name="row_date"
@@ -270,7 +270,7 @@ export function StatementForm({ mode, action, drafter, stampUrl, cancelHref, ini
                       placeholder={
                         isCar ? "예: 양주 사무실(회암동) → 서울 사무실(창동)" : "예: 코엑스 주차비 (전시회 설치)"
                       }
-                      className={`${INPUT_CLASS} col-span-2 sm:col-span-1`}
+                      className={`${INPUT_CLASS}`}
                     />
                   </div>
 

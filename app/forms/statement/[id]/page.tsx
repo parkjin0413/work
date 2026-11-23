@@ -22,6 +22,7 @@ export default async function ExpenseStatementPage({ params }: { params: { id: s
     <>
       <DocumentToolbar
         editHref={`/forms/statement/${statement.id}/edit`}
+        copyHref={`/forms/statement/new?from=${statement.id}`}
         onDelete={deleteExpenseStatementAction.bind(null, statement.id)}
         label={`경비내역서 (${formatWrittenAt(statement.writtenAt)} 작성)`}
       />

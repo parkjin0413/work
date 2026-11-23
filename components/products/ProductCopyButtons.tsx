@@ -4,6 +4,8 @@ import { CopyButton } from "@/components/CopyButton";
 import { DownloadButton } from "./DownloadButton";
 
 type Props = {
+  /** 견적서용 규격 요약 (타입·규격·구성) */
+  quote?: string;
   plain: string;
   markdown: string;
   json: string;
@@ -13,9 +15,10 @@ type Props = {
 };
 
 /** 데이터시트 헤더의 복사 버튼 + (선택) MD 다운로드. 문자열은 서버에서 만들어 내려준다. */
-export function ProductCopyButtons({ plain, markdown, json, claude, downloadName }: Props) {
+export function ProductCopyButtons({ quote, plain, markdown, json, claude, downloadName }: Props) {
   return (
     <div className="flex flex-wrap gap-2">
+      {quote ? <CopyButton text={quote} label="견적용 규격" /> : null}
       <CopyButton text={plain} label="텍스트" />
       <CopyButton text={markdown} label="마크다운 원문" />
       <CopyButton text={json} label="JSON" />

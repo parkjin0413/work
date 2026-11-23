@@ -241,3 +241,24 @@ export function previousMonthStart(writtenAt: string): string {
   const month = m === 1 ? 12 : m - 1;
   return `${year}-${String(month).padStart(2, "0")}-01`;
 }
+
+/**
+ * 날짜를 몇 달 옮긴다. 그 달에 없는 날(31일 등)은 그 달 마지막 날로 맞춘다.
+ * 지난 경비내역서를 복사할 때 행 날짜를 이번 내역 달로 옮기는 데 쓴다.
+ */
+export function shiftMonthsISO(dateISO: string, months: number): string {
+  const [y, m, d] = dateISO.split("-").map(Number);
+  if (!y || !m || !d) return dateISO;
+  const index = y * 12 + (m - 1) + months;
+  const year = Math.floor(index / 12);
+  const month = (index % 12) + 1;
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  return `${year}-${String(month).padStart(2, "0")}-${String(Math.min(d, lastDay)).padStart(2, "0")}`;
+}
+
+/** 두 날짜의 달 차이 ("2026-10-05" → "2026-12-01" 은 2) */
+export function monthsBetween(fromISO: string, toISO: string): number {
+  const [fy, fm] = fromISO.split("-").map(Number);
+  const [ty, tm] = toISO.split("-").map(Number);
+  return ty * 12 + tm - (fy * 12 + fm);
+}

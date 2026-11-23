@@ -70,12 +70,12 @@ describe("favoritesStore", () => {
         {
           id: "cat-1",
           name: "업무",
-          favorites: [{ id: "fav-1", name: "사내 위키", url: "https://wiki.example.com" }],
+          favorites: [{ id: "fav-1", name: "사내 위키", url: "https://wiki.example.com", pinned: false, pinOrder: null }],
         },
         {
           id: "cat-2",
           name: "개인",
-          favorites: [{ id: "fav-2", name: "블로그", url: "https://blog.example.com" }],
+          favorites: [{ id: "fav-2", name: "블로그", url: "https://blog.example.com", pinned: false, pinOrder: null }],
         },
       ]);
     });

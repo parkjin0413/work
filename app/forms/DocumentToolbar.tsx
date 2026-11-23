@@ -6,10 +6,13 @@ import { useTransition } from "react";
 /** 문서 화면 위 버튼 줄: 목록 / 수정 / 삭제 / 인쇄. 인쇄할 때는 숨긴다. */
 export function DocumentToolbar({
   editHref,
+  copyHref,
   onDelete,
   label,
 }: {
   editHref: string;
+  /** 있으면 "복사해서 새로" 버튼 (이 문서 내용으로 새 문서 작성) */
+  copyHref?: string;
   onDelete: () => Promise<void>;
   /** 삭제 확인 문구에 쓰는 문서 이름 (예: "품의서 홍보부-2026-01") */
   label: string;
@@ -21,7 +24,16 @@ export function DocumentToolbar({
       <Link href="/forms" className="text-sm text-muted hover:text-foreground">
         ← 목록으로
       </Link>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
+        {copyHref ? (
+          <Link
+            href={copyHref}
+            title="이 문서 내용을 그대로 가져와 새 문서를 씁니다"
+            className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-hover"
+          >
+            복사해서 새로
+          </Link>
+        ) : null}
         <Link
           href={editHref}
           className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-hover"

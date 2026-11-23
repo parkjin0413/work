@@ -2,33 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 테마 "그래파이트 & 강산 그린": 따뜻한 회색 바탕, 흰 카드, 먹색 글씨, 포인트는 로고의 초록을 깊게 누른 색.
+   색은 전부 여기 토큰으로만 정한다 (tailwind.config.ts 가 이 변수를 쓴다). 다크 모드는 아래 .dark 에서 바꾼다. */
 :root {
-  --color-bg: #F7F7F9;
+  --color-bg: #F5F5F2;
   --color-surface: #FFFFFF;
-  --color-surface-hover: #F1F1F4;
-  /* 업무 목록 카드용 강조 면. 앱 액센트(인디고)와 같은 계열의 옅은 톤이라
-     흰 카드들 사이에서 확실히 구분되면서도 넓은 면적에 깔려도 눈이 편하다.
-     카드 안쪽 면/테두리/글자까지 같은 계열로 맞춘다. */
-  --color-surface-highlight: #EEF1FC;
-  --color-surface-highlight-soft: #FAFBFF;
-  --color-highlight-line: #D8DDF4;
-  --color-highlight-foreground: #1E2033;
-  --color-highlight-muted: #5C6180;
-  --color-border: #E4E4E9;
-  --color-text: #121214;
-  --color-text-muted: #6B6B76;
-  --color-accent: 99 102 241;
-  --color-accent-hover: #4F46E5;
+  --color-surface-hover: #EFEFEA;
+  /* 업무 목록 카드용 강조 면. 포인트(초록)와 같은 계열의 옅은 톤 */
+  --color-surface-highlight: #E8F2EC;
+  --color-surface-highlight-soft: #F8FBF9;
+  --color-highlight-line: #CFE2D6;
+  --color-highlight-foreground: #14241B;
+  --color-highlight-muted: #55685C;
+  --color-border: #E3E2DC;
+  --color-text: #17181A;
+  --color-text-muted: #66675F;
+  --color-accent: 31 122 84; /* #1F7A54 */
+  --color-accent-hover: #186446;
   --color-accent-foreground: #FFFFFF;
-  --color-danger: #DC2626;
-  --color-danger-bg: #FEE2E2;
-  --color-success: #16A34A;
-  --color-success-bg: #DCFCE7;
+  --color-danger: #C9302C;
+  --color-danger-bg: #FBE9E7;
+  --color-success: #2E7D4F;
+  --color-success-bg: #E3F1E8;
+}
+
+/* 다크 모드: 상단 메뉴의 달 버튼으로 켠다 (이 브라우저에 기억). 인쇄 양식은 늘 흰 종이로 나온다. */
+.dark {
+  --color-bg: #111214;
+  --color-surface: #1A1B1E;
+  --color-surface-hover: #24252A;
+  --color-surface-highlight: #16231C;
+  --color-surface-highlight-soft: #17191B;
+  --color-highlight-line: #2A3B31;
+  --color-highlight-foreground: #E4ECE7;
+  --color-highlight-muted: #9AAEA2;
+  --color-border: #2B2D31;
+  --color-text: #ECECEA;
+  --color-text-muted: #A3A49E;
+  --color-accent: 74 190 140; /* #4ABE8C */
+  --color-accent-hover: #63CC9E;
+  --color-accent-foreground: #0A1F15;
+  --color-danger: #F2766F;
+  --color-danger-bg: rgba(242, 118, 111, 0.14);
+  --color-success: #5CC98A;
+  --color-success-bg: rgba(92, 201, 138, 0.14);
 }
 
 html {
   color-scheme: light;
   font-size: 18px;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 /* 기준 글자 크기: 24인치 1920×1080(배율 100%) = 18px. 큰·고해상도 모니터에서는 창 폭(CSS px)과
@@ -58,6 +84,22 @@ html {
   }
 }
 
+/* 손가락으로 누르는 화면(휴대폰·태블릿): 체크 칸·연필·휴지통처럼 작은 아이콘 버튼은 누르기 어렵다.
+   보이는 모양은 그대로 두고, 버튼 둘레 5px 까지 눌리게 투명한 영역을 넓힌다.
+   :where() 로 우선순위를 0 으로 둬서, 이미 absolute 등으로 자리를 잡은 버튼은 그 배치를 그대로 쓴다.
+   상단 메뉴는 아이콘이 이미 충분히 크고, 넓힌 영역이 메뉴 줄 밖으로 나가 스크롤 막대가 생기므로 뺀다. */
+@media (pointer: coarse) {
+  :where(main) :where(button[aria-label], a[aria-label]) {
+    position: relative;
+  }
+
+  :where(main) :where(button[aria-label], a[aria-label])::after {
+    content: "";
+    position: absolute;
+    inset: -5px;
+  }
+}
+
 /* 휴대폰(터치)에서 입력칸을 누를 때 화면이 확대되지 않게: iOS 는 16px 미만 글자에서 확대한다. */
 @media (max-width: 639px) and (hover: none) {
   input,
@@ -76,6 +118,7 @@ html {
 
   html {
     font-size: 16px !important;
+    color-scheme: light !important;
   }
 
   body {

@@ -10,7 +10,10 @@ import {
   ChevronLeft,
   ChevronRight,
   FileSpreadsheet,
+  Keyboard,
   Pencil,
+  Rows3,
+  Rows4,
   Plus,
   Trash2,
 } from "lucide-react";
@@ -39,6 +42,7 @@ import { splitPastedLines } from "@/lib/tasks/pasteLines";
 import { planDrop } from "@/lib/tasks/reorder";
 import { buildWeeklyReport, spreadAcrossWeek, toExcelText } from "@/lib/tasks/weeklyReport";
 import { compareWorkItems, type ProjectOption, type WorkItem, type WorkItemStatus } from "@/lib/tasks/workItems";
+import { isPlainShortcut } from "@/lib/ui/keyboard";
 import { SectionHeader } from "./SectionHeader";
 import {
   createWorkItemAction,
@@ -90,11 +94,52 @@ export function WeekPlanner({
   const [overdue, setOverdue] = useState(serverOverdue);
   const [error, setError] = useState<string | null>(null);
   const [showReport, setShowReport] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  // 보기 촘촘함: 빈 칸 높이와 항목 줄 간격을 줄인다. 이 브라우저에만 기억한다.
+  const [dense, setDense] = useState(false);
 
   useEffect(() => setItems(serverItems), [serverItems]);
   useEffect(() => setOverdue(serverOverdue), [serverOverdue]);
+  useEffect(() => {
+    try {
+      setDense(localStorage.getItem(DENSITY_KEY) === "dense");
+    } catch {}
+  }, []);
+
+  function toggleDense() {
+    setDense((value) => {
+      try {
+        localStorage.setItem(DENSITY_KEY, value ? "normal" : "dense");
+      } catch {}
+      return !value;
+    });
+  }
 
   const nextWeekStart = addDaysISO(weekStart, 7);
+
+  // 단축키: ← → 주 이동, T 이번 주, N 오늘(없으면 첫날) 입력칸. 입력 중에는 동작하지 않는다.
+  // 한글 자판 상태에서도 되도록 글자(e.key) 대신 자판 위치(e.code)로 본다.
+  useEffect(() => {
+    function onKey(e: globalThis.KeyboardEvent) {
+      if (!isPlainShortcut(e) || e.shiftKey) return;
+      if (document.querySelector("[role='dialog']")) return;
+      if (e.key === "ArrowLeft") router.push(`/tasks?week=${addDaysISO(weekStart, -7)}`);
+      else if (e.key === "ArrowRight") router.push(`/tasks?week=${addDaysISO(weekStart, 7)}`);
+      else if (e.code === "KeyT") router.push("/tasks");
+      else if (e.code === "KeyN") {
+        const inputs = Array.from(document.querySelectorAll<HTMLInputElement>("input[data-add-date]")).filter(
+          (el) => el.offsetParent !== null,
+        );
+        const target = inputs.find((el) => el.dataset.addDate === todayISO) ?? inputs[0];
+        if (!target) return;
+        target.focus();
+        target.scrollIntoView({ block: "center", behavior: "smooth" });
+      } else return;
+      e.preventDefault();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [router, weekStart, todayISO]);
   const isCurrentWeek = weekStart === currentWeekStart;
   const isFriday = getWeekdayIndex(todayISO) === 4;
   const sortedItems = useMemo(() => [...items].sort(compareWorkItems), [items]);
@@ -336,6 +381,7 @@ export function WeekPlanner({
     onMoveToToday: (item) => moveItems([item], todayISO),
     overDate,
     checkableUntil,
+    dense,
   };
 
   return (
@@ -364,6 +410,45 @@ export function WeekPlanner({
             <Link href="/tasks" className="ml-1 text-ui-body text-accent hover:underline">
               이번 주로
             </Link>
+          ) : null}
+        </div>
+        <div className="relative hidden items-center gap-1 sm:flex">
+          <button
+            type="button"
+            onClick={toggleDense}
+            aria-pressed={dense}
+            title={dense ? "기본 간격으로 보기" : "촘촘하게 보기"}
+            aria-label={dense ? "기본 간격으로 보기" : "촘촘하게 보기"}
+            className={`rounded-lg border p-1.5 ${
+              dense ? "border-accent bg-accent/10 text-accent" : "border-border text-muted hover:bg-surface-hover hover:text-foreground"
+            }`}
+          >
+            {dense ? <Rows4 className="h-3.5 w-3.5" aria-hidden="true" /> : <Rows3 className="h-3.5 w-3.5" aria-hidden="true" />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowShortcuts((v) => !v)}
+            aria-expanded={showShortcuts}
+            aria-label="단축키 보기"
+            title="단축키"
+            className="rounded-lg border border-border p-1.5 text-muted hover:bg-surface-hover hover:text-foreground"
+          >
+            <Keyboard className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+          {showShortcuts ? (
+            <div className="absolute right-0 top-full z-20 mt-1 w-52 rounded-xl border border-border bg-surface p-3 text-ui-body text-foreground shadow-lg">
+              <p className="mb-1.5 text-ui-meta font-semibold text-muted">단축키 (입력 중이 아닐 때)</p>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+                {SHORTCUTS.map(([key, label]) => (
+                  <div key={key} className="contents">
+                    <dt>
+                      <kbd className="rounded border border-border bg-bg px-1.5 py-px font-sans text-ui-meta">{key}</kbd>
+                    </dt>
+                    <dd>{label}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
           ) : null}
         </div>
         {undatedCount > 0 ? (
@@ -469,7 +554,18 @@ type DayHandlers = {
   onMoveToToday: (item: WorkItem) => void;
   /** 끌고 있는 항목이 올라가 있는 날짜 (칸 강조용) */
   overDate: string | null;
+  /** 촘촘하게 보기 */
+  dense: boolean;
 };
+
+const DENSITY_KEY = "tasks-density";
+
+const SHORTCUTS: [string, string][] = [
+  ["N", "오늘 칸에 바로 적기"],
+  ["←", "이전 주"],
+  ["→", "다음 주"],
+  ["T", "이번 주로"],
+];
 
 /** 항목 위에 있으면 항목을, 아니면 날짜 칸을 놓을 곳으로 본다. */
 const itemFirstCollision: CollisionDetection = (args) => {
@@ -539,7 +635,7 @@ function WeekGrid({
               onClick={() => setMobileDate(date)}
               className={`flex min-w-[3rem] flex-1 flex-col items-center rounded-lg border py-1 leading-tight ${
                 isShown
-                  ? "border-accent bg-accent text-white"
+                  ? "border-accent bg-accent text-accent-foreground"
                   : date === handlers.todayISO
                     ? "border-accent text-accent"
                     : "border-border text-foreground"
@@ -606,7 +702,7 @@ function DayColumn({
           : isToday
             ? "border-accent ring-1 ring-accent/30"
             : "border-border"
-      } ${compact ? "min-h-[7rem]" : "min-h-[12rem]"}`}
+      } ${handlers.dense ? "min-h-[4.5rem]" : compact ? "min-h-[7rem]" : "min-h-[12rem]"}`}
     >
       <div className="flex items-baseline gap-1.5">
         <span className={`text-ui-head font-semibold ${dateColor}`}>
@@ -735,7 +831,9 @@ function ItemRow({ item, isOverdue, handlers }: { item: WorkItem; isOverdue: boo
       {...listeners}
       role={undefined}
       tabIndex={-1}
-      className={`group/item relative -mx-1 flex cursor-grab items-start gap-1.5 rounded-md px-1 py-[0.3rem] hover:bg-bg active:cursor-grabbing ${
+      className={`group/item relative -mx-1 flex cursor-grab items-start gap-1.5 rounded-md px-1 ${
+        handlers.dense ? "py-[0.12rem]" : "py-[0.3rem]"
+      } hover:bg-bg active:cursor-grabbing ${
         isDragging ? "opacity-40" : ""
       }`}
     >
@@ -959,6 +1057,7 @@ function AddItemInput({ date, handlers }: { date: string; handlers: DayHandlers 
         onChange={(e) => setBody(e.target.value)}
         onKeyDown={onKeyDown}
         onPaste={onPaste}
+        data-add-date={date}
         placeholder={isFuture ? "+ 할 일 계획" : "+ 한 일 적기"}
         aria-label={`${formatMonthDayWeekday(date)} ${isFuture ? "할 일 계획" : "한 일 적기"}`}
         className="w-full min-w-0 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-ui-body text-foreground placeholder:text-muted hover:border-border focus:border-border focus:bg-bg focus:outline-none"

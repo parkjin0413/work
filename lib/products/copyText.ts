@@ -122,3 +122,17 @@ export function buildClaudeBlock(p: Product): string {
     buildPlainText(p)
   );
 }
+
+/**
+ * 견적서용 규격 요약: 제품명 한 줄 + 타입마다 "타입 | 규격 | 구성 | 중량" 한 줄.
+ * 엑셀·한글 표에 붙여넣기 좋게 칸은 탭으로 나눈다. 빈 칸은 뺀다.
+ */
+export function buildQuoteText(p: Product): string {
+  const lines = [`${p.name}${p.productType ? ` (${p.productType})` : ""}`];
+  for (const t of p.types) {
+    const name = t.group ? `[${t.group}] ${t.typeName}` : t.typeName;
+    lines.push([name, t.sizeWxhxt, t.composition, t.weight].filter((v) => v && v.trim() && v !== "-").join("\t"));
+  }
+  if (p.material) lines.push(`소재\t${p.material}`);
+  return lines.filter(Boolean).join("\n");
+}

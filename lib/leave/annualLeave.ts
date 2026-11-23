@@ -185,3 +185,44 @@ export function leaveEventsInRange(summary: LeaveSummary, first: string, last: s
 
   return events.sort((a, b) => a.date.localeCompare(b.date));
 }
+
+/** 연차 일정표 한 줄: 언제 몇 일이 생기고 언제까지 써야 하는지 */
+export type LeavePlanRow = {
+  /** 발생 시작일 (월 만근은 첫 달) */
+  from: string;
+  /** 월 만근처럼 여러 번 나눠 생기면 마지막 발생일, 한 번이면 null */
+  to: string | null;
+  days: number;
+  expires: string;
+  label: string;
+  /** 오늘 기준: 지난 묶음 / 지금 쓰는 묶음 / 앞으로 생길 묶음 */
+  state: "past" | "current" | "upcoming";
+};
+
+/**
+ * 입사 첫해(월 만근 1일씩, 최대 11일)와 그 뒤 해마다 생기는 연차를 묶어 보여준다.
+ * 지난 묶음은 빼고, 지금 쓰는 묶음부터 `count` 줄.
+ */
+export function buildLeavePlan(hireDate: string, today: string, count = 4): LeavePlanRow[] {
+  const grants = buildGrants(hireDate, addMonthsToDate(today > hireDate ? today : hireDate, 12 * (count + 1)));
+  const rows: LeavePlanRow[] = [];
+  const monthly = grants.filter((g) => g.kind === "monthly");
+  if (monthly.length) {
+    rows.push({
+      from: monthly[0].date,
+      to: monthly[monthly.length - 1].date,
+      days: monthly.length,
+      expires: monthly[0].expires,
+      label: "입사 첫해 (매월 1일)",
+      state: "past",
+    });
+  }
+  for (const g of grants.filter((g) => g.kind === "annual")) {
+    rows.push({ from: g.date, to: null, days: g.days, expires: g.expires, label: g.label, state: "past" });
+  }
+  for (const row of rows) {
+    row.state = row.expires < today ? "past" : row.from <= today ? "current" : "upcoming";
+  }
+  // 입사 첫해 묶음은 아직 다 생기기 전이어도 "지금 쓰는 묶음"이다
+  return rows.filter((r) => r.state !== "past").slice(0, count);
+}

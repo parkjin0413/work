@@ -5,6 +5,7 @@ import { withRetry } from "@/lib/supabase/withRetry";
 import { listCategoriesWithAccounts } from "@/lib/accounts/accountsStore";
 import { listCategoriesWithFavorites } from "@/lib/favorites/favoritesStore";
 import type { SiteCategory, SiteItem } from "@/lib/sites/merge";
+import { getKstTodayISO } from "@/lib/tasks/week";
 import { SitesPreview } from "./SitesPreview";
 
 export default async function SitesPage() {
@@ -43,6 +44,9 @@ export default async function SitesPage() {
         password: a.password || null,
         memo: a.memo,
         originalCategory: category.name,
+        pinned: a.pinned,
+        pinOrder: a.pinOrder,
+        passwordChangedAt: a.passwordChangedAt,
       }))
     ),
     ...favorites.flatMap((category) =>
@@ -57,6 +61,8 @@ export default async function SitesPage() {
         password: null,
         memo: null,
         originalCategory: category.name,
+        pinned: f.pinned,
+        pinOrder: f.pinOrder,
       }))
     ),
   ];
@@ -72,7 +78,7 @@ export default async function SitesPage() {
       <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-106.6667rem)/2))] py-6">
         <h1 className="text-lg font-semibold text-foreground">어카운트</h1>
 
-        <SitesPreview items={items} categories={categories} />
+        <SitesPreview items={items} categories={categories} todayISO={getKstTodayISO()} />
       </main>
     </div>
   );

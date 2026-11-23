@@ -95,6 +95,16 @@ export function ProjectBoard({ projects: serverProjects, todayISO }: { projects:
 
   useEffect(() => setProjects(serverProjects), [serverProjects]);
 
+  // 통합 검색에서 /tasks?project=<id> 로 오면 그 프로젝트를 열고 그쪽으로 내려간다.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("project");
+    if (!id || !serverProjects.some((p) => p.id === id)) return;
+    setSelectedId(id);
+    requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    // 처음 열 때 한 번만
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const active = projects.filter((p) => !p.isCompleted);
   const selected = projects.find((p) => p.id === selectedId) ?? active[0] ?? projects[0] ?? null;
 
@@ -306,13 +316,39 @@ function ProjectRow({
           {project.name}
         </span>
         {!project.isCompleted && project.kind === "project" && remaining > 0 ? (
-          <span className="shrink-0 text-ui-meta text-muted">남은 {remaining}</span>
+          <span className="flex shrink-0 items-center gap-1.5 text-ui-meta text-muted">
+            <ProgressBar project={project} className="hidden w-10 sm:block" />
+            남은 {remaining}
+          </span>
         ) : null}
         {project.lastDoneDate ? (
           <span className="shrink-0 text-ui-meta text-muted">{project.lastDoneDate.slice(5).replace("-", ".")}</span>
         ) : null}
       </button>
     </li>
+  );
+}
+
+function progressOf(project: Project) {
+  const done = project.done.length;
+  const total = done + project.steps.length + project.scheduled.length;
+  return { done, total, percent: total > 0 ? Math.round((done / total) * 100) : 0 };
+}
+
+/** 프로젝트 진행 막대 (한 일의 비율) */
+function ProgressBar({ project, className = "" }: { project: Project; className?: string }) {
+  const { percent } = progressOf(project);
+  return (
+    <span
+      role="progressbar"
+      aria-label="진행률"
+      aria-valuenow={percent}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      className={`h-1.5 overflow-hidden rounded-full bg-border ${className}`}
+    >
+      <span className="block h-full rounded-full bg-accent" style={{ width: `${percent}%` }} />
+    </span>
   );
 }
 
@@ -341,6 +377,7 @@ function ProjectDetail({
   const [memo, setMemo] = useState(project.memo ?? "");
   const [stepDraft, setStepDraft] = useState("");
   const [showAllDone, setShowAllDone] = useState(false);
+  const progress = progressOf(project);
 
   // 날짜 정하기: 이번 주·다음 주 월~금을 요일 버튼으로 (그 밖의 날짜는 달력)
   const weekRows = useMemo(() => buildWeekRows(todayISO), [todayISO]);
@@ -597,6 +634,16 @@ function ProjectDetail({
           </button>
         </div>
       </div>
+
+      {/* 진행률: 한 일 / (한 일 + 예정 + 남은 단계). 상시 업무는 끝이 없어 표시하지 않는다 */}
+      {project.kind === "project" && progress.total > 0 ? (
+        <div className="mt-3 flex items-center gap-2 text-ui-meta text-muted">
+          <ProgressBar project={project} className="w-full max-w-[16rem]" />
+          <span className="shrink-0">
+            {progress.done}/{progress.total} 완료 · {progress.percent}%
+          </span>
+        </div>
+      ) : null}
 
       {/* 설명 */}
       {isEditingMemo ? (
@@ -903,7 +950,7 @@ function DatePickerPanel({
                 title={formatShortDateWeekday(date)}
                 className={`flex w-[2.4rem] flex-col items-center rounded-md border py-0.5 leading-tight ${
                   isSelected
-                    ? "border-accent bg-accent text-white"
+                    ? "border-accent bg-accent text-accent-foreground"
                     : isToday
                       ? "border-accent bg-accent/10 text-accent hover:border-accent"
                       : isPast
@@ -943,7 +990,7 @@ function DatePickerPanel({
           type="button"
           onClick={() => picked && onConfirm(picked)}
           disabled={!picked}
-          className="rounded-md bg-accent px-2.5 py-0.5 text-ui-meta font-semibold text-white disabled:opacity-40"
+          className="rounded-md bg-accent px-2.5 py-0.5 text-ui-meta font-semibold text-accent-foreground disabled:opacity-40"
         >
           확인
         </button>

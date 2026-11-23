@@ -1,10 +1,31 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Cake, ChevronLeft, ChevronRight, FileText, Globe, Palmtree, Pencil, Trash2 } from "lucide-react";
-import { addMonths, daysInMonth, enumerateDates, firstWeekday, monthRange, weekdayOf } from "@/lib/schedule/calendar";
+import {
+  Cake,
+  CalendarDays,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  Globe,
+  List,
+  Palmtree,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import {
+  addDays,
+  addMonths,
+  daysInMonth,
+  enumerateDates,
+  firstWeekday,
+  monthRange,
+  weekdayOf,
+} from "@/lib/schedule/calendar";
+import { daysBetweenISO, getMondayOfISO } from "@/lib/tasks/week";
 import {
   CATEGORY_COLORS,
   OVERLAY_COLORS,
@@ -13,7 +34,7 @@ import {
 } from "@/lib/schedule/categories";
 import type { Schedule, TeamMember } from "@/lib/schedule/scheduleStore";
 import type { OverlayItem } from "@/lib/schedule/overlays";
-import { LEAVE_TYPE_LABELS, type LeaveSummary } from "@/lib/leave/annualLeave";
+import { buildLeavePlan, LEAVE_TYPE_LABELS, type LeaveSummary } from "@/lib/leave/annualLeave";
 import { ScheduleForm } from "./ScheduleForm";
 import { createScheduleAction, deleteScheduleAction, updateScheduleAction } from "./actions";
 
@@ -24,6 +45,9 @@ const MAX_CHIPS_PER_CELL = 5;
 type FilterKey = ScheduleCategory | OverlayItem["kind"];
 
 type DayItem = { type: "schedule"; schedule: Schedule } | { type: "overlay"; overlay: OverlayItem };
+
+/** 그날 업무(주간 업무의 항목). 달력에는 건수만, 선택한 날짜 패널에는 내용까지 보여준다. */
+export type CalendarWorkItem = { id: string; date: string; body: string; status: "planned" | "done" };
 
 function dayItemKey(item: DayItem): string {
   return item.type === "schedule" ? item.schedule.id : item.overlay.id;
@@ -60,16 +84,18 @@ export function CalendarBoard({
   ym,
   today,
   initialDate,
-  schedules,
+  schedules: serverSchedules,
   overlays,
   holidays,
   leaveSummary,
   teamMembers,
+  workItems = [],
 }: {
   ym: string;
   today: string;
   initialDate: string;
   schedules: Schedule[];
+  workItems?: CalendarWorkItem[];
   overlays: OverlayItem[];
   holidays: Record<string, string[]>;
   leaveSummary: LeaveSummary | null;
@@ -82,6 +108,19 @@ export function CalendarBoard({
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  // 휴대폰에서 달력 대신 이달 일정 목록으로 보기 (태블릿·PC 는 목록이 늘 옆에 있다)
+  const [mobileView, setMobileView] = useState<"month" | "list">("month");
+  // 끌어서 옮기기: 화면을 먼저 바꾸고 저장한다. 실패하면 되돌린다.
+  const [schedules, setSchedules] = useState(serverSchedules);
+  useEffect(() => setSchedules(serverSchedules), [serverSchedules]);
+  const dragRef = useRef<{ schedule: Schedule; fromDate: string } | null>(null);
+  const [dropDate, setDropDate] = useState<string | null>(null);
+
+  const workByDate = useMemo(() => {
+    const map: Record<string, CalendarWorkItem[]> = {};
+    for (const item of workItems) (map[item.date] ??= []).push(item);
+    return map;
+  }, [workItems]);
 
   const [year, month] = ym.split("-").map(Number);
   const { first, last } = monthRange(ym);
@@ -134,6 +173,45 @@ export function CalendarBoard({
     router.push(`/calendar?ym=${targetYm}${date ? `&date=${date}` : ""}`);
   }
 
+  function startDrag(e: DragEvent, schedule: Schedule, fromDate: string) {
+    dragRef.current = { schedule, fromDate };
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", schedule.title);
+  }
+
+  function endDrag() {
+    dragRef.current = null;
+    setDropDate(null);
+  }
+
+  async function dropOn(date: string) {
+    const drag = dragRef.current;
+    endDrag();
+    if (!drag) return;
+    const shift = daysBetweenISO(drag.fromDate, date);
+    if (shift === 0) return;
+    const { schedule } = drag;
+    const moved = { ...schedule, startDate: addDays(schedule.startDate, shift), endDate: addDays(schedule.endDate, shift) };
+    const before = schedules;
+    setSchedules((list) => list.map((s) => (s.id === schedule.id ? moved : s)));
+    setErrorMessage(null);
+    try {
+      await updateScheduleAction(schedule.id, {
+        title: moved.title,
+        category: moved.category,
+        startDate: moved.startDate,
+        endDate: moved.endDate,
+        memo: moved.memo,
+        leaveType: moved.leaveType,
+        employeeId: moved.employeeId,
+      });
+      router.refresh();
+    } catch {
+      setSchedules(before);
+      setErrorMessage("일정을 옮기지 못했습니다.");
+    }
+  }
+
   async function handleDelete(schedule: Schedule) {
     if (!window.confirm(`"${schedule.title}" 일정을 삭제할까요?`)) return;
     setErrorMessage(null);
@@ -152,6 +230,7 @@ export function CalendarBoard({
   while (cells.length % 7 !== 0) cells.push(null);
 
   const selectedItems = itemsByDate[selectedDate] ?? [];
+  const selectedWork = workByDate[selectedDate] ?? [];
   const selectedHolidays = holidays[selectedDate] ?? [];
   const currentYear = Number(today.slice(0, 4));
 
@@ -170,7 +249,10 @@ export function CalendarBoard({
       selectedDate={selectedDate}
       itemsByDate={itemsByDate}
       holidays={holidays}
-      onSelect={selectDate}
+      onSelect={(date) => {
+        selectDate(date);
+        setMobileView("month");
+      }}
     />
   );
 
@@ -200,6 +282,28 @@ export function CalendarBoard({
               <ChevronRight size={20} />
             </Link>
           </div>
+          <div role="radiogroup" aria-label="보기 방식" className="flex rounded-lg border border-border p-0.5 md:hidden">
+            {(
+              [
+                ["month", "달력", CalendarDays],
+                ["list", "목록", List],
+              ] as const
+            ).map(([value, label, Icon]) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={mobileView === value}
+                onClick={() => setMobileView(value)}
+                className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium ${
+                  mobileView === value ? "bg-accent text-accent-foreground" : "text-muted"
+                }`}
+              >
+                <Icon size={13} aria-hidden="true" />
+                {label}
+              </button>
+            ))}
+          </div>
           <div className="flex items-center gap-1.5">
             <select
               value={year}
@@ -228,7 +332,7 @@ export function CalendarBoard({
             <button
               type="button"
               onClick={() => (today.startsWith(ym) ? selectDate(today) : goToMonth(today.slice(0, 7), today))}
-              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground hover:bg-surface-hover"
+              className="whitespace-nowrap rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground hover:bg-surface-hover"
             >
               오늘
             </button>
@@ -299,7 +403,7 @@ export function CalendarBoard({
           </p>
         ) : null}
 
-        {selectedItems.length === 0 && !isCreating ? (
+        {selectedItems.length === 0 && !isCreating && selectedWork.length === 0 ? (
           <p className="py-3 text-center text-sm text-muted">등록된 일정이 없습니다.</p>
         ) : null}
 
@@ -394,17 +498,50 @@ export function CalendarBoard({
             })}
           </ul>
         ) : null}
+
+        {selectedWork.length > 0 ? (
+          <div className="border-t border-border pt-3">
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <h3 className="text-xs font-semibold text-muted">
+                이날 업무 <span className="font-normal">{selectedWork.length}건</span>
+              </h3>
+              <Link href={`/tasks?week=${getMondayOfISO(selectedDate)}`} className="text-xs text-accent hover:underline">
+                업무에서 보기
+              </Link>
+            </div>
+            <ul className="flex flex-col gap-1">
+              {selectedWork.map((item) => (
+                <li key={item.id} className="flex items-start gap-1.5 text-[0.75rem] text-foreground">
+                  <span
+                    className={`mt-[0.15rem] flex h-3 w-3 shrink-0 items-center justify-center rounded-[3px] border ${
+                      item.status === "done" ? "border-accent bg-accent text-accent-foreground" : "border-border"
+                    }`}
+                    aria-label={item.status === "done" ? "완료" : "계획"}
+                  >
+                    {item.status === "done" ? <Check size={9} strokeWidth={3} aria-hidden="true" /> : null}
+                  </span>
+                  <span className={`min-w-0 break-words ${item.status === "done" ? "text-muted" : ""}`}>{item.body}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </section>
 
         {leaveSummary ? <LeaveCard summary={leaveSummary} /> : null}
         <div className="hidden md:block">{agenda}</div>
       </div>
 
+      {/* 휴대폰 목록 보기: 달력 자리에 이달 일정 목록 */}
+      {mobileView === "list" ? <div className="order-2 md:hidden">{agenda}</div> : null}
+
 
       {/* 월 달력 */}
       <section
         aria-label={`${year}년 ${month}월 달력`}
-        className="order-2 min-w-0 rounded-2xl border border-border bg-surface p-2 sm:p-4 xl:order-none xl:col-start-2 xl:row-start-2"
+        className={`order-2 min-w-0 rounded-2xl border border-border bg-surface p-2 sm:p-4 xl:order-none xl:col-start-2 xl:row-start-2 ${
+          mobileView === "list" ? "hidden md:block" : ""
+        }`}
       >
         <div className="grid grid-cols-7 text-center text-sm font-semibold text-muted">
           {WEEKDAYS.map((d, i) => (
@@ -422,6 +559,7 @@ export function CalendarBoard({
             const weekday = weekdayOf(date);
             const holidayNames = holidays[date] ?? [];
             const items = itemsByDate[date] ?? [];
+            const work = workByDate[date] ?? [];
             const isToday = date === today;
             const isSelected = date === selectedDate;
             const dayColor =
@@ -432,10 +570,26 @@ export function CalendarBoard({
                 key={date}
                 type="button"
                 onClick={() => selectDate(date)}
-                aria-label={`${month}월 ${day}일${holidayNames.length ? ` ${holidayNames.join(", ")}` : ""}, 일정 ${items.length}건`}
+                onDragOver={(e) => {
+                  if (!dragRef.current) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (dropDate !== date) setDropDate(date);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  void dropOn(date);
+                }}
+                aria-label={`${month}월 ${day}일${holidayNames.length ? ` ${holidayNames.join(", ")}` : ""}, 일정 ${items.length}건${
+                  work.length ? `, 업무 ${work.length}건` : ""
+                }`}
                 aria-pressed={isSelected}
                 className={`flex min-h-[3.2rem] min-w-0 flex-col items-stretch gap-1 rounded-lg border p-1 text-left transition-colors sm:min-h-[5.2rem] sm:p-1.5 lg:min-h-[max(6.2rem,calc((100vh-25rem)/6))] ${
-                  isSelected ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border hover:bg-surface-hover"
+                  dropDate === date
+                    ? "border-accent bg-accent/10 ring-2 ring-accent/50"
+                    : isSelected
+                      ? "border-accent bg-accent/5 ring-1 ring-accent"
+                      : "border-border hover:bg-surface-hover"
                 }`}
               >
                 <div className="flex min-w-0 items-center gap-1">
@@ -467,8 +621,13 @@ export function CalendarBoard({
                   {items.slice(0, MAX_CHIPS_PER_CELL).map((item) => (
                     <span
                       key={dayItemKey(item)}
-                      title={itemTitle(item)}
-                      className={`flex min-w-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-medium lg:text-[0.65rem] ${itemColors(item).chip}`}
+                      title={item.type === "schedule" ? `${itemTitle(item)} (끌어서 다른 날로 옮기기)` : itemTitle(item)}
+                      draggable={item.type === "schedule"}
+                      onDragStart={item.type === "schedule" ? (e) => startDrag(e, item.schedule, date) : undefined}
+                      onDragEnd={endDrag}
+                      className={`flex min-w-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-medium lg:text-[0.65rem] ${itemColors(item).chip} ${
+                        item.type === "schedule" ? "cursor-grab active:cursor-grabbing" : ""
+                      }`}
                     >
                       {item.type === "overlay" ? <OverlayIcon kind={item.overlay.kind} size={12} /> : null}
                       <span className="truncate">{itemTitle(item)}</span>
@@ -478,6 +637,15 @@ export function CalendarBoard({
                     <span className="px-1 text-xs text-muted">+{items.length - MAX_CHIPS_PER_CELL}건 더</span>
                   ) : null}
                 </div>
+                {work.length > 0 ? (
+                  <span
+                    className="mt-auto hidden items-center gap-1 px-1 text-[0.6rem] text-muted sm:flex"
+                    title={work.map((w) => `${w.status === "done" ? "✓" : "·"} ${w.body}`).join("\n")}
+                  >
+                    <Check size={10} aria-hidden="true" />
+                    업무 {work.filter((w) => w.status === "done").length}/{work.length}
+                  </span>
+                ) : null}
               </button>
             );
           })}
@@ -539,7 +707,7 @@ function AgendaList({
       {dates.length === 0 ? (
         <p className="py-2 text-center text-sm text-muted">이번 달 일정이 없습니다.</p>
       ) : (
-        <ol className="flex max-h-[21rem] flex-col gap-1 overflow-y-auto">
+        <ol className="flex flex-col gap-1 md:max-h-[21rem] md:overflow-y-auto">
           {dates.map((date) => {
             const weekday = weekdayOf(date);
             const isHoliday = (holidays[date] ?? []).length > 0;
@@ -581,6 +749,10 @@ function formatDays(days: number): string {
   return Number.isInteger(days) ? `${days}` : days.toFixed(1);
 }
 
+function formatYearMonth(dateISO: string): string {
+  return `${Number(dateISO.slice(0, 4))}.${Number(dateISO.slice(5, 7))}`;
+}
+
 function formatKoreanDate(dateISO: string): string {
   return `${Number(dateISO.slice(0, 4))}.${Number(dateISO.slice(5, 7))}.${Number(dateISO.slice(8, 10))}`;
 }
@@ -594,6 +766,8 @@ function LeaveCard({ summary }: { summary: LeaveSummary }) {
   const expiringDays = expiring
     ? summary.active.filter((g) => g.expires === expiring.expires).reduce((sum, g) => sum + g.remaining, 0)
     : 0;
+  // 지금 쓰는 묶음과 바로 다음에 생길 묶음까지만 (지금은 입사 첫해 월 만근 + 2027.9.1 발생분)
+  const plan = buildLeavePlan(summary.hireDate, summary.today, 2);
 
   return (
     <section aria-label="내 연차" className="flex flex-col gap-2 rounded-2xl border border-border bg-surface p-3">
@@ -644,6 +818,45 @@ function LeaveCard({ summary }: { summary: LeaveSummary }) {
       </dl>
       {summary.overdrawn > 0 ? (
         <p className="px-1 text-xs text-danger">발생한 연차보다 {formatDays(summary.overdrawn)}일 더 잡혀 있습니다.</p>
+      ) : null}
+
+      {/* 연차 일정: 언제 몇 일이 생기고 언제까지 써야 하는지 */}
+      {plan.length > 0 ? (
+        <div className="mt-1 border-t border-border px-1 pt-2.5">
+          <h3 className="mb-1.5 text-xs font-semibold text-foreground">연차 일정</h3>
+          <ol className="flex flex-col gap-1">
+            {plan.map((row) => {
+              const isFirstYear = row.to !== null;
+              const grantedSoFar = isFirstYear
+                ? summary.grants.filter((g) => g.kind === "monthly" && g.date <= summary.today).length
+                : 0;
+              return (
+                <li
+                  key={row.from}
+                  className={`grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2 rounded-lg px-2 py-1.5 text-xs ${
+                    row.state === "current" ? "bg-accent/10" : ""
+                  }`}
+                >
+                  <span className="min-w-0 font-medium text-foreground">
+                    {isFirstYear
+                      ? `${formatYearMonth(row.from)} ~ ${formatYearMonth(row.to!)} 매월`
+                      : `${formatKoreanDate(row.from)} 발생`}
+                  </span>
+                  <span className={`text-right font-semibold tabular-nums ${row.state === "current" ? "text-accent" : "text-foreground"}`}>
+                    {isFirstYear ? `${grantedSoFar}/${row.days}일` : `+${row.days}일`}
+                  </span>
+                  <span className="text-muted">{formatKoreanDate(row.expires)}까지 사용</span>
+                  <span className={`text-right ${row.state === "current" ? "font-medium text-accent" : "text-muted"}`}>
+                    {row.state === "current" ? "사용 중" : row.label.replace(" 연차", "")}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+          <p className="mt-1.5 text-[0.65rem] leading-relaxed text-muted">
+            1년 출근율 80% 이상이면 15일, 3년차부터 2년마다 1일씩 늘어 최대 25일. 기한이 지나면 남은 연차는 사라집니다.
+          </p>
+        </div>
       ) : null}
     </section>
   );

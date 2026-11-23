@@ -1,9 +1,70 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Building2, CalendarDays, CheckSquare, FileText, Globe, KeyRound, LogOut, Package } from "lucide-react";
+import {
+  Building2,
+  CalendarDays,
+  CheckSquare,
+  FileText,
+  Globe,
+  KeyRound,
+  LogOut,
+  Moon,
+  Package,
+  Search,
+  Sun,
+} from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getNavAlertsAction } from "@/app/navActions";
+import { CommandPalette } from "./CommandPalette";
+
+/** 웹 만료 알림 건수: 페이지를 옮길 때마다 묻지 않게 10분 동안 이 탭에 기억한다 */
+const ALERT_CACHE_KEY = "nav-alerts";
+const ALERT_CACHE_MS = 10 * 60 * 1000;
+
+function useHostingAlerts(): number {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(ALERT_CACHE_KEY) ?? "null") as { at: number; hosting: number } | null;
+      if (cached && Date.now() - cached.at < ALERT_CACHE_MS) {
+        setCount(cached.hosting);
+        return;
+      }
+    } catch {}
+    getNavAlertsAction()
+      .then(({ hosting }) => {
+        if (cancelled) return;
+        setCount(hosting);
+        try {
+          sessionStorage.setItem(ALERT_CACHE_KEY, JSON.stringify({ at: Date.now(), hosting }));
+        } catch {}
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return count;
+}
+
+/** 밝은/어두운 화면 전환. 처음 값은 layout 의 스크립트가 <html class="dark"> 로 이미 정해 둔다. */
+function useTheme(): [boolean, () => void] {
+  const [dark, setDark] = useState(false);
+  useEffect(() => setDark(document.documentElement.classList.contains("dark")), []);
+  function toggle() {
+    const next = !document.documentElement.classList.contains("dark");
+    document.documentElement.classList.toggle("dark", next);
+    try {
+      localStorage.setItem("theme", next ? "dark" : "light");
+    } catch {}
+    setDark(next);
+  }
+  return [dark, toggle];
+}
 
 // 별도 홈 대시보드 없음 — 업무관리가 사실상 기본 화면(첫 메뉴)이라 "/" 항목은 두지 않는다.
 const NAV_ITEMS = [
@@ -19,6 +80,21 @@ const NAV_ITEMS = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const hostingAlerts = useHostingAlerts();
+  const [dark, toggleTheme] = useTheme();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // Ctrl+K / ⌘K: 어디서든 통합 검색 (입력 중이어도 연다)
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && e.code === "KeyK") {
+        e.preventDefault();
+        setSearchOpen((v) => !v);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   async function handleLogout() {
     const supabase = createSupabaseBrowserClient();
@@ -49,35 +125,70 @@ export function Sidebar() {
       <ul className="flex min-w-0 items-center justify-between gap-0 overflow-x-auto sm:justify-center sm:gap-0.5 md:gap-1">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive = pathname?.startsWith(href);
+          const alert = href === "/hosting" ? hostingAlerts : 0;
           return (
             <li key={href} className="shrink-0">
               <Link
                 href={href}
-                aria-label={label}
+                aria-label={alert ? `${label} (만료 임박 ${alert}건)` : label}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-2 rounded-lg px-1.5 py-2 text-sm font-medium transition-colors sm:px-2 lg:px-3 ${
+                title={alert ? `만료됐거나 30일 안에 만료되는 항목 ${alert}건` : undefined}
+                className={`relative flex items-center gap-2 rounded-lg px-1.5 py-2 text-sm font-medium transition-colors sm:px-2 lg:px-3 ${
                   isActive
-                    ? "bg-accent/10 text-accent"
+                    ? "bg-foreground text-surface"
                     : "text-muted hover:bg-surface-hover hover:text-foreground"
                 }`}
               >
                 <Icon className="h-[0.9rem] w-[0.9rem]" aria-hidden="true" />
                 <span className="hidden whitespace-nowrap lg:inline">{label}</span>
+                {alert ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute right-0.5 top-1 h-[0.42rem] w-[0.42rem] rounded-full bg-danger ring-2 ring-surface lg:right-1"
+                  />
+                ) : null}
               </Link>
             </li>
           );
         })}
       </ul>
 
-      <button
-        type="button"
-        onClick={handleLogout}
-        aria-label="로그아웃"
-        className="flex shrink-0 items-center gap-2 justify-self-end rounded-lg border border-border px-2.5 py-1.5 text-sm font-medium text-foreground hover:bg-surface-hover"
-      >
-        <LogOut className="h-4 w-4" aria-hidden="true" />
-        <span className="hidden lg:inline">로그아웃</span>
-      </button>
+      <div className="flex shrink-0 items-center gap-0.5 justify-self-end sm:gap-1">
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          aria-label="통합 검색 (Ctrl+K)"
+          title="통합 검색 (Ctrl+K)"
+          className="flex items-center gap-2 rounded-lg px-1.5 py-1.5 text-sm text-muted hover:bg-surface-hover hover:text-foreground sm:px-2 xl:border xl:border-border xl:pr-1.5"
+        >
+          <Search className="h-4 w-4" aria-hidden="true" />
+          <span className="hidden xl:inline">검색</span>
+          <kbd className="hidden rounded border border-border bg-bg px-1 font-sans text-[0.6rem] text-muted xl:inline">Ctrl K</kbd>
+        </button>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={dark ? "밝은 화면으로" : "어두운 화면으로"}
+          title={dark ? "밝은 화면으로" : "어두운 화면으로"}
+          className="rounded-lg px-1.5 py-1.5 text-muted hover:bg-surface-hover hover:text-foreground sm:px-2"
+        >
+          {dark ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
+        </button>
+        <button
+          type="button"
+          onClick={handleLogout}
+          aria-label="로그아웃"
+          className="flex items-center gap-2 rounded-lg border border-border px-2 py-1.5 text-sm font-medium text-foreground hover:bg-surface-hover sm:px-2.5"
+        >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          <span className="hidden lg:inline">로그아웃</span>
+        </button>
+      </div>
+      <CommandPalette
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        menus={NAV_ITEMS.map(({ href, label }) => ({ href, label }))}
+      />
     </nav>
   );
 }

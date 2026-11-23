@@ -14,7 +14,7 @@ function isPresent(v: ProductAttributeValue): boolean {
 
 // 분류별 색 — 총괄표에서 벽/바닥/천장을 한눈에 구분. (JIT 안전하게 인라인 스타일)
 const CATEGORY_STYLE: Record<CategoryLabel, { bar: string; tint: string; text: string }> = {
-  벽재: { bar: "#4F46E5", tint: "rgba(79,70,229,0.10)", text: "#4F46E5" },
+  벽재: { bar: "#3B5F8A", tint: "rgba(59,95,138,0.10)", text: "#3B5F8A" },
   바닥재: { bar: "#C2410C", tint: "rgba(194,65,12,0.10)", text: "#C2410C" },
   천장재: { bar: "#0F766E", tint: "rgba(15,118,110,0.10)", text: "#0F766E" },
 };

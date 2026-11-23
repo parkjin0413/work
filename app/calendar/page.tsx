@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { withRetry } from "@/lib/supabase/withRetry";
 import { getKstTodayISO } from "@/lib/tasks/week";
+import { listWorkItemsInRange } from "@/lib/tasks/workItems";
 import { isValidISODate, isValidYm, monthRange } from "@/lib/schedule/calendar";
 import { getMonthHolidays } from "@/lib/schedule/holidays";
 import { listLeaveSchedules, listSchedulesInRange, listTeamMembers, type TeamMember } from "@/lib/schedule/scheduleStore";
@@ -14,7 +15,18 @@ import {
   listHostingOverlays,
   type OverlayItem,
 } from "@/lib/schedule/overlays";
-import { CalendarBoard } from "./CalendarBoard";
+import { CalendarBoard, type CalendarWorkItem } from "./CalendarBoard";
+
+/** 이달 업무(주간 업무 항목). 실패하면 업무 표시만 빠진다. */
+async function loadWorkItems(first: string, last: string): Promise<CalendarWorkItem[]> {
+  try {
+    const items = await withRetry(() => listWorkItemsInRange(first, last), "calendar/work");
+    return items.map(({ id, date, body, status }) => ({ id, date, body, status }));
+  } catch (error) {
+    console.error("[calendar] 업무 조회 실패:", error);
+    return [];
+  }
+}
 
 /** 부가 정보(호스팅 만료·생일)는 실패해도 달력 자체는 보여준다. */
 async function loadOverlay(label: string, load: () => Promise<OverlayItem[]>): Promise<OverlayItem[]> {
@@ -83,12 +95,13 @@ export default async function CalendarPage({
     );
   }
 
-  const [hostingOverlays, birthdayOverlays, documentOverlays, leaveSummary, teamMembers] = await Promise.all([
+  const [hostingOverlays, birthdayOverlays, documentOverlays, leaveSummary, teamMembers, workItems] = await Promise.all([
     loadOverlay("calendar/hosting", () => listHostingOverlays(first, last)),
     loadOverlay("calendar/birthdays", () => listBirthdayOverlays(first, last)),
     loadOverlay("calendar/documents", () => listDocumentOverlays(first, last)),
     loadLeaveSummary(today),
     loadTeamMembers(),
+    loadWorkItems(first, last),
   ]);
   const leaveOverlays: OverlayItem[] = leaveSummary
     ? leaveEventsInRange(leaveSummary, first, last).map((event) => ({ ...event, kind: "leave" as const }))
@@ -100,8 +113,8 @@ export default async function CalendarPage({
       <main className="min-w-0 flex-1 px-4 sm:px-8 lg:px-12 2xl:px-[max(4rem,calc((100%-106.6667rem)/2))] py-6">
         <h1 className="text-lg font-semibold text-foreground">일정</h1>
         <p className="mt-1 text-sm text-muted">
-          날짜를 누르면 그날 일정을 보고 추가할 수 있습니다. 호스팅·도메인 계약일, 직원 생일, 결재 문서(품의서·경비내역서)는
-          자동으로 표시됩니다.
+          날짜를 누르면 그날 일정과 업무를 보고 일정을 추가할 수 있습니다. 일정은 끌어서 다른 날로 옮길 수 있고, 호스팅·도메인
+          계약일, 직원 생일, 결재 문서(품의서·경비내역서)는 자동으로 표시됩니다.
         </p>
 
         <CalendarBoard
@@ -113,6 +126,7 @@ export default async function CalendarPage({
           overlays={[...leaveOverlays, ...hostingOverlays, ...birthdayOverlays, ...documentOverlays]}
           leaveSummary={leaveSummary}
           teamMembers={teamMembers}
+          workItems={workItems}
           holidays={getMonthHolidays(ym)}
         />
       </main>

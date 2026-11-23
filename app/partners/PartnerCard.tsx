@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GripVertical, Pencil, Trash2 } from "lucide-react";
+import { ClipboardCopy, GripVertical, Pencil, Phone, Trash2 } from "lucide-react";
+import { buildPartnerText } from "@/lib/partners/partnerText";
 import type { Partner } from "@/lib/partners/partnersStore";
 import type { DragHandleProps } from "./PartnersBoard";
 import { updatePartnerAction, deletePartnerAction } from "./actions";
 import { PartnerFilePreview } from "./PartnerFilePreview";
+import { formatBusinessNumber, formatPhoneNumber } from "@/lib/format/koreanNumbers";
 
 type FieldKey =
+  | "all"
   | "companyName"
   | "representative"
   | "address"
@@ -19,7 +22,7 @@ type FieldKey =
   | "accountNumber"
   | "accountHolder";
 
-const FIELD_LABELS: Record<Exclude<FieldKey, "companyName">, string> = {
+const FIELD_LABELS: Record<Exclude<FieldKey, "companyName" | "all">, string> = {
   representative: "대표자",
   address: "주소",
   businessNumber: "사업자번호",
@@ -32,6 +35,13 @@ const FIELD_LABELS: Record<Exclude<FieldKey, "companyName">, string> = {
 
 // 숫자만 복사: 이체 화면 계좌번호 칸에 바로 붙여넣을 수 있게
 const DIGITS_ONLY_FIELDS: FieldKey[] = ["businessNumber", "phone", "accountNumber"];
+
+/** 화면에 보일 값: 숫자만 저장된 사업자번호·전화번호는 하이픈을 넣어 읽기 쉽게 */
+function toDisplayValue(field: FieldKey, value: string): string {
+  if (field === "businessNumber") return formatBusinessNumber(value);
+  if (field === "phone") return formatPhoneNumber(value);
+  return value;
+}
 
 function toCopyValue(field: FieldKey, value: string): string {
   return DIGITS_ONLY_FIELDS.includes(field) ? value.replace(/[^0-9]/g, "") : value;
@@ -74,7 +84,7 @@ export function PartnerCard({
 
   async function copyToClipboard(field: FieldKey, rawValue: string) {
     try {
-      await navigator.clipboard.writeText(toCopyValue(field, rawValue));
+      await navigator.clipboard.writeText(field === "all" ? rawValue : toCopyValue(field, rawValue));
     } catch {
       return;
     }
@@ -287,7 +297,7 @@ export function PartnerCard({
     );
   }
 
-  const fields: { key: Exclude<FieldKey, "companyName">; value: string | null }[] = [
+  const fields: { key: Exclude<FieldKey, "companyName" | "all">; value: string | null }[] = [
     { key: "representative", value: partner.representative },
     { key: "address", value: partner.address },
     { key: "businessNumber", value: partner.businessNumber },
@@ -325,6 +335,18 @@ export function PartnerCard({
         <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
+            onClick={() => copyToClipboard("all", buildPartnerText(partner))}
+            aria-label={`${partner.companyName} 정보 전체 복사`}
+            title="견적서·계약서용으로 회사 정보 전체 복사"
+            className={`flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium hover:bg-bg ${
+              copiedField === "all" ? "text-accent" : "text-muted hover:text-foreground"
+            }`}
+          >
+            <ClipboardCopy size={14} aria-hidden="true" />
+            {copiedField === "all" ? "복사됨" : "전체 복사"}
+          </button>
+          <button
+            type="button"
             onClick={() => setIsEditing(true)}
             aria-label={`${partner.companyName} 수정`}
             className="rounded-md p-1.5 text-muted hover:bg-bg hover:text-foreground"
@@ -353,14 +375,27 @@ export function PartnerCard({
           <div key={key}>
             <div className="flex items-start justify-between gap-2 text-sm">
               <span className="mt-0.5 shrink-0 text-muted">{FIELD_LABELS[key]}</span>
-              <button
-                type="button"
-                onClick={() => copyToClipboard(key, value)}
-                title="클릭하여 복사"
-                className="min-w-0 whitespace-normal break-words rounded px-1 text-right font-medium text-foreground hover:bg-bg"
-              >
-                {value}
-              </button>
+              <span className="flex min-w-0 items-start gap-1">
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(key, value)}
+                  title="클릭하여 복사"
+                  className="min-w-0 whitespace-normal break-words rounded px-1 text-right font-medium text-foreground hover:bg-bg"
+                >
+                  {toDisplayValue(key, value)}
+                </button>
+                {/* 휴대폰·태블릿: 눌러서 바로 전화 (PC 는 복사만) */}
+                {key === "phone" ? (
+                  <a
+                    href={`tel:${value.replace(/[^0-9]/g, "")}`}
+                    aria-label={`${partner.companyName}에 전화`}
+                    className="hidden shrink-0 items-center gap-0.5 rounded-md border border-accent/40 px-1.5 py-0.5 text-xs font-medium text-accent [@media(pointer:coarse)]:inline-flex"
+                  >
+                    <Phone size={12} aria-hidden="true" />
+                    전화
+                  </a>
+                ) : null}
+              </span>
             </div>
             {copiedField === key ? (
               <p role="status" className="text-right text-xs text-accent">

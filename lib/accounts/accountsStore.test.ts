@@ -98,6 +98,9 @@ describe("accountsStore", () => {
               username: "admin",
               password: "secret1",
               memo: "메모1",
+              pinned: false,
+              passwordChangedAt: null,
+              pinOrder: null,
             },
           ],
         },
@@ -112,6 +115,9 @@ describe("accountsStore", () => {
               username: "me",
               password: "secret2",
               memo: null,
+              pinned: false,
+              passwordChangedAt: null,
+              pinOrder: null,
             },
           ],
         },
@@ -185,6 +191,7 @@ describe("accountsStore", () => {
         username: "admin",
         password_encrypted: "enc:secret1",
         memo: "메모1",
+        password_changed_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       });
     });
 
@@ -204,8 +211,31 @@ describe("accountsStore", () => {
   });
 
   describe("renameAccount", () => {
+    function mockExisting(passwordEncrypted: string) {
+      selectMock.mockReturnValueOnce({
+        eq: () => ({ maybeSingle: async () => ({ data: { password_encrypted: passwordEncrypted }, error: null }) }),
+      } as never);
+    }
+
+    it("비밀번호가 같으면 변경일은 그대로 두고 수정한다", async () => {
+      eqMock.mockResolvedValue({ error: null });
+      mockExisting("enc:same");
+
+      await renameAccount("acc-1", {
+        categoryId: "cat-2",
+        name: "새 이름",
+        url: "https://new.example.com",
+        username: "new-admin",
+        password: "same",
+        memo: null,
+      });
+
+      expect(updateMock).toHaveBeenCalledWith(expect.not.objectContaining({ password_changed_at: expect.anything() }));
+    });
+
     it("비밀번호를 다시 암호화해서 계정을 수정한다", async () => {
       eqMock.mockResolvedValue({ error: null });
+      mockExisting("enc:old-secret");
 
       await renameAccount("acc-1", {
         categoryId: "cat-2",
@@ -223,6 +253,7 @@ describe("accountsStore", () => {
         username: "new-admin",
         password_encrypted: "enc:new-secret",
         memo: null,
+        password_changed_at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       });
       expect(eqMock).toHaveBeenCalledWith("id", "acc-1");
     });

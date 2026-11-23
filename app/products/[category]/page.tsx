@@ -14,13 +14,11 @@ import {
   getRawMarkdown,
   type Product,
 } from "@/lib/products/productsStore";
-import { buildClaudeBlock, buildJson, buildPlainText } from "@/lib/products/copyText";
+import { buildClaudeBlock, buildJson, buildPlainText, buildQuoteText } from "@/lib/products/copyText";
 import { RollupTable } from "@/components/products/RollupTable";
 import { DownloadButton } from "@/components/products/DownloadButton";
-import {
-  ProductComparison,
-  type ComparisonItem,
-} from "@/components/products/ProductComparison";
+import type { ComparisonItem } from "@/components/products/ProductComparison";
+import { ComparisonPicker } from "@/components/products/ComparisonPicker";
 
 export function generateStaticParams() {
   return CATEGORY_ORDER.map((category) => ({ category }));
@@ -47,6 +45,7 @@ function toItem(category: string, p: Product): ComparisonItem {
   return {
     product: p,
     copy: {
+      quote: buildQuoteText(p),
       plain: buildPlainText(p),
       markdown: getRawMarkdown(category, p.slug) ?? "",
       json: buildJson(p),
@@ -122,7 +121,7 @@ export default function CategoryPage({ params }: { params: { category: string } 
 
           <section className="space-y-3">
             <h2 className="text-sm font-semibold text-foreground">항목별 비교</h2>
-            <ProductComparison items={products.map((p) => toItem(params.category, p))} />
+            <ComparisonPicker items={products.map((p) => toItem(params.category, p))} />
           </section>
         </>
       )}

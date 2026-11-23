@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { isPlainShortcut } from "@/lib/ui/keyboard";
+import { daysBetweenISO } from "@/lib/tasks/week";
+import { reorderPinnedAction, setSitePinnedAction } from "./pinActions";
 import { groupWeight, splitIntoColumns } from "@/lib/sites/columns";
 import {
   DndContext,
@@ -18,17 +21,19 @@ import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import {
   SortableContext,
   arrayMove,
+  rectSortingStrategy,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useRouter } from "next/navigation";
-import { GripVertical, KeyRound, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
+import { GripVertical, KeyRound, Pencil, Pin, PinOff, Plus, Search, Star, Trash2 } from "lucide-react";
 import {
   buildGroups,
   displayUrl,
   matchesQuery,
+  PASSWORD_STALE_DAYS,
   type SiteCategory,
   type SiteGroup,
   type SiteItem,
@@ -92,10 +97,45 @@ function useCopy() {
   return { copied, copy };
 }
 
-export function SitesPreview({ items, categories }: { items: SiteItem[]; categories: SiteCategory[] }) {
+/** 오늘 날짜 (비밀번호 변경일 경과 계산용). 서버에서 받은 값을 써서 화면이 서버·브라우저에서 같게 그려진다. */
+const TodayContext = createContext<string>("");
+
+export function SitesPreview({
+  items,
+  categories,
+  todayISO = "",
+}: {
+  items: SiteItem[];
+  categories: SiteCategory[];
+  todayISO?: string;
+}) {
   const [query, setQuery] = useState("");
   const { copied, copy } = useCopy();
   const searching = !!query.trim();
+  const searchRef = useRef<HTMLInputElement>(null);
+  // 고정 순서: 옮긴 적 있는 것(pinOrder)부터, 없는 것은 고정한 대로 뒤에
+  const pinned = useMemo(
+    () =>
+      items
+        .filter((i) => i.pinned)
+        .map((item, index) => ({ item, index }))
+        .sort((a, b) => (a.item.pinOrder ?? Infinity) - (b.item.pinOrder ?? Infinity) || a.index - b.index)
+        .map(({ item }) => item),
+    [items],
+  );
+  const pinnedChars = Math.max(8, ...pinned.map((i) => (i.username ?? "").length));
+
+  // "/" 를 누르면 어디서든 검색칸으로 (입력 중일 때는 그대로 "/" 입력)
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "/" || !isPlainShortcut(e)) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+      searchRef.current?.select();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // 계정과 즐겨찾기는 영역을 나누고, 각 영역 안에서 분류 순서대로 묶는다. 검색 중이 아니면 빈 분류도 보여준다.
   const zones = useMemo(() => {
@@ -114,19 +154,48 @@ export function SitesPreview({ items, categories }: { items: SiteItem[]; categor
   const resultCount = zones.reduce((n, z) => n + z.groups.reduce((m, g) => m + g.items.length, 0), 0);
 
   return (
+    <TodayContext.Provider value={todayISO}>
     <div className="mt-4 flex flex-col gap-5">
       <label className="relative max-w-md">
         <Search size={17} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
         <input
+          ref={searchRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setQuery("");
+              e.currentTarget.blur();
+            }
+          }}
           placeholder="이름·주소·아이디·메모 검색"
           aria-label="검색"
-          className="w-full rounded-xl border border-border bg-surface py-2.5 pl-9 pr-3 text-[0.75rem] text-foreground shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-shadow placeholder:text-muted focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/15"
+          aria-keyshortcuts="/"
+          className="w-full rounded-xl border border-border bg-surface py-2.5 pl-9 pr-9 text-[0.75rem] text-foreground shadow-[0_1px_2px_rgba(16,24,40,0.05)] transition-shadow placeholder:text-muted focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/15"
         />
+        <kbd
+          aria-hidden="true"
+          className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-border bg-bg px-1.5 font-sans text-[0.6rem] text-muted sm:block"
+        >
+          /
+        </kbd>
       </label>
 
       {resultCount === 0 ? <p className="py-8 text-center text-[0.75rem] text-muted">검색 결과가 없습니다.</p> : null}
+
+      {/* 고정: 자주 쓰는 계정·즐겨찾기를 맨 위에 모아 둔다 (각 항목의 핀 버튼으로 올리고 내림) */}
+      {!searching && pinned.length > 0 ? (
+        <section aria-label="고정" className="flex flex-col gap-2.5">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+              <Pin size={17} className="text-accent" />
+            </span>
+            고정
+            <span className="text-[0.75rem] font-normal text-muted">{pinned.length}</span>
+          </h2>
+          <PinnedGrid items={pinned} credentialChars={pinnedChars} copied={copied} onCopy={copy} />
+        </section>
+      ) : null}
 
       {zones.map((zone) =>
         searching && zone.groups.length === 0 ? null : (
@@ -155,6 +224,143 @@ export function SitesPreview({ items, categories }: { items: SiteItem[]; categor
         )
       )}
     </div>
+    </TodayContext.Provider>
+  );
+}
+
+/**
+ * 고정 카드 목록. 아래 분류 카드와 같은 단 수·간격으로, 항목마다 작은 카드 (메모는 아래 분류 카드에서 본다).
+ * 왼쪽 손잡이를 끌어 순서를 바꾼다. 화면을 먼저 바꾸고 저장에 실패하면 되돌린다.
+ */
+function PinnedGrid({
+  items,
+  credentialChars,
+  copied,
+  onCopy,
+}: {
+  items: SiteItem[];
+  credentialChars: number;
+  copied: string | null;
+  onCopy: (key: string, text: string) => void;
+}) {
+  const router = useRouter();
+  const [order, setOrder] = useState(items);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => setOrder(items), [items]);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const from = order.findIndex((i) => i.id === active.id);
+    const to = order.findIndex((i) => i.id === over.id);
+    if (from < 0 || to < 0) return;
+    const before = order;
+    const next = arrayMove(order, from, to);
+    setOrder(next);
+    setError(null);
+    try {
+      await reorderPinnedAction(next.map((i) => ({ source: i.source, id: i.rawId })));
+      router.refresh();
+    } catch (e) {
+      setOrder(before);
+      setError(e instanceof Error ? e.message : "고정 순서를 저장하지 못했습니다.");
+    }
+  }
+
+  return (
+    <>
+      {error ? (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      ) : null}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={order.map((i) => i.id)} strategy={rectSortingStrategy}>
+          <ul className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {order.map((item) => (
+              <SortablePinnedCard
+                key={item.id}
+                item={item}
+                credentialChars={credentialChars}
+                copied={copied}
+                onCopy={onCopy}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+      </DndContext>
+    </>
+  );
+}
+
+function SortablePinnedCard(props: {
+  item: SiteItem;
+  credentialChars: number;
+  copied: string | null;
+  onCopy: (key: string, text: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.item.id });
+  return (
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`min-w-0 overflow-hidden rounded-2xl border bg-surface pl-1 shadow-[0_1px_2px_rgba(16,24,40,0.05),0_4px_14px_-6px_rgba(16,24,40,0.08)] ${
+        isDragging ? "relative z-10 border-accent opacity-90 shadow-lg" : "border-border"
+      }`}
+    >
+      <SiteRow {...props} hideMemo dragHandle={{ attributes, listeners }} />
+    </li>
+  );
+}
+
+/** 맨 위 "고정"에 올리기·내리기 */
+function PinButton({ item }: { item: SiteItem }) {
+  const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
+  const label = item.pinned ? "고정 해제" : "맨 위에 고정";
+  return (
+    <button
+      type="button"
+      disabled={isSaving}
+      onClick={async () => {
+        setIsSaving(true);
+        try {
+          await setSitePinnedAction(item.source, item.rawId, !item.pinned);
+          router.refresh();
+        } catch (e) {
+          window.alert(e instanceof Error ? e.message : "고정을 바꾸지 못했습니다.");
+        } finally {
+          setIsSaving(false);
+        }
+      }}
+      aria-label={`${item.name} ${label}`}
+      aria-pressed={item.pinned ?? false}
+      title={label}
+      className={`rounded p-1 hover:bg-bg disabled:opacity-50 ${item.pinned ? "text-accent" : "text-muted hover:text-foreground"}`}
+    >
+      {item.pinned ? <PinOff size={14} /> : <Pin size={14} />}
+    </button>
+  );
+}
+
+/** "비번 변경 2026.05.03" — 오래됐으면(180일) 눈에 띄게 */
+function PasswordAge({ changedAt }: { changedAt: string }) {
+  const today = useContext(TodayContext);
+  const days = today ? daysBetweenISO(changedAt, today) : 0;
+  const stale = days >= PASSWORD_STALE_DAYS;
+  const months = Math.floor(days / 30);
+  return (
+    <p
+      title={stale ? "비밀번호를 바꾼 지 오래됐습니다" : "비밀번호를 마지막으로 바꾼 날"}
+      className={`mt-0.5 px-1 text-[0.58rem] leading-4 ${stale ? "font-semibold text-amber-700 dark:text-amber-300" : "text-muted opacity-70"}`}
+    >
+      비번 변경 {changedAt.replace(/-/g, ".")}
+      {stale ? ` · ${months}개월 지남` : ""}
+    </p>
   );
 }
 
@@ -848,15 +1054,19 @@ function SiteRow({
   onEdit,
   onDelete,
   dragHandle,
+  hideMemo = false,
 }: {
   item: SiteItem;
   /** 이 카드에서 가장 긴 아이디 글자 수 — ID·PW 칸 폭 계산용 */
   credentialChars: number;
   copied: string | null;
   onCopy: (key: string, text: string) => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  /** 없으면(맨 위 "고정" 목록) 수정·삭제 버튼을 빼고 고정 해제만 둔다 */
+  onEdit?: () => void;
+  onDelete?: () => void;
   dragHandle?: DragHandleProps;
+  /** 메모를 숨긴다 (맨 위 "고정" 카드) */
+  hideMemo?: boolean;
 }) {
   return (
     <div className="group relative flex flex-col py-[0.55rem] pl-1.5 pr-3 transition-colors duration-150 before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent before:opacity-0 before:transition-opacity hover:bg-accent/[0.04] hover:before:opacity-100">
@@ -881,30 +1091,35 @@ function SiteRow({
               target="_blank"
               rel="noopener noreferrer"
               title={item.url}
-              className="truncate text-[0.85rem] font-semibold leading-6 text-foreground hover:text-accent"
+              className="line-clamp-2 min-w-0 break-keep text-[0.85rem] font-semibold leading-snug text-foreground [overflow-wrap:anywhere] hover:text-accent"
             >
               {item.name}
             </a>
             {/* 수정·삭제: 이름 바로 옆. PC에서는 마우스를 올릴 때만, 터치 화면에서는 항상 보인다 */}
             <span className="flex shrink-0 items-center sm:opacity-0 sm:group-focus-within:opacity-100 sm:group-hover:opacity-100">
-              <button
-                type="button"
-                onClick={onEdit}
-                aria-label={`${item.name} 수정`}
-                title="수정"
-                className="rounded p-1 text-muted hover:bg-bg hover:text-foreground"
-              >
-                <Pencil size={14} />
-              </button>
-              <button
-                type="button"
-                onClick={onDelete}
-                aria-label={`${item.name} 삭제`}
-                title="삭제"
-                className="rounded p-1 text-danger hover:bg-bg"
-              >
-                <Trash2 size={14} />
-              </button>
+              <PinButton item={item} />
+              {onEdit ? (
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  aria-label={`${item.name} 수정`}
+                  title="수정"
+                  className="rounded p-1 text-muted hover:bg-bg hover:text-foreground"
+                >
+                  <Pencil size={14} />
+                </button>
+              ) : null}
+              {onDelete ? (
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  aria-label={`${item.name} 삭제`}
+                  title="삭제"
+                  className="rounded p-1 text-danger hover:bg-bg"
+                >
+                  <Trash2 size={14} />
+                </button>
+              ) : null}
             </span>
           </div>
           {/* 주소는 최대한 다 보이게: 잘라내지 않고 줄바꿈, 정말 긴 경우만 두 줄에서 끊는다 */}
@@ -932,10 +1147,11 @@ function SiteRow({
             {item.password ? (
               <CredentialLine label="PW" value={item.password} secret copyKey={`${item.id}-pw`} copied={copied} onCopy={onCopy} />
             ) : null}
+            {item.password && item.passwordChangedAt ? <PasswordAge changedAt={item.passwordChangedAt} /> : null}
           </div>
         ) : null}
       </div>
-      {item.memo ? (
+      {item.memo && !hideMemo ? (
         <p className={`mt-2 whitespace-pre-line break-words border-l-2 border-border pl-2.5 text-[0.725rem] leading-relaxed text-muted ${dragHandle ? "ml-6" : ""}`}>
           {item.memo}
         </p>

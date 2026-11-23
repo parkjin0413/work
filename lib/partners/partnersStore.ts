@@ -1,5 +1,6 @@
 import { randomUUID } from "crypto";
 import { createSupabaseServiceClient } from "@/lib/supabase/serviceClient";
+import { fixUploadedFileName } from "@/lib/files/fileName";
 
 /** 사업자등록증: 공개 버킷 (공개 URL) */
 const BUCKET = "partner-files";
@@ -140,7 +141,8 @@ const FILE_LABELS: Record<FileKind, string> = { registration: "사업자등록�
 
 async function uploadFile(kind: FileKind, file: File): Promise<{ path: string; name: string }> {
   const supabase = createSupabaseServiceClient();
-  const ext = file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : "";
+  const name = fixUploadedFileName(file.name);
+  const ext = name.includes(".") ? name.slice(name.lastIndexOf(".")) : "";
   const path = `${randomUUID()}${ext}`;
 
   const { error } = await supabase.storage.from(FILE_BUCKETS[kind]).upload(path, file, {
@@ -152,7 +154,7 @@ async function uploadFile(kind: FileKind, file: File): Promise<{ path: string; n
     throw new Error(`${FILE_LABELS[kind]} 업로드 실패: ${error.message}`);
   }
 
-  return { path, name: file.name };
+  return { path, name };
 }
 
 async function removeFile(kind: FileKind, path: string): Promise<void> {

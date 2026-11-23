@@ -5,7 +5,7 @@ import { ProductCopyButtons } from "./ProductCopyButtons";
 
 export type ComparisonItem = {
   product: Product;
-  copy: { plain: string; markdown: string; json: string; claude: string };
+  copy: { plain: string; markdown: string; json: string; claude: string; quote?: string };
 };
 
 /**
@@ -65,6 +65,7 @@ export function ProductComparison({ items }: { items: ComparisonItem[] }) {
             </div>
             <div className="mt-2">
               <ProductCopyButtons
+                quote={copy.quote}
                 plain={copy.plain}
                 markdown={copy.markdown}
                 json={copy.json}

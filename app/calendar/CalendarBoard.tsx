@@ -491,7 +491,7 @@ export function CalendarBoard({
                     </div>
                   </div>
                   {schedule.memo ? (
-                    <p className="whitespace-pre-line break-words text-sm opacity-80">{schedule.memo}</p>
+                    <p className="whitespace-pre-line break-words text-[0.72rem] leading-relaxed opacity-80">{schedule.memo}</p>
                   ) : null}
                 </li>
               );
